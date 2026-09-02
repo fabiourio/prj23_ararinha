@@ -19,6 +19,19 @@ Cada script imprime os resultados no terminal e salva as figuras `*.png`
 em `Resultados/`. Os scripts são determinísticos (semente fixa no NSGA-II),
 então re-rodar reproduz os números do relatório.
 
+## Como ler o código
+
+```
+lab2_opt_*.py          scripts do roteiro (rodam sozinhos, geram Resultados/)
+lab2_equipe_common.py  problema da equipe: DVs, CON, airplane_out(), g >= 0
+lab2_plot.py           estilo matplotlib + planformas esquematicas
+designTool/            analise conceitual (nao editar; importar analyze)
+```
+
+Fluxo tipico da secao 3/4: o script monta o otimizador → chama `airplane_out(x)`
+→ `constraints_geq0(out)` → SciPy (`g>=0`) ou pymoo (`G=-g`). Detalhes de
+normalizacao e sinais estao no docstring de `lab2_equipe_common.py`.
+
 ## Estrutura
 
 ### Exercícios do roteiro
@@ -29,10 +42,12 @@ então re-rodar reproduz os números do relatório.
   Resultado: **W0 = 290.117 kgf (−5,42 %)**, 6 restrições ativas.
 - `lab2_opt_equipe_moga.py` — **Seção 4**: min {W0, Wf} com NSGA-II (pymoo),
   pop. 80 × 200 gerações, população semeada com os ótimos SLSQP (âncoras de
-  convergência). Salva a frente em `Resultados/equipe_moga_frente.csv`.
-- `lab2_doe_equipe.py` — storytelling do Tópico 2: cortes 1-a-1 no ótimo
-  (qual restrição barra cada direção), comparação de W0 pelas etapas e
-  variações v1 → v2 (DVs e resultados).
+  convergência). Salva a frente em `Resultados/3_multiobj/equipe_moga_frente.csv`.
+- `lab2_equipe_common.py` — DVs, restrições e `airplane_out()` compartilhados
+  pelos scripts da equipe (seções 3–4).
+- `lab2_plot.py` — estilo de gráficos e desenhos de planformas.
+- `lab2_doe_equipe.py` — figuras de apoio da secao 3: cortes 1-a-1 no otimo,
+  comparacao de W0 pelas etapas e variacoes v1 -> v2.
 - `lab2_moga_convergencia.py` — Tópico 3: rodada ingênua do NSGA-II
   comparada à frente final e às âncoras SLSQP (evidência de convergência).
 - `lab2_opt_equipe.py` — versão intermediária da Seção 3 (6 DVs, sem as
