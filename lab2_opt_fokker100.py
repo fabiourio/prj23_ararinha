@@ -1,3 +1,9 @@
+'''
+Lab 02 secao 2: min MTOW do Fokker 100 em AR_w e S_w, restrição b_w <= 30 m.
+
+Rodar: python lab2_opt_fokker100.py  (~1,5 min com contorno)
+'''
+
 import os
 
 import numpy as np
@@ -8,6 +14,8 @@ from designTool.standard_airplane import standard_airplane
 from designTool.analyze import analyze
 from designTool.constants import gravity
 
+from lab2_plot import PAL, INK2, style_axes
+
 Xlist = []
 flist = []
 g1list = []
@@ -16,7 +24,7 @@ neval = [0]
 
 b_w_max = 30.0
 
-# figuras organizadas por topico do roteiro
+# figuras em Resultados/1_monoobj_fokker100
 RES = 'Resultados/1_monoobj_fokker100'
 os.makedirs(RES, exist_ok=True)
 
@@ -65,8 +73,7 @@ def confun(x):
 
     MTOW, b_w = run_analysis(x)
 
-    # >= 0
-    g1 = 1 - b_w/b_w_max
+    g1 = 1 - b_w / b_w_max  # SciPy: g >= 0 viavel
 
     return g1
 
@@ -133,38 +140,19 @@ print('')
 print('  Norma do gradiente do objetivo no otimo: |jac| = %.3e'%np.linalg.norm(result.jac[:2]))
 
 if not (ativo_g1 or ativo_AR or ativo_S):
-    print('  => OTIMO IRRESTRITO (interior). Nenhuma restricao ativa:')
-    print('     o gradiente do objetivo se anula, e a condicao de otimalidade')
-    print('     e simplesmente grad(f) = 0, sem contribuicao dos multiplicadores.')
+    print('  => otimo interior (nenhuma restricao ativa)')
 else:
-    print('  => OTIMO RESTRINGIDO.')
+    print('  => otimo restringido')
 print('='*58)
 
 Xhist = np.array(Xlist)
 
-# paleta e tintas (mesma convencao dos demais scripts do lab)
-PAL = ['#2a78d6', '#eb6834']
-INK2 = '#52514e'
-MUTED = '#c3c2b7'
-GRID = '#e1e0d9'
+fig, axs = plt.subplots(4, 1, figsize=(7, 9), sharex=True)
 
-def style_axes(ax):
-    ax.grid(color=GRID, linewidth=0.7)
-    ax.set_axisbelow(True)
-    for side in ('top', 'right'):
-        ax.spines[side].set_visible(False)
-    for side in ('left', 'bottom'):
-        ax.spines[side].set_color(MUTED)
-    ax.tick_params(colors=INK2, labelsize=9)
-
-fig, axs = plt.subplots(4, 1, figsize=(7,9), sharex=True)
-
-# cada DV no seu painel, em unidades fisicas (eixo y duplo num painel so
-# induz correlacao falsa entre escalas arbitrarias)
-axs[0].plot(Xhist[:,0], '-', linewidth=1.6, color=PAL[0])
+axs[0].plot(Xhist[:, 0], '-', linewidth=1.6, color=PAL[0])
 axs[0].set_ylabel(r'$AR_w$', fontsize=12)
 
-axs[1].plot(Xhist[:,1], '-', linewidth=1.6, color=PAL[1])
+axs[1].plot(Xhist[:, 1], '-', linewidth=1.6, color=PAL[1])
 axs[1].set_ylabel(r'$S_w$ [m$^2$]', fontsize=12)
 
 axs[2].plot(flist, '-', linewidth=1.8, color=PAL[0])
