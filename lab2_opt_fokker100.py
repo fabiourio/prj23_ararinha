@@ -157,23 +157,24 @@ def style_axes(ax):
         ax.spines[side].set_color(MUTED)
     ax.tick_params(colors=INK2, labelsize=9)
 
-fig, axs = plt.subplots(3, 1, figsize=(7,7), sharex=True)
+fig, axs = plt.subplots(4, 1, figsize=(7,9), sharex=True)
 
-# um eixo so: as duas DVs normalizadas pelo valor inicial (eixo duplo
+# cada DV no seu painel, em unidades fisicas (eixo y duplo num painel so
 # induz correlacao falsa entre escalas arbitrarias)
-axs[0].plot(Xhist[:,0]/X0[0], '-', linewidth=1.6, color=PAL[0], label=r'$AR_w$')
-axs[0].plot(Xhist[:,1]/X0[1], '-', linewidth=1.6, color=PAL[1], label=r'$S_w$')
-axs[0].set_ylabel('DV / valor inicial', fontsize=12)
-axs[0].legend(fontsize=9, frameon=False, loc='center right')
+axs[0].plot(Xhist[:,0], '-', linewidth=1.6, color=PAL[0])
+axs[0].set_ylabel(r'$AR_w$', fontsize=12)
 
-axs[1].plot(flist, '-', linewidth=1.8, color=PAL[0])
-axs[1].set_ylabel('MTOW [kgf]', fontsize=12)
+axs[1].plot(Xhist[:,1], '-', linewidth=1.6, color=PAL[1])
+axs[1].set_ylabel(r'$S_w$ [m$^2$]', fontsize=12)
 
-axs[2].plot(g1list, '-', linewidth=1.6, color=PAL[0], label=r'$g_1 = b_w/30 - 1$')
-axs[2].axhline(0, color=INK2, linewidth=0.8)
-axs[2].set_ylabel('$g$', fontsize=12)
-axs[2].set_xlabel('avaliações', fontsize=12)
-axs[2].legend(fontsize=9, frameon=False)
+axs[2].plot(flist, '-', linewidth=1.8, color=PAL[0])
+axs[2].set_ylabel('MTOW [kgf]', fontsize=12)
+
+axs[3].plot(g1list, '-', linewidth=1.6, color=PAL[0], label=r'$g_1 = b_w/30 - 1$')
+axs[3].axhline(0, color=INK2, linewidth=0.8)
+axs[3].set_ylabel('$g$', fontsize=12)
+axs[3].set_xlabel('avaliações', fontsize=12)
+axs[3].legend(fontsize=9, frameon=False)
 
 for ax in axs:
     style_axes(ax)
