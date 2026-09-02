@@ -69,13 +69,13 @@ o = np.argsort(W0f)
 ax.plot(W0f[o]/1000, Wff[o]/1000, '-', color=PAL[0], linewidth=1.1, alpha=0.5)
 ax.plot(W0f/1000, Wff/1000, 'o', color=PAL[0], markersize=4.5,
         markeredgecolor='white', markeredgewidth=0.9,
-        label='frente de Pareto (Tópico 3)')
+        label='frente de Pareto')
 
 # v2 e selecionadas
 ax.plot(v2['W0']/1000, v2['Wf']/1000, '*', color=INK, markersize=16,
         markeredgecolor='white', markeredgewidth=0.8,
-        label='v2: ótimo mono-objetivo (Tópico 2)')
-ax.annotate('v2 (min $W_0$)', (v2['W0']/1000, v2['Wf']/1000),
+        label='ótimo mono-objetivo (SLSQP)')
+ax.annotate('min $W_0$ (SLSQP)', (v2['W0']/1000, v2['Wf']/1000),
             xytext=(-10, 8), textcoords='offset points', ha='right',
             fontsize=9, color=INK2)
 
@@ -118,19 +118,19 @@ axi.plot(v2['W0']/1000, v2['Wf']/1000, '*', color=INK, markersize=9)
 axi.annotate('', xy=(v2['W0']/1000, v2['Wf']/1000),
              xytext=(v1['W0']/1000, v1['Wf']/1000),
              arrowprops=dict(arrowstyle='->', color=INK2, lw=1.1))
-axi.annotate('v1 (PRJ-22)', (v1['W0']/1000, v1['Wf']/1000),
+axi.annotate('baseline (PRJ-22)', (v1['W0']/1000, v1['Wf']/1000),
              xytext=(-6, -12), textcoords='offset points', ha='right',
              fontsize=7.5, color=INK2)
 axi.annotate('$-5{,}4\\%$ $W_0$\n$-9{,}5\\%$ $W_f$',
              ((v1['W0'] + v2['W0'])/2000, (v1['Wf'] + v2['Wf'])/2000),
              xytext=(2, 6), textcoords='offset points',
              fontsize=7.5, color=INK2)
-axi.set_title('o caminho desde a v1', fontsize=8, color=INK2)
+axi.set_title('o caminho desde a baseline', fontsize=8, color=INK2)
 axi.tick_params(labelsize=7)
 axi.margins(x=0.25, y=0.25)
 style_axes(axi)
 
-ax.set_title('Da v1 à escolha final: mono-objetivo aproxima, a frente decide',
+ax.set_title('Da baseline à escolha final: mono-objetivo aproxima, a frente decide',
              fontsize=12.5, color=INK)
 
 plt.tight_layout()
