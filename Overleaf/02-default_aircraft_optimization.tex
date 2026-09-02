@@ -1,0 +1,92 @@
+\newpage
+\section{Otimização do Fokker 100}
+
+O objetivo desta seção é minimizar o MTOW do Fokker 100 variando o
+alongamento, $AR_w$, e a área de asa, $S_w$, sujeito a uma restrição de
+envergadura, $b_w \le 30$~m, que é função das duas variáveis. O ponto de
+partida é $AR_w = 7{,}5$ e $S_w = 90$~m$^2$. Formalmente, o problema de
+otimização é definido como:
+
+\begin{equation*}
+\begin{aligned}
+\underset{\vec{x}}{\text{minimizar}} \quad & \mathrm{MTOW}(\vec{x}),
+    \qquad \vec{x} = \begin{bmatrix} AR_w & S_w \end{bmatrix}^{T} \\[1ex]
+\text{sujeito a} \quad & g_1(\vec{x}) = \frac{b_w(\vec{x})}{30\,\mathrm{m}} - 1 \le 0 \\[1ex]
+ & 7 \le AR_w \le 12 \\
+ & 80\,\mathrm{m^2} \le S_w \le 120\,\mathrm{m^2}
+\end{aligned}
+\end{equation*}
+
+Para melhorar o condicionamento numérico, as variáveis de projeto foram
+normalizadas pelos valores do ponto de partida e a função objetivo pelo
+MTOW inicial; a restrição $g_1$ já é adimensional por construção. A
+otimização foi realizada com a função \texttt{minimize} da biblioteca
+\textit{SciPy}, algoritmo SLSQP, com gradientes estimados por diferenças
+finitas e parâmetros $\texttt{maxiter} = 200$ e $\texttt{ftol} = 10^{-8}$.
+O histórico da otimização é apresentado na
+Figura~\ref{fig:fokker100hist}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/fokker100_historico.png}
+    \caption{Histórico da otimização ao longo das avaliações da função:
+             variáveis de projeto normalizadas pelo valor inicial,
+             objetivo e restrição de envergadura.}
+    \label{fig:fokker100hist}
+\end{figure}
+
+Observa-se que o MTOW cai rapidamente nas primeiras iterações e estabiliza
+em seguida, com as variáveis de projeto seguramente afastadas dos
+batentes. A restrição $g_1$ aproxima-se de zero ao longo do processo, mas
+recua levemente nas iterações finais, terminando \emph{inativa}:
+no ótimo, $b_w = 29{,}89$~m e $g_1 = -3{,}8\times10^{-3}$. Como nenhum
+batente está ativo e a norma do gradiente do objetivo no ponto final é
+$\|\nabla f\| \approx 7\times10^{-6}$, conclui-se que \textbf{o ótimo não é
+restringido}: trata-se de um mínimo interior, cuja condição de
+otimalidade se reduz a $\nabla f = 0$, sem contribuição de
+multiplicadores de Lagrange.
+
+A Figura~\ref{fig:fokker100espaco} apresenta o espaço de projeto completo,
+com o caminho percorrido pelo otimizador. O mínimo situa-se em uma bacia
+rasa de MTOW, próxima --- porém aquém --- da fronteira $b_w = 30$~m, o que
+confirma visualmente o caráter interior do ótimo e explica a convergência
+em poucas iterações.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{images/fokker100_espaco_projeto.png}
+    \caption{Espaço de projeto $AR_w \times S_w$ colorido por MTOW, com a
+             restrição de envergadura (vermelho) e a trajetória do
+             otimizador do ponto de partida (verde) ao ótimo (azul).}
+    \label{fig:fokker100espaco}
+\end{figure}
+
+Os resultados estão resumidos na Tabela~\ref{tab:otim_fokker100}. A maior
+variação relativa ocorreu no alongamento ($+40\,\%$), enquanto a área de
+asa foi levemente reduzida; o MTOW caiu $1\,187$~kgf.
+
+\begin{table}[H]
+\centering
+\caption{Resultados da otimização do Fokker 100.}
+\label{tab:otim_fokker100}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{l|cccc}
+\hline
+Ponto & $AR_w$ & $S_w$ [m$^2$] & MTOW [kgf] & $b_w$ [m] \\
+\hline
+Partida   &  7{,}50 & 90{,}00 & 43\,067 & 25{,}98 \\
+Otimizado & 10{,}52 & 84{,}88 & 41\,880 & 29{,}89 \\
+\hline
+\end{tabular}
+\end{table}
+
+A melhoria relativa da função objetivo foi de
+
+\begin{equation*}
+    \frac{43\,067 - 41\,880}{43\,067} \times 100\,\% = 2{,}756\,\%.
+\end{equation*}
+
+O custo computacional da otimização foi de 33 avaliações da função
+objetivo (\texttt{nfev}), correspondendo a 68 execuções da função
+\texttt{analyze} (objetivo e restrição são avaliados em varreduras
+separadas de diferenças finitas), em 11 iterações do SLSQP.
