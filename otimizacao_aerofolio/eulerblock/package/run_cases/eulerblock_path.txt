@@ -1,0 +1,4 @@
+# This file indicates the path to the eulerblock folder from the perspective
+# of the scripts present in the run folders
+import os
+eulerblock_path = os.path.join('..','..')

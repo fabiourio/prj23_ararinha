@@ -1,0 +1,35 @@
+# alpha (rad)
+0.0245219
+# mach
+0.75
+# reference x position
+0.25
+# reference y position
+0
+# reference chord
+1
+# gamma
+1.4
+# order (1 for 1st; 2 for 2nd)
+2
+# time-stepping strategy (0 for global dt; 1 for local dt based on CFL)
+1
+# maximum number of time steps
+20000
+# dt (only used for global time-steeping)
+0.001
+# CFL (only used for local time-steeping)
+0.2
+# residuals MSE tolerance to switch to NK solver (should be lower than the next residual value)
+0.0001
+# residuals MSE tolerance to finish the execution
+1e-06
+# BC types for ilow, jlow, ihigh, and jhigh boundaries (1:farfield, 2:wall, 3:periodic)
+3 2 3 1
+# Reinitialize solution with solution.vtk? (0-No 1-Yes)
+0
+# First line: Quantity of functions to compute derivatives (use 0 for no derivatives). Next lines: Function flags (1-cx_ilow 2-cy_ilow 3-cm_ilow 4-cl_ilow 05-cd_ilow 06-cx_jlow 07-cy_jlow 08-cm_jlow 09-cl_jlow 10-cd_jlow 11-cx_ihigh 12-cy_ihigh 13-cm_ihigh 14-cl_ihigh 15-cd_ihigh 16-cx_jhigh 17-cy_jhigh 18-cm_jhigh 19-cl_jhigh 20-cd_jhigh)
+3
+9
+10
+8

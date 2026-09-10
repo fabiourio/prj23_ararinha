@@ -27,3 +27,13 @@ desktop.ini
 Aulas/
 Histórico de Versões/
 *.zip
+
+# Subprodutos das execucoes do eulerblock e do XFoil.
+# Todos sao regenerados a cada rodada, com nomes fixos no diretorio corrente.
+solution.vtk
+grid.xyz
+grid.png
+wall.dat
+derivatives.dat
+opt_results*.pickle
+build/
