@@ -37,3 +37,5 @@ wall.dat
 derivatives.dat
 opt_results*.pickle
 build/
+log_*.txt
+historico.pickle

@@ -112,12 +112,25 @@ def test_ponto_de_partida_atende_as_restricoes():
         d = dsc.descritores(Au, Al)
         assert abs(d['t_max'] - est['tc_ref']) < 0.01, \
             f'{nome}: t/c de partida {d["t_max"]:.4f} != alvo {est["tc_ref"]:.4f}'
-        bl = ot.bluntez(ot.t01_de(Al, Au), d['t_max'])
-        assert bl >= ot.BLUNTEZ_MIN, \
-            f'{nome}: bluntez de partida {bl:.5f} abaixo do limiar ' \
-            f'{ot.BLUNTEZ_MIN} (t/c = {d["t_max"]:.4f})'
         assert d['t_min'] >= ot.MINT_MIN, \
             f'{nome}: superficies cruzadas na partida (t_min = {d["t_min"]:.5f})'
+
+
+def test_bluntez_de_partida_perto_do_limiar():
+    '''
+    O ponto de partida nao PRECISA atender a bluntez -- o SLSQP lida com
+    partida inviavel numa desigualdade. Mas se estiver muito longe, as
+    primeiras iteracoes gastam avaliacoes so restaurando viabilidade, e cada
+    uma custa ~98 s. Exigimos que esteja a no maximo 20% do limiar.
+    '''
+    for nome, est in ot.ESTACOES.items():
+        Al, Au = ot.ponto_de_partida(est['tc_ref'])
+        d = dsc.descritores(Au, Al)
+        bl = ot.bluntez(ot.t01_de(Al, Au), d['t_max'])
+        alvo = ot.limiar_bluntez(nome)
+        assert bl >= 0.80 * alvo, \
+            f'{nome}: bluntez de partida {bl:.5f} muito abaixo do limiar ' \
+            f'{alvo:.5f} (t/c = {d["t_max"]:.4f})'
 
 
 def test_ponto_de_partida_preserva_arqueamento():

@@ -62,6 +62,28 @@ ESTACOES = {
     'ponta': dict(eta=0.900, cl_ref=0.7677, tc_ref=0.1082),
 }
 
+
+def limiar_bluntez(estacao):
+    '''
+    Limiar da substituta de cl_max para a estacao, lido da calibracao.
+
+    O limiar depende da espessura -- exigir da ponta fina a mesma bluntez
+    absoluta da raiz grossa seria conservador demais -- entao calibra_limiar.py
+    resolve um valor por estacao. Se o arquivo nao existir, cai no valor
+    global do DOE, que e conservador mas seguro.
+    '''
+    cam = os.path.join(RES, 'limiares_bluntez.csv')
+    if not os.path.isfile(cam):
+        print(f'  AVISO: {cam} nao existe; usando o limiar global '
+              f'{BLUNTEZ_GLOBAL} (conservador). Rode calibra_limiar.py.')
+        return BLUNTEZ_GLOBAL
+    with open(cam) as fid:
+        linhas = [l.split(',') for l in fid.read().splitlines()[1:] if l.strip()]
+    for partes in linhas:
+        if partes[0] == estacao:
+            return float(partes[2])          # coluna nao-viesada
+    raise KeyError(f'estacao {estacao} ausente em {cam}')
+
 # --- restricoes geometricas -------------------------------------------------
 X_T01 = 0.01             # estacao do descritor substituto
 MINT_MAX = 0.01          # bordo de fuga fino (formulacao do professor)
@@ -79,7 +101,9 @@ MINT_MIN = 0.0           # superficies nao se cruzam (acrescentado por nos)
 #
 # Continua diferenciavel: t_01 e linear nos coeficientes CST e t_max vem da
 # funcao KS do airfoil_mod, suave por construcao, com gradiente ja disponivel.
-BLUNTEZ_MIN = 0.0979
+# Valor de reserva, do limiar conservador global do DOE. O limiar de fato
+# usado sai de calibra_limiar.py, por estacao -- ver limiar_bluntez().
+BLUNTEZ_GLOBAL = 0.0979
 
 # --- parametros do solver ---------------------------------------------------
 NCHORD, NJ, S0 = 31, 49, 0.5e-2      # malha nivel 1,0
@@ -232,11 +256,20 @@ class Avaliador:
                          'tc_ref': self.tc_ref, 'mach_n': MACH_N}, fid)
 
 
-def otimiza(nome_estacao):
+def otimiza(nome_estacao, com_bluntez=True):
+    '''
+    com_bluntez=False roda o MESMO problema sem a restricao de sustentacao
+    maxima. Serve para medir quanto ela custa em arrasto: se o otimo sem ela
+    ja atender o limiar, a restricao era inativa e nao custou nada; se nao
+    atender, a diferenca de c_d entre as duas rodadas e o preco exato de
+    manter clmax_w = 1,80.
+    '''
     est = ESTACOES[nome_estacao]
     cl_ref, tc_ref = est['cl_ref'], est['tc_ref']
+    bluntez_min = limiar_bluntez(nome_estacao) if com_bluntez else None
 
-    pasta = os.path.join(RES, f'otim_{nome_estacao}')
+    sufixo = '' if com_bluntez else '_sem_bluntez'
+    pasta = os.path.join(RES, f'otim_{nome_estacao}{sufixo}')
     shutil.rmtree(pasta, ignore_errors=True)
     os.makedirs(pasta)
 
@@ -245,7 +278,12 @@ def otimiza(nome_estacao):
 
     print(f'=== ESTACAO {nome_estacao.upper()} (eta = {est["eta"]}) ===')
     print(f'  M_n = {MACH_N}   cl_ref = {cl_ref}   (t/c)_ref = {tc_ref}')
-    print(f'  t_01/sqrt(t/c) >= {BLUNTEZ_MIN} (substituta de cl_max >= 1,80)')
+    if com_bluntez:
+        print(f'  t_01/sqrt(t/c) >= {bluntez_min:.4f} '
+              f'(substituta de cl_max >= 1,80)')
+    else:
+        print('  SEM a restricao de sustentacao maxima '
+              '(rodada de comparacao)')
     print(f'  partida: NACA 1411 reescalado, t/c = {tc_ref:.4f}, '
           f't01 = {t01_de(Al0, Au0):.5f}\n', flush=True)
 
@@ -276,17 +314,19 @@ def otimiza(nome_estacao):
 
     def ineqfun(xx):
         d = av(xx)
-        return np.array([
-            d['maxt'] - tc_ref,                            # espessura exigida
-            MINT_MAX - d['mint'],                          # bordo de fuga fino
-            d['mint'] - MINT_MIN,                          # sem cruzar
-            bluntez(d['t01'], d['maxt']) - BLUNTEZ_MIN,    # substituta clmax
-        ])
+        g = [d['maxt'] - tc_ref,          # espessura exigida
+             MINT_MAX - d['mint'],        # bordo de fuga fino
+             d['mint'] - MINT_MIN]        # sem cruzar superficies
+        if com_bluntez:
+            g.append(bluntez(d['t01'], d['maxt']) - bluntez_min)
+        return np.array(g)
 
     def ineqgrad(xx):
         d = av(xx)
-        return np.vstack([d['dmaxt'], -d['dmint'], d['dmint'],
-                          grad_bluntez(d['t01'], d['maxt'], d['dmaxt'])])
+        J = [d['dmaxt'], -d['dmint'], d['dmint']]
+        if com_bluntez:
+            J.append(grad_bluntez(d['t01'], d['maxt'], d['dmaxt']))
+        return np.vstack(J)
 
     cons = [{'type': 'ineq', 'fun': ineqfun, 'jac': ineqgrad},
             {'type': 'eq', 'fun': eqfun, 'jac': eqgrad}]
@@ -310,9 +350,15 @@ def otimiza(nome_estacao):
     print(f'  CL  = {d["CL"]:.5f}   (alvo {cl_ref})')
     print(f'  t/c = {d["maxt"]:.5f}  (min {tc_ref})')
     bl = bluntez(d['t01'], d['maxt'])
-    print(f'  t01 = {d["t01"]:.5f}   bluntez = {bl:.5f} '
-          f'(min {BLUNTEZ_MIN})'
-          f'{"  ATIVA" if abs(bl - BLUNTEZ_MIN) < 1e-4 else "  folgada"}')
+    if com_bluntez:
+        print(f'  t01 = {d["t01"]:.5f}   bluntez = {bl:.5f} '
+              f'(min {bluntez_min:.4f})'
+              f'{"  ATIVA" if abs(bl - bluntez_min) < 1e-4 else "  folgada"}')
+    else:
+        ref = limiar_bluntez(nome_estacao)
+        print(f'  t01 = {d["t01"]:.5f}   bluntez = {bl:.5f}   '
+              f'(limiar seria {ref:.4f}: '
+              f'{"ATENDE mesmo sem a restricao" if bl >= ref else "VIOLA"})')
     print(f'  Al  = {np.array2string(Al, precision=6)}')
     print(f'  Au  = {np.array2string(Au, precision=6)}')
     print(f'  alpha = {alpha*180/np.pi:.4f} deg')
@@ -321,9 +367,11 @@ def otimiza(nome_estacao):
 
 
 if __name__ == '__main__':
-    estacao = sys.argv[1] if len(sys.argv) > 1 else 'meio'
+    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    estacao = args[0] if args else 'meio'
+    com_bluntez = '--sem-bluntez' not in sys.argv
     if estacao not in ESTACOES:
         print(f'estacao invalida: {estacao}. Use: {list(ESTACOES)}')
         sys.exit(1)
     os.makedirs(RES, exist_ok=True)
-    otimiza(estacao)
+    otimiza(estacao, com_bluntez=com_bluntez)
