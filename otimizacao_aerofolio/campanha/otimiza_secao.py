@@ -284,6 +284,12 @@ class Avaliador:
         h['tempo'].append(time.time() - self.t0)
         self.dados.append(d)
         n = len(h['CD'])
+        # rede de seguranca no lugar da restricao 'mint >= 0', que tornava a
+        # jacobiana singular: se o perfil chegar a cruzar as superficies, o
+        # aviso aparece no log em vez de passar despercebido.
+        if d['mint'] < 0:
+            print(f'      AVISO: superficies cruzadas (mint = {d["mint"]:.6f})',
+                  flush=True)
         print(f"[{n:3d}] {h['tempo'][-1]/60:6.1f} min  CD={d['CD']:.6f}  "
               f"CL={d['CL']:.5f} (alvo {self.cl_ref:.4f})  "
               f"t/c={d['maxt']:.4f} (min {self.tc_ref:.4f})  "
@@ -355,16 +361,23 @@ def otimiza(nome_estacao, com_bluntez=True):
 
     def ineqfun(xx):
         d = av(xx)
+        # NAO acrescentar 'mint >= 0' aqui. Junto com 'MINT_MAX - mint' isso
+        # poe na jacobiana duas linhas exatamente antiparalelas (-dmint e
+        # +dmint), deixando-a deficiente em posto POR CONSTRUCAO, e o SLSQP
+        # morre com "Singular matrix E in LSQ subproblem".
+        # Alem de nociva, era desnecessaria: em todas as rodadas o mint
+        # converge para 0,010000, prensado contra o teto -- o otimizador
+        # empurra o bordo de fuga para ficar mais GROSSO, na direcao oposta ao
+        # cruzamento de superficies. A checagem em _grava cobre o caso raro.
         g = [d['maxt'] - tc_ref,          # espessura exigida
-             MINT_MAX - d['mint'],        # bordo de fuga fino
-             d['mint'] - MINT_MIN]        # sem cruzar superficies
+             MINT_MAX - d['mint']]        # bordo de fuga fino
         if com_bluntez:
             g.append(bluntez(d['t01'], d['maxt']) - bluntez_min)
         return np.array(g)
 
     def ineqgrad(xx):
         d = av(xx)
-        J = [d['dmaxt'], -d['dmint'], d['dmint']]
+        J = [d['dmaxt'], -d['dmint']]
         if com_bluntez:
             J.append(grad_bluntez(d['t01'], d['maxt'], d['dmaxt']))
         return np.vstack(J)
