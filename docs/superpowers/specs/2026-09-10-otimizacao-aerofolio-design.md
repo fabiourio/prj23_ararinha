@@ -102,6 +102,37 @@ plano normal ao enflechamento e `M_n = 0,72`, apresenta choque bem mais
 forte do que o modelo de Korn sugere, e o ótimo do Lab 02 se apoiou num
 ponto cego do modelo. O código de Euler decide.
 
+### 1.3 A hipótese se confirma por dois caminhos
+
+**Caminho analítico.** Aplicando a mesma equação de Korn **à seção**, no
+plano normal (onde `cosΛ = 1` porque as grandezas já foram transformadas):
+
+```
+M_dd    = 0,95 − 0,2179 − 0,5997/10          = 0,672
+M_crit  = M_dd − (0,1/80)^(1/3)              = 0,564
+c_d,onda = 20·(M_n − M_crit)⁴ = 20·(0,1556)⁴ = 0,0117
+```
+
+O próprio modelo do Lab 02, aplicado à seção da raiz, prevê **0,0117 de
+arrasto de onda** — metade do CD total da aeronave inteira (0,0241). A
+aeronave não viu isso porque a fórmula usa a média ponderada
+`0,25·tcr + 0,75·tct`, diluindo a raiz a um quarto do peso e trocando-a por
+uma ponta de 8 %.
+
+**Caminho numérico.** O código de Euler **diverge** nessa seção: o resíduo
+cai até ~10⁻⁵, o solver troca para Newton-Krylov, a busca em linha encolhe o
+passo para 0,25 e a solução explode para NaN. Não é apenas dificuldade
+numérica — é o sintoma de uma seção operando **48 pontos de Mach além da
+divergência de arrasto**, com um choque forte demais para a formulação
+não-viscosa fazer sentido (o escoamento real separaria).
+
+Consequência para a campanha: a estação da raiz precisa de tratamento
+próprio — CFL menor, e possivelmente uma geometria de partida supercrítica em
+vez do NACA de 4 dígitos, cuja espessura máxima a 30 % da corda é péssima em
+transônico. Se nem assim convergir, **isso é o resultado**: a espessura de
+raiz escolhida no Lab 02 não é realizável na condição de cruzeiro, e o
+`tcr_w` precisa voltar para a mesa.
+
 ---
 
 ## 2. Aeronave de referência
