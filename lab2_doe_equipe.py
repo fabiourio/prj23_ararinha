@@ -72,7 +72,7 @@ Xetapa2 = dict(AR_w=10.7327, xr_w=16.1393, S_w=361.5249,
 
 def run_analysis(X):
 
-    airplane = standard_airplane('my_airplane')
+    airplane = standard_airplane('my_airplane_v1')
     for name, value in zip(dv_names, X):
         airplane['inputs'][name] = value
 

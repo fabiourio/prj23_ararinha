@@ -146,18 +146,25 @@ def standard_airplane(name='fokker100'):
 
     elif name == 'my_airplane':
 
-        # This is just a placeholder to register the student airplane.
+        # v3 (Lab 02): aeronave escolhida pela equipe -- ponto B, o joelho da
+        # frente de Pareto W0 x Wf obtida com NSGA-II (lab2_opt_equipe_moga.py).
+        # W0 = 291.291,1 kgf e Wf = 109.891,3 kgf, ou seja -5,04% de MTOW e
+        # -10,47% de combustivel em relacao a v1 (configuracao final do PRJ-22).
+        # Em relacao a v2 (otimo mono-objetivo de min W0, 290.117,1 kgf), B
+        # aceita +0,4% de MTOW para queimar -1,0% de combustivel por missao.
+        # A v1 continua disponivel em standard_airplane('my_airplane_v1'),
+        # pois os scripts do Lab 02 partem dela.
 
         inputs = {'type': 'transport', # Can be 'transport', 'fighter', or 'general'
 
-                  'S_w' : 390.0, # Wing area [m2]
-                  'AR_w' : 8.0,  # Wing aspect ratio
+                  'S_w' : 368.833, # Wing area [m2] (v1: 390.0)
+                  'AR_w' : 9.80998,  # Wing aspect ratio (v1: 8.0)
                   'taper_w' : 0.24, # Wing taper ratio
-                  'sweep_w' : 0.58, # Wing sweep [rad] 0.5759586531581288
+                  'sweep_w' : 0.60478, # Wing sweep [rad] (v1: 0.58)
                   'dihedral_w' : 6*np.pi/180, # Wing dihedral [rad]
-                  'xr_w' : 17, # Longitudinal position of the wing (with respect to the fuselage nose) [m]
+                  'xr_w' : 15.9966, # Longitudinal position of the wing (with respect to the fuselage nose) [m] (v1: 17)
                   'zr_w' : -1.3, # Vertical position of the wing (with respect to the fuselage nose) [m]
-                  'tcr_w' : 0.18, # t/c of the root section of the wing
+                  'tcr_w' : 0.196226, # t/c of the root section of the wing (v1: 0.18)
                   'tct_w' : 0.08, # t/c of the tip section of the wing
 
                   'Cht' : 0.7, # Horizontal tail volume coefficient
@@ -201,9 +208,9 @@ def standard_airplane(name='fokker100'):
                               },
 
                   'x_nlg' : 3.0, # Longitudinal position of the nose landing gear [m]
-                  'x_mlg' : 31, # Longitudinal position of the main landing gear [m]
-                  'y_mlg' : 5.5, # Lateral position of the main landing gear [m]
-                  'z_lg' : -5.75, # Vertical position of the landing gear [m]
+                  'x_mlg' : 29.3738, # Longitudinal position of the main landing gear [m] (v1: 31)
+                  'y_mlg' : 6.93599, # Lateral position of the main landing gear [m] (v1: 5.5)
+                  'z_lg' : -6.02342, # Vertical position of the landing gear [m] (v1: -5.75)
                   'x_tailstrike' : 46.19, # Longitudinal position of critical tailstrike point [m]
                   'z_tailstrike' : -3.04, # Vertical position of critical tailstrike point [m]
 
@@ -267,8 +274,34 @@ def standard_airplane(name='fokker100'):
 
                   'rho_fuel' : 804, # Fuel density kg/m3 (This is Jet A-1)
 
-                  'W0_guess' : 2_844_900 # Guess for MTOW
+                  'W0_guess' : 2_857_566 # Guess for MTOW (= W0 da aeronave B, 291.291,1 kgf)
                   }
+
+    elif name == 'my_airplane_v1':
+
+        # v1: configuracao final do PRJ-22. E o ponto de partida das
+        # otimizacoes do Lab 02 e a baseline das figuras de comparacao, entao
+        # fica registrada aqui para que os scripts lab2_*.py continuem
+        # reproduzindo o relatorio depois que 'my_airplane' passou a ser a v3.
+        # W0 = 306.745,2 kgf e Wf = 122.743,5 kgf.
+        #
+        # A v1 difere da v3 apenas nas oito variaveis de projeto do Lab 02
+        # (e no chute de MTOW), entao e escrita como um override da v3 para
+        # nao duplicar o dicionario e nao permitir que as duas versoes se
+        # desencontrem no resto dos parametros.
+
+        inputs = standard_airplane('my_airplane')['inputs']
+
+        inputs.update({'AR_w' : 8.0,   # Wing aspect ratio
+                       'xr_w' : 17,    # Longitudinal position of the wing [m]
+                       'S_w' : 390.0,  # Wing area [m2]
+                       'sweep_w' : 0.58, # Wing sweep [rad] 0.5759586531581288
+                       'x_mlg' : 31,   # Longitudinal position of the MLG [m]
+                       'tcr_w' : 0.18, # t/c of the root section of the wing
+                       'z_lg' : -5.75, # Vertical position of the landing gear [m]
+                       'y_mlg' : 5.5,  # Lateral position of the MLG [m]
+                       'W0_guess' : 2_844_900, # Guess for MTOW
+                       })
 
     airplane = {'inputs':inputs}
 

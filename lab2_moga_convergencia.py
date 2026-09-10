@@ -73,7 +73,7 @@ def run_analysis(x):
 
     X = np.asarray(x)*Xref
 
-    airplane = standard_airplane('my_airplane')
+    airplane = standard_airplane('my_airplane_v1')
     for name, value in zip(dv_names, X):
         airplane['inputs'][name] = value
 

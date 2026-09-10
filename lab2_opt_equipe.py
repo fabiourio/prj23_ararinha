@@ -55,7 +55,7 @@ def run_analysis(x):
 
     X = np.asarray(x)*Xref
 
-    airplane = standard_airplane('my_airplane')
+    airplane = standard_airplane('my_airplane_v1')
     for name, value in zip(dv_names, X):
         airplane['inputs'][name] = value
 
@@ -237,12 +237,12 @@ axs[2].legend(fontsize=7, ncol=3, loc='upper right')
 plt.tight_layout()
 fig.savefig('Resultados/2_monoobj_equipe/equipe_etapa2_historico.png', dpi=150)
 
-airplane_opt = standard_airplane('my_airplane')
+airplane_opt = standard_airplane('my_airplane_v1')
 for name, value in zip(dv_names, Xopt):
     airplane_opt['inputs'][name] = value
 analyze(airplane_opt)
 
-airplane_ref = standard_airplane('my_airplane')
+airplane_ref = standard_airplane('my_airplane_v1')
 analyze(airplane_ref)
 
 def planform(ax, ap, color, label):

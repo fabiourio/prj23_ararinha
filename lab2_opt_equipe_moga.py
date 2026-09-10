@@ -71,7 +71,7 @@ def run_analysis(x):
 
     X = np.asarray(x)*Xref
 
-    airplane = standard_airplane('my_airplane')
+    airplane = standard_airplane('my_airplane_v1')
     for name, value in zip(dv_names, X):
         airplane['inputs'][name] = value
 
@@ -356,7 +356,7 @@ axb1 = fig.add_subplot(gs[0, 1])
 axb2 = fig.add_subplot(gs[1, 1])
 
 for name, k, c in zip(sel_names, sel_idx, PAL):
-    airplane = standard_airplane('my_airplane')
+    airplane = standard_airplane('my_airplane_v1')
     for j, dvn in enumerate(dv_names):
         airplane['inputs'][dvn] = X[k,j]*Xref[j]
     analyze(airplane)

@@ -26,7 +26,7 @@ RES = 'Resultados/3_multiobj'
 os.makedirs(RES, exist_ok=True)
 
 # v1: baseline do PRJ-22, calculada na hora
-ap = standard_airplane('my_airplane')
+ap = standard_airplane('my_airplane_v1')
 analyze(ap)
 v1 = {'W0': ap['thrust_matching']['W0']/gravity,
       'Wf': ap['thrust_matching']['W_fuel']/gravity}

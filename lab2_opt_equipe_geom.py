@@ -67,7 +67,7 @@ def run_analysis(x):
 
     X = np.asarray(x)*Xref
 
-    airplane = standard_airplane('my_airplane')
+    airplane = standard_airplane('my_airplane_v1')
     for name, value in zip(dv_names, X):
         airplane['inputs'][name] = value
 
@@ -231,12 +231,12 @@ print('Tempo de otimizacao:           %.2f s'%t_elapsed)
 print('Restricoes ativas:             %d'%n_ativas)
 print('='*70)
 
-airplane_opt = standard_airplane('my_airplane')
+airplane_opt = standard_airplane('my_airplane_v1')
 for name, value in zip(dv_names, Xopt):
     airplane_opt['inputs'][name] = value
 analyze(airplane_opt)
 
-airplane_ref = standard_airplane('my_airplane')
+airplane_ref = standard_airplane('my_airplane_v1')
 analyze(airplane_ref)
 
 Xhist = np.array(Xlist)
