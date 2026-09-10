@@ -174,7 +174,9 @@ def fig_limiar(d, m, cl, rank):
 
     ax.set_xlabel(ROTULO.get(nome, nome), color=INK2, fontsize=10)
     ax.set_ylabel(r'$c_{\ell,max}$  (XFoil viscoso)', color=INK2, fontsize=10)
-    leg = ax.legend(loc='lower right', fontsize=9, frameon=False)
+    # canto inferior esquerdo: o unico livre, ja que a regiao aceita fica a
+    # direita e o rotulo do limiar ocupa a base perto da linha verde
+    leg = ax.legend(loc='lower left', fontsize=9, frameon=False)
     for txt in leg.get_texts():
         txt.set_color(INK2)
     titulo(ax, 'A restrição substituta que o otimizador vai carregar',

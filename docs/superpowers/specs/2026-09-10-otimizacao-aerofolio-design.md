@@ -332,13 +332,62 @@ limpa — e não mais como a restrição em si.
 Condição do DOE: Re = 4,2×10⁷ e M = 0,266 — decolagem na MAC
 (`V₂ = 1,2·V_stall = 90,59 m/s`, com `CLmaxTO = 2,2196`).
 
-### 6.2 Resultado preliminar
+### 6.2 Resultado — corte controlado
 
-O corte controlado (só o nariz varia, a partir do NACA 1411) já mostra que o
-risco é grande: `cl_max` vai de **0,888 a 2,132** — fator de 2,4 — e cruza o
-alvo de 1,8 em **Δy = 2,77 % da corda**. O batente do roteiro
-(`Au_lower = 0,05`) permite `r_LE/c = 0,125 %`, um bordo praticamente afiado:
-não protege nada.
+Variando **só o nariz** a partir do NACA 1411, `cl_max` vai de **0,888 a
+2,132** — fator de 2,4 — e cruza o alvo de 1,8 em **Δy = 2,77 % da corda**.
+O batente do roteiro (`Au_lower = 0,05`) permite `r_LE/c = 0,125 %`, um bordo
+praticamente afiado: não protege nada. Figura: `doe_clmax_corte.png`.
+
+### 6.3 Resultado — LHS, e a substituta escolhida
+
+256 perfis amostrados, 233 avaliados (o resto descartado por geometria
+degenerada antes de gastar XFoil), **199 com estol capturado de forma
+confiável**. `cl_max` de 0,685 a 2,257, mediana 1,832; 56,3 % atingem o alvo.
+
+Correlação de posto com `cl_max`:
+
+| descritor | ρ |
+|---|---|
+| `t_01` (espessura em x/c = 1 %) | **+0,756** |
+| `t_05` (espessura em x/c = 5 %) | +0,736 |
+| `r_LE_sup` | +0,695 |
+| `delta_y` (Abbott) | +0,667 |
+| `x_tmax` | −0,619 |
+| demais (arqueamento, carregamento traseiro, espessura máxima) | ≤ 0,36 |
+
+Dois resultados que contrariam a expectativa e merecem registro:
+
+- **O vencedor é `t_01`, não o raio de bordo de ataque nem o Δy de
+  handbook.** Faz sentido a posteriori: `t_01` mede a espessura efetiva do
+  nariz somando as duas superfícies, enquanto `r_LE` enxerga apenas o
+  primeiro coeficiente CST do extradorso e o Δy apenas o extradorso. Foi bom
+  não ter pré-comprometido o preditor.
+- **O Δy não admite limiar utilizável** para o alvo de 1,8 com 95 % de
+  precisão, apesar de ser o correlator clássico da literatura. Ele continua
+  bom como *descritor* (ρ = 0,67), mas não como *critério*.
+
+Superfície de resposta quadrática, R² de validação cruzada por número de
+descritores:
+
+| k | 1 | 2 | 3 | 4 | 5 | **6** | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| R²_cv | 0,528 | 0,542 | 0,738 | 0,800 | 0,834 | **0,871** | 0,923 | 0,964 |
+| resíduo perto de 1,8 | 0,150 | 0,146 | 0,151 | 0,130 | 0,119 | **0,099** | 0,070 | 0,041 |
+
+**Escolha: k = 6** — `t_01`, `t_05`, `r_LE_sup`, `delta_y`, `x_tmax`,
+`r_LE_inf`. É o menor k que satisfaz os dois critérios de §6.1
+(R²_cv ≥ 0,85 e resíduo < 0,15 perto do alvo), com 28 termos para 199
+pontos — folgado o bastante para não superajustar, e o R² de validação
+cruzada confirma que generaliza. Não usamos k = 7 ou 8 porque, com apenas 8
+variáveis CST no total, tantos descritores passam a reconstruir as próprias
+variáveis de projeto, e o modelo perde a robustez de extrapolação fora da
+caixa amostrada.
+
+Como diagnóstico, o limiar `t_01 ≥ 0,0368` tem **95,2 % de precisão e 52,7 %
+de cobertura** para o alvo de 1,8 (figura `doe_clmax_limiar.png`) — ou seja,
+existe também um critério geométrico simples de reserva, caso a superfície de
+resposta se mostre problemática dentro do otimizador.
 
 ---
 
@@ -359,12 +408,48 @@ Cada código faz só o que sabe fazer:
 
 Antes de qualquer otimização longa:
 
-1. **Convergência de malha.** Já medido que a malha pela metade é inaceitável:
-   o CD vai de 0,01577 para 0,03557, **+126 %**, embora o caso rode em 6 s em
-   vez de 68 s. Não dá para baratear o DOE afinando a malha — o custo se paga
-   em paralelismo. Falta varrer os níveis intermediários e fixar o escolhido.
-2. **Ruído numérico.** Verificar que `c_d(α)` é suave; o gradiente exige isso.
-3. **Verificação do adjunto** contra diferenças finitas em `dc_d/dα` e
+### 8.1 Convergência de malha — feito, e o resultado é grave
+
+NACA 1411 na condição de projeto (M_n = 0,7196, α = 2°):
+
+| nível | células | CL | CD | erro de CD vs extrapolado |
+|---|---|---|---|---|
+| 0,50 | 360 | 0,5243 | 0,033519 | +359 % |
+| 0,75 | 792 | 0,5500 | 0,018428 | +152 % |
+| **1,00** (padrão do professor) | 1440 | 0,5626 | **0,012426** | **+70,0 %** |
+| 1,25 | 2220 | 0,5688 | 0,010334 | +41,4 % |
+| 1,50 | 3240 | 0,5723 | 0,009170 | +25,5 % |
+| 2,00 | 5760 | 0,5777 | 0,008279 | +13,3 % |
+
+Ajustando `CD = CD_∞ + C·h^p` aos níveis ≥ 1,0: **ordem observada p = 2,43**
+(compatível com o esquema de 2ª ordem) e **CD_∞ = 0,007308**.
+
+**O CD não está convergido nem no nível 2,0.** A malha padrão do professor
+superestima o arrasto em **70 %**. Fisicamente é o esperado: numa malha
+grosseira a dissipação numérica age como viscosidade artificial e gera
+entropia — logo arrasto — espúria. O CL sofre muito menos (nível 1,0 erra
+−5,5 %, `CL_∞ = 0,595`), porque é uma integral de pressão dominada pela
+circulação global.
+
+Três consequências para a campanha:
+
+1. **O CD absoluto do nível 1,0 não serve para calibrar `k_korn`.** Ou se
+   extrapola por Richardson, ou se roda o ponto final numa malha fina. Sem
+   isso, entregaríamos ao Lab 02 um arrasto de onda 70 % maior que o real.
+2. **Para a otimização, o que importa é a diferença entre projetos na mesma
+   malha.** Isso costuma sobreviver ao erro de malha, mas não é garantido
+   aqui: a dissipação numérica depende da intensidade do choque, que é
+   exatamente o que estamos otimizando.
+3. **Mitigação obrigatória:** otimizar no nível 1,0 (é o que cabe no tempo) e,
+   ao final, reavaliar a linha de base **e** o ótimo nos níveis 1,5 e 2,0,
+   confirmando que a melhoria Δc_d sobrevive ao refinamento. Se não
+   sobreviver, o resultado da otimização é artefato de malha e precisa ser
+   refeito mais fino.
+
+### 8.2 Ainda pendente
+
+1. **Ruído numérico.** Verificar que `c_d(α)` é suave; o gradiente exige isso.
+2. **Verificação do adjunto** contra diferenças finitas em `dc_d/dα` e
    `dc_d/dA_u`. É o conteúdo da Aula 03 (FD, CS, AD, AM) aplicado, e é o tipo
    de evidência que sustenta o resto do relatório.
 
