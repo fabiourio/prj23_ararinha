@@ -127,11 +127,55 @@ divergência de arrasto**, com um choque forte demais para a formulação
 não-viscosa fazer sentido (o escoamento real separaria).
 
 Consequência para a campanha: a estação da raiz precisa de tratamento
-próprio — CFL menor, e possivelmente uma geometria de partida supercrítica em
-vez do NACA de 4 dígitos, cuja espessura máxima a 30 % da corda é péssima em
-transônico. Se nem assim convergir, **isso é o resultado**: a espessura de
-raiz escolhida no Lab 02 não é realizável na condição de cruzeiro, e o
-`tcr_w` precisa voltar para a mesa.
+próprio — CFL menor. Com CFL = 0,10 ela converge normalmente (a sondagem
+mostrou que 0,05 dá o mesmo resultado, logo 0,10 já está na região estável).
+
+### 1.4 Correção: o problema não é o `k_korn`, é a agregação
+
+A conclusão de §1.3 estava **parcialmente errada**, e vale registrar a
+correção porque ela muda a recomendação para a equipe.
+
+Com os perfis **otimizados** (e não com o NACA reescalado, que é um péssimo
+perfil transônico), o `k_korn` implícito em cada seção fica:
+
+| estação | (t/c)_n | Korn previa | Euler mediu | k_korn implícito |
+|---|---|---|---|---|
+| raiz | 0,2179 | 0,011601 | 0,015218 | **0,9391** |
+| meio | 0,1772 | 0,005321 | 0,007145 | **0,9402** |
+| ponta | 0,1082 | 0,000301 | 0,003858 | 0,8944 |
+
+**`k_korn = 0,95` é essencialmente correto.** A física de seção do modelo
+está certa; ele apostava que a equipe entregaria bons perfis, e o Lab 03
+mostra que isso é alcançável. O que estava errado era comparar Korn com o
+perfil de *partida*, que não é o que a aeronave vai voar.
+
+**O problema real é a agregação.** Integrando os `c_d` das seções otimizadas
+ao longo da parte exposta da asa, com a conversão de enflechamento
+`CD = (2/S)∫ c_d,n · cos³Λ · c(y) dy`:
+
+| | CDwave |
+|---|---|
+| integração por seções | **0,00403** |
+| fórmula do `designTool` | 0,00051 |
+| razão | **7,9×** |
+
+A causa é aritmética e direta: `(t/c)_m = 0,25·0,196 + 0,75·0,080 = 0,1091`,
+e na variação linear de espessura essa é a espessura da estação
+**η = 0,750** — onde a corda já caiu para **43 % da corda de raiz**. A
+fórmula representa a asa inteira por uma estação a três quartos da
+semi-envergadura, justamente pulando a região interna, que é onde a asa é
+grossa **e** tem corda longa, e portanto onde o arrasto de onda pesa mais.
+
+Recomendação revisada para a equipe — três caminhos, e a escolha é de
+projeto, não deste documento:
+
+  a) afinar `tcr_w` e reotimizar o Lab 02;
+  b) manter a espessura e corrigir a agregação do `CDwave` no `designTool`,
+     trocando a média ponderada por uma integração ao longo da envergadura;
+  c) aceitar o custo, declarando-o no relatório.
+
+A opção (b) é a mais barata e a mais correta tecnicamente: não mexe na
+aeronave e conserta o modelo onde ele de fato falha.
 
 ---
 
