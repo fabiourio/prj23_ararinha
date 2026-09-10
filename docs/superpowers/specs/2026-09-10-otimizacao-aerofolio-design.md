@@ -555,6 +555,31 @@ Três consequências para a campanha:
    sobreviver, o resultado da otimização é artefato de malha e precisa ser
    refeito mais fino.
 
+### 8.1.1 Resultado da mitigação: o ganho CRESCE com o refinamento
+
+| estação | nível 1,0 | nível 1,5 | nível 2,0 |
+|---|---|---|---|
+| raiz | (partida diverge) | −69,8 % | −71,0 % |
+| meio | −78,9 % | −84,3 % | **−85,9 %** |
+| ponta | −64,3 % | −77,7 % | **−81,7 %** |
+
+O mecanismo aparece nos números brutos. Refinando de 1,0 para 2,0 na MAC:
+
+| perfil | c_d nível 1,0 | c_d nível 2,0 | variação |
+|---|---|---|---|
+| partida | 0,055979 | 0,050556 | −9,7 % |
+| otimizado | 0,011822 | 0,007145 | **−39,6 %** |
+
+A dissipação numérica adiciona um piso de arrasto aproximadamente **absoluto**.
+No perfil de partida, cujo arrasto real é dominado por um choque forte, esse
+piso pesa pouco em proporção; no otimizado, cujo arrasto verdadeiro é baixo,
+ele domina. Portanto **otimizar no nível 1,0 subestima o benefício real** — o
+resultado é conservador, não artefato. É o oposto do risco levantado, e vale
+declarar assim no relatório.
+
+Consequência prática: os c_d absolutos que forem realimentar o `designTool`
+devem vir da extrapolação (§8.1) ou de malha fina, **não** do nível 1,0.
+
 ### 8.2 Ainda pendente
 
 1. **Ruído numérico.** Verificar que `c_d(α)` é suave; o gradiente exige isso.
