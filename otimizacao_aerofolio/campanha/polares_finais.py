@@ -121,7 +121,10 @@ def curvas_subsonicas(nome, com):
     print(f'  XFoil viscoso em Re = {Re:.2e} (decolagem)...', flush=True)
     curvas = {}
     for rot, (Au, Al) in [('partida', (Aui, Ali)), ('otimizado', (Auo, Alo))]:
-        r = xr.clmax_cst(Au, Al, Re=Re, Mach=0.0, alpha_seq=(-6.0, 20.0, 0.5),
+        # ate 28 graus: a 20 a varredura parava ANTES do estol e o cl_max
+        # saia como limite inferior ('nao_atingido'), escondendo justamente a
+        # comparacao de sustentacao maxima que o item 8 pede
+        r = xr.clmax_cst(Au, Al, Re=Re, Mach=0.0, alpha_seq=(-6.0, 28.0, 0.5),
                          timeout=900)
         curvas[rot] = r['polar']
         print(f'    {rot}: {r["n_pontos"]} pontos, '
@@ -145,12 +148,13 @@ def curvas_subsonicas(nome, com):
         t.set_color(INK2)
 
     fig.suptitle(f'Comportamento subsônico — estação {nome}',
-                 color=INK, fontsize=12, fontweight='bold', x=0.06, ha='left')
-    fig.text(0.06, 0.945,
+                 color=INK, fontsize=12, fontweight='bold', x=0.06, ha='left',
+                 y=1.06)
+    fig.text(0.06, 0.99,
              f'XFoil viscoso, Re = {Re:.2e} (condição de decolagem), '
              'Mach desprezado como permite o roteiro',
-             fontsize=9, color=INK2, ha='left')
-    fig.tight_layout(rect=[0, 0, 1, 0.91])
+             fontsize=9, color=INK2, ha='left', va='top')
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
     salvar(fig, os.path.join(RES, f'subsonico_{nome}.png'))
 
 
