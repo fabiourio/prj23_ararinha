@@ -1,0 +1,473 @@
+# Projeto de perfil para a ararinha_23 — definição do problema
+
+Lab 03 do PRJ-23 (Maj. Ney Rafael Sêcco), entrega em 13/09/2026.
+Equipe Ararinha. Documento escrito em 10/09/2026.
+
+O roteiro pede a otimização de **uma** seção. Este documento define uma
+campanha maior, que usa a seção do roteiro como primeiro caso e estende para
+três estações da asa, com o objetivo declarado de **realimentar o Lab 02**:
+decidir a distribuição de espessura da asa com base em aerodinâmica de maior
+fidelidade, em vez das duas constantes que a equipe assumiu.
+
+---
+
+## 1. Por que este laboratório existe, do ponto de vista do projeto
+
+O `designTool` usa o perfil aerodinâmico em exatamente dois lugares, e em
+ambos por meio de uma **constante assumida**:
+
+| Constante | Valor no Lab 02 | Onde entra | Consequência |
+|---|---|---|---|
+| `k_korn` | 0,95 | `aerodynamics.py:269`, equação de Korn | arrasto de onda de cruzeiro |
+| `clmax_w` | 1,8 | `aerodynamics.py:282` | `CLmax_clean`, daí `CLmaxTO`, daí distâncias de decolagem e pouso, daí `S_w` |
+
+A cadeia da segunda constante é direta e quantificada:
+
+```
+CLmax_clean = 0,9 · clmax_w · cos Λ = 0,9 · 1,8 · 0,82263 = 1,3327
+CLmaxTO     = CLmax_clean + ΔCL_flape + ΔCL_slat = 2,2196   (designTool)
+```
+
+Na configuração de decolagem, verificado: `1,3327 + 0,7174 + 0,1696 = 2,2196`.
+(Cuidado ao ler esses números: o dicionário que fica em
+`airplane['aerodynamics']` depois do `analyze` é o da **última** chamada de
+`aerodynamics`, que é outra configuração — é preciso chamar explicitamente
+com `highlift_config='takeoff'`.)
+
+O que importa é a **sensibilidade**: as contribuições de flape e slat não
+dependem de `clmax_w`, então cada unidade de `cl_max` do perfil vale
+`0,9 · cos Λ = 0,7404` de `CLmaxTO`, um-para-um — conferido numericamente
+varrendo `clmax_w` de 1,4 a 2,0.
+
+### 1.1 O orçamento de cl_max
+
+Vale a pena saber **quanto** de sustentação máxima o perfil pode perder antes
+de a aeronave precisar mudar, porque isso transforma a restrição de um
+"1,8 ou falhou" numa escala com significado físico. Varrendo `clmax_w` na
+aeronave B:
+
+| `clmax_w` | `CLmaxTO` | `T0req/T0` | `deltaS_wlan` |
+|---|---|---|---|
+| 1,80 (assumido) | 2,2196 | 0,800 | 106,6 |
+| 1,50 | 1,9975 | 0,889 | 81,2 |
+| 1,35 | 1,8865 | 0,942 | 66,6 |
+| **1,20** | **1,7754** | **1,000** | **50,4** |
+| 1,00 | 1,6273 | 1,091 | 25,9 |
+
+Dois resultados:
+
+- **A restrição ativa é a decolagem, por empuxo — não o pouso.** A folga de
+  área de asa para pouso (`deltaS_wlan`) permanece positiva mesmo em
+  `clmax_w = 1,0`. Quem limita é o empuxo requerido para os 2.900 m de pista.
+- Com a geometria da aeronave B **congelada**, o empuxo esgota em
+  `clmax_w ≈ 1,20`.
+
+### 1.2 Por que o alvo é 1,80 e não 1,20
+
+O 1,20 da tabela acima é real, mas **não serve como alvo de projeto**, por
+três razões que se acumulam:
+
+1. **O ótimo do Lab 02 foi obtido com `clmax_w = 1,8`.** A varredura acima
+   congela a geometria da aeronave B e mexe numa constante — responde "esta
+   aeronave aguenta?", não "que aeronave o problema produz?". Com
+   `clmax_w = 1,20` desde o início, o NSGA-II teria convergido para outra
+   aeronave, provavelmente de asa maior. Só a segunda pergunta importa para
+   projeto.
+2. **`T0` é resultado do casamento de empuxo, não dado.** Quando `T0req`
+   excede `Tmax`, a resposta de projeto não é "inviável", é motor maior ou
+   asa maior. O 1,20 marca o fim *desta escolha de motor*, e o
+   `Tmax = 513 kN` é herança do PRJ-22.
+3. **1,80 é o número com o qual a aeronave foi otimizada.** Segurar o perfil
+   em 1,80 mantém o Lab 02 auto-consistente. Descer abaixo disso gasta,
+   calado, margem que pertence a decisões anteriores.
+
+**Decisão: o alvo é `cl_max = 1,80`.** O 1,20 entra no relatório apenas como
+contexto — mostra que não estamos à beira de um precipício, e quantifica o
+que se perde caso o alvo se revele caro demais em arrasto de onda.
+
+**O Lab 03 mede essas duas constantes.** É esse o produto.
+
+### A hipótese que motiva a campanha
+
+Na equação de Korn a espessura entra como média ponderada
+`(t/c)_m = 0,25·tcr + 0,75·tct`, com `tct` fixo em 0,08 (não era variável de
+projeto no Lab 02). O otimizador do Lab 02 engordou a raiz de 0,18 para
+0,196 porque isso alivia a estrutura, e o modelo cobrou pouco por isso:
+no ponto de cruzeiro o arrasto de onda previsto é de apenas **2,1 % do CD
+total** (`CDwave` = 0,000508 contra `CD` = 0,024069), com
+`Mach_dd = 0,887 > M = 0,85`.
+
+**Hipótese a testar:** a seção da raiz, com espessura relativa de 21,8 % no
+plano normal ao enflechamento e `M_n = 0,72`, apresenta choque bem mais
+forte do que o modelo de Korn sugere, e o ótimo do Lab 02 se apoiou num
+ponto cego do modelo. O código de Euler decide.
+
+---
+
+## 2. Aeronave de referência
+
+Aeronave **B** — o joelho da frente de Pareto, escolhida pela equipe no
+Lab 02 pelo critério de taxa marginal de troca.
+
+| | |
+|---|---|
+| W0 | 291.291,1 kgf |
+| Wf | 109.891,3 kgf |
+| S_w | 368,833 m² |
+| AR_w geométrico / efetivo | 9,810 / **11,772** (winglet = `True`) |
+| afilamento | 0,240 |
+| enflechamento c/4 | 34,651° |
+| enflechamento c/2 | 32,158° |
+| envergadura | 60,152 m |
+| corda de raiz / ponta / MAC | 9,890 / 2,374 / 6,899 m |
+| MAC em | η = 0,398 |
+| tcr / tct | 0,19623 / 0,08000 |
+
+Observação registrada porque contraria a suposição inicial da equipe: a
+aeronave **tem winglet**, e o `designTool` traduz isso em `AR_eff = 1,2·AR_w`.
+Isso já estava embutido no arrasto induzido que produziu a aeronave B.
+
+---
+
+## 3. Ponto de projeto
+
+### 3.1 Condição da aeronave
+
+| Parâmetro | Valor |
+|---|---|
+| h | 10.668 m (35.000 ft) |
+| M∞ | 0,850 |
+| a∞ | 296,587 m/s → V = 252,10 m/s |
+| ρ∞ | 0,38046 kg/m³ |
+| q∞ | 12.089,69 Pa |
+
+**Peso escolhido: peso médio de cruzeiro.** A fração de combustível de
+cruzeiro é 0,681 (alcance de 14.816 km), então o CL varia muito ao longo do
+voo:
+
+| Instante | Peso [kgf] | CL |
+|---|---|---|
+| início do cruzeiro | 278.385,6 | 0,612 |
+| **médio: √(W_ini · W_fim)** | **229.669,3** | **0,505** |
+| fim do cruzeiro: W_ini · Mf_cru | 189.478,1 | 0,417 |
+
+O `designTool` usa o peso de **início** de cruzeiro para calcular L/D
+(`weight.py:378`), mas o perfil passa a maior parte do voo perto do peso
+médio. Adotamos o médio para o caso mono-ponto e cobrimos a faixa inteira na
+rodada multiponto (§7), o que transforma essa escolha de aposta em resultado.
+
+### 3.2 Transformação para a condição 2D
+
+O perfil não vê M = 0,85. Pela teoria de asa enflechada, a seção normal vê
+
+```
+M_n     = M · cos Λ
+cl_n    = cl / cos²Λ
+(t/c)_n = (t/c) / cos Λ
+c_n     = c · cos Λ
+```
+
+**Usamos Λ a 50 % da corda (32,158°), não a 1/4.** A justificativa é de
+consistência interna: a própria equação de Korn do `designTool` usa
+`sweep_50` e embute exatamente essa transformação —
+
+```
+Mach_dd = k_korn/cos Λ₅₀ − (t/c)_m/cos²Λ₅₀ − CL/(10 cos³Λ₅₀)
+```
+
+Adotar outro enflechamento aqui produziria um perfil incoerente com o modelo
+que gerou a aeronave. Resulta **M_n = 0,7196** para as três estações.
+
+### 3.3 Distribuição de sustentação
+
+Adotamos distribuição **elíptica**, e não Schrenk nem a distribuição real da
+asa sem torção. O motivo é de projeto, não de conveniência: a otimização de
+torção é o passo seguinte do projeto da asa e tem a elíptica como alvo, de
+modo que projetar os perfis para a elíptica é projetá-los para a asa que
+pretendemos ter. Com `c·cl = K√(1−η²)` e `K = 4·CL·S/(π·b)`.
+
+Consequência não óbvia, e importante: com afilamento 0,24 o cl local
+**máximo fica em η = 0,76**, não na raiz — a corda encurta mais rápido do que
+a carga. As estações externas são as mais carregadas.
+
+---
+
+## 4. As três estações
+
+| Estação | η | c [m] | (t/c) | (t/c)_n | cl | cl_n | Re_n |
+|---|---|---|---|---|---|---|---|
+| raiz (junção asa-fuselagem) | 0,101 | 9,130 | 0,1845 | 0,2179 | 0,430 | 0,600 | 4,34×10⁷ |
+| meio (MAC — a seção do roteiro) | 0,398 | 6,899 | 0,1500 | 0,1772 | 0,524 | 0,732 | 3,28×10⁷ |
+| ponta | 0,900 | 3,125 | 0,0916 | 0,1082 | 0,550 | 0,768 | 1,49×10⁷ |
+
+Justificativa das estações escolhidas:
+
+- **Raiz em η = 0,101, não em η = 0.** A raiz geométrica está dentro da
+  fuselagem e nunca vê escoamento livre. η = 0,101 é a lateral da fuselagem
+  (`D_f/2 = 3,04 m`).
+- **Meio na MAC.** É a seção que o roteiro pede, com `c_ref = c_MAC`.
+- **Ponta em η = 0,90, não em η = 1.** Em carregamento elíptico o cl na ponta
+  geométrica tende a zero (cl = 0,074 em η = 0,999) — é uma estação sem
+  informação. Além disso η = 0,90 é o fim do tanque de combustível
+  (`b_tank_b_w_end = 0,9`), o que dá sentido físico à restrição de espessura.
+
+---
+
+## 5. Formulação da otimização
+
+Para cada estação *i*:
+
+```
+min   φ(A_l, A_u, α) = c_d + ρ · max(0, 1,80 − ĉl_max(A_u, A_l))²
+s.a.  c_l(A_l, A_u, α) = cl_n,i           igualdade
+      (t/c)_max        ≥ (t/c)_n,i        função KS, já suave no airfoil_mod
+      (t/c)_min        ≥ 0,01             superfícies não podem se cruzar
+      batentes em A_l, A_u, α
+```
+
+Variáveis: 4 coeficientes CST do intradorso, 4 do extradorso, e α — nove no
+total. Otimizador SLSQP, como no roteiro. `M_n = 0,7196` fixo.
+
+O `c_d` vem do código de Euler com gradiente adjunto. O `ĉl_max` é a
+substituta suave calibrada pelo DOE (§6) — analítica nos coeficientes CST,
+portanto de custo desprezível e diferenciável.
+
+### 5.1 Por que penalidade e não restrição
+
+A sustentação máxima entra como **penalidade quadrática** no objetivo, e não
+como restrição de desigualdade, porque 1,80 é uma **meta de projeto**, não um
+limite físico (§1.2). Uma restrição rígida transformaria uma preferência em
+barreira: se 1,80 for inatingível no espaço de projeto, o SLSQP falha em vez
+de entregar o melhor compromisso disponível — e nós ficaríamos sem saber
+quanto custava chegar perto.
+
+É também a aplicação direta do conteúdo da Aula 03 (funções de penalidade
+quadrática, logarítmica e inversa). A quadrática é a escolha certa aqui
+porque, ao contrário da logarítmica e da inversa, **admite ponto de partida
+inviável** — e o NACA 1411, ponto de partida do roteiro, pode perfeitamente
+não atender ao alvo em algumas estações.
+
+A penalidade é unilateral: `max(0, ·)²` não cobra nada de perfis que já
+superam 1,80, então não distorce o ótimo quando o alvo não está apertando.
+
+**Sobre ρ.** Não há taxa de câmbio derivável entre `c_d` e `cl_max` pela
+aeronave, justamente porque a restrição de empuxo não está ativa (§1.1): no
+projeto atual `dW0/dclmax_w = 0`. Logo ρ é uma **preferência declarada**, e o
+honesto é tratá-la como tal: fixamos ρ de modo que um déficit de 0,1 em
+cl_max custe cerca de 5 contagens de arrasto (`ρ ≈ 0,05`, já que
+`0,05 · 0,1² = 5 × 10⁻⁴`) e rodamos a otimização em dois ou três valores de ρ
+para reportar a sensibilidade. O relatório traz o `cl_max` efetivamente
+atingido, nunca só o valor penalizado.
+
+---
+
+## 6. Como o cl_max entra sem quebrar o método de gradiente
+
+O `cl_max` do XFoil vem de varrer α até o solver viscoso divergir: é
+não-diferenciável e descontínuo em falhas de convergência. **Não serve como
+`g(x)` para o SLSQP.** Mas deixá-lo só para o fim é arriscado, porque nada na
+formulação impede o otimizador de afiar o bordo de ataque para reduzir
+arrasto de onda e destruir a sustentação máxima no caminho.
+
+Solução em três camadas:
+
+1. **Substituta suave** `ĉl_max(A_u, A_l)`, analítica nos coeficientes CST —
+   diferenciável e de custo desprezível. Calibrada por um DOE de XFoil, e
+   usada dentro da penalidade quadrática de §5.
+2. **Verificação a posteriori** com o XFoil de verdade no perfil ótimo.
+3. **Laço externo de correção**, se a verificação discordar da substituta:
+   reajusta a substituta com o novo ponto e re-otimiza com partida quente
+   (converge em poucas iterações).
+
+### 6.1 O DOE que escolhe a substituta
+
+Não pré-comprometemos o preditor. O DOE varre as 8 variáveis CST e registra
+**doze descritores geométricos candidatos** (`descritores.py`), deixando a
+regressão decidir:
+
+| Categoria | Descritores |
+|---|---|
+| bordo de ataque | `r_LE` extradorso e intradorso, Δy de Abbott, espessura em x/c = 1 % e 5 % |
+| espessura | t/c máximo e posição, t/c mínimo |
+| arqueamento | arqueamento máximo e posição |
+| carregamento traseiro | arqueamento em x/c = 0,85, inclinação da linha média no BF |
+
+Dois deles merecem nota:
+
+- **`r_LE/c = A[0]²/2`** — na função de classe do CST (N1 = 0,5) a superfície
+  tende a `y → A[0]·√x` perto do bordo, e a parábola `y² = A²x` tem raio
+  `A²/2` no vértice. Confere com o valor teórico do NACA de 4 dígitos.
+- **Δy de Abbott & von Doenhoff** — diferença de ordenada do extradorso entre
+  x/c = 6 % e 0,15 %, o correlator de handbook (DATCOM, Roskam) para cl_max e
+  tipo de estol. Vem da mesma literatura que o `designTool` usa para flape,
+  slat e fator de forma.
+
+**O que o DOE precisa entregar.** Como a formulação usa penalidade (§5.1), e
+não um batente, o produto do DOE é um **preditor do valor** de `cl_max`, não
+um classificador de limiar:
+
+```
+ĉl_max(A_u, A_l) = superfície de resposta sobre k descritores
+```
+
+**Critério de aceitação**, em ordem:
+
+1. **R² de validação cruzada ≥ 0,85** com o menor k que já sature. O R² de
+   treino sempre sobe com mais termos; só o de validação diz se generaliza.
+2. **Resíduo máximo < 0,15 em cl_max** na faixa que interessa (perto de
+   1,80). Um preditor com viés grande ali empurraria o otimizador para o
+   lugar errado sem que a penalidade percebesse.
+3. **Monotonicidade no sentido físico** para o descritor dominante — um
+   preditor que recompense afiar o bordo de ataque estaria invertido, e a
+   verificação em XFoil pegaria isso tarde demais.
+
+Se nenhuma superfície atingir (1), a penalidade passa a usar o descritor
+dominante isolado, normalizado — pior em precisão, mas ainda no sentido
+certo, e a verificação em XFoil no fim continua sendo o juiz.
+
+A correlação de posto e a análise de limiar continuam sendo calculadas, mas
+como **diagnóstico** — para saber qual descritor domina e se a separação é
+limpa — e não mais como a restrição em si.
+
+Condição do DOE: Re = 4,2×10⁷ e M = 0,266 — decolagem na MAC
+(`V₂ = 1,2·V_stall = 90,59 m/s`, com `CLmaxTO = 2,2196`).
+
+### 6.2 Resultado preliminar
+
+O corte controlado (só o nariz varia, a partir do NACA 1411) já mostra que o
+risco é grande: `cl_max` vai de **0,888 a 2,132** — fator de 2,4 — e cruza o
+alvo de 1,8 em **Δy = 2,77 % da corda**. O batente do roteiro
+(`Au_lower = 0,05`) permite `r_LE/c = 0,125 %`, um bordo praticamente afiado:
+não protege nada.
+
+---
+
+## 7. Divisão de trabalho entre as ferramentas
+
+Cada código faz só o que sabe fazer:
+
+| | eulerblock (Euler 2D, adjunto) | XFoil (painéis + viscoso) |
+|---|---|---|
+| regime | transônico, M_n = 0,72 | baixa velocidade, M = 0,266 |
+| entrega | c_d, c_l, c_m, choque, gradientes | c_l_max, polar viscosa, transição |
+| papel | dentro do laço de otimização | calibração e verificação, fora do laço |
+| custo | 68 s sem adjunto, 98 s com | 4–6 s por perfil |
+
+---
+
+## 8. Verificação da ferramenta antes de confiar nela
+
+Antes de qualquer otimização longa:
+
+1. **Convergência de malha.** Já medido que a malha pela metade é inaceitável:
+   o CD vai de 0,01577 para 0,03557, **+126 %**, embora o caso rode em 6 s em
+   vez de 68 s. Não dá para baratear o DOE afinando a malha — o custo se paga
+   em paralelismo. Falta varrer os níveis intermediários e fixar o escolhido.
+2. **Ruído numérico.** Verificar que `c_d(α)` é suave; o gradiente exige isso.
+3. **Verificação do adjunto** contra diferenças finitas em `dc_d/dα` e
+   `dc_d/dA_u`. É o conteúdo da Aula 03 (FD, CS, AD, AM) aplicado, e é o tipo
+   de evidência que sustenta o resto do relatório.
+
+---
+
+## 9. O produto sobre t/c
+
+Uma otimização por estação responde "qual o melhor perfil **dado** este t/c".
+O Lab 02 precisa de outra coisa: a curva **c_d,mín(t/c)** por estação — o
+preço aerodinâmico da espessura, para pesar contra o ganho estrutural.
+
+A restrição de espessura fica **ativa** no ótimo (mais fino é sempre melhor
+para onda), então seu multiplicador de Lagrange é `d c_d,mín / d(t/c)`. Uma
+otimização por estação dá o ponto e a inclinação; duas ou três
+re-otimizações com partida quente em valores vizinhos de t/c fecham a curva a
+custo baixo, porque cada uma parte do ótimo anterior.
+
+---
+
+## 10. Ordem de execução
+
+1. Verificação do solver (§8) — ~35 min de máquina.
+2. DOE de cl_max no XFoil (§6) → fixa o limiar da substituta.
+3. **MAC, mono-ponto** — entregável do roteiro e diagnóstico do que o
+   otimizador faz.
+4. **Raiz e ponta, mono-ponto**, em paralelo.
+5. **Varredura em t/c** nas três estações, com partida quente (§9).
+6. **Multiponto** na faixa de CL do cruzeiro (0,417 a 0,612), que responde os
+   itens 7 e 9 do roteiro.
+7. **Realimentação**: `k_korn` e `clmax_w` medidos, de volta ao `designTool`.
+
+Cada otimização roda em **pasta isolada**. Isso não é organização, é
+necessidade: o `eulerblock.exe` escreve `grid.xyz`, `settings.txt`,
+`wall.dat`, `solution.vtk`, `derivatives.dat` e `opt_results.pickle` com
+nomes fixos no diretório corrente (`euler_mod.py:47`). Duas otimizações na
+mesma pasta se corrompem mutuamente. A máquina tem 10 núcleos físicos;
+usamos 6 processos simultâneos.
+
+---
+
+## 11. Defeitos encontrados no material fornecido
+
+Registrados aqui porque afetam resultados do roteiro e valem menção ao
+professor.
+
+1. **`export_airfoil` quebra o XFoil em modo batch.** Com o padrão
+   `close_te=True`, a função repete o ponto do bordo de fuga. O `cstfoil` já
+   devolve o contorno fechado (primeiro ponto = último, que é a convenção do
+   XFoil para BF afiado), então a cópia extra vira um **terceiro** ponto
+   coincidente — um painel de comprimento zero. Diante disso o XFoil encerra
+   **em silêncio**, com código de retorno 0 e sem mensagem de erro, logo após
+   imprimir "Clockwise ordering". Afeta o `single_run.py` do próprio
+   professor. Contornado em `xfoil_runner.py`, com teste de regressão.
+
+2. **A ordem dos argumentos é invertida entre duas funções da mesma API.**
+   `cstfoil(Au, Al, x)` recebe o **extradorso** primeiro;
+   `run_cst(Al, Au, ...)` recebe o **intradorso** primeiro. Passar na ordem
+   errada gera um perfil de dentro para fora: o gerador de malha avisa
+   "negative-area cells", o solver encerra sem escrever `wall.dat` e o erro
+   que chega ao Python é um `FileNotFoundError` — que não diz nada sobre a
+   causa. Caímos nisso. Mitigado com uma checagem de espessura máxima logo
+   após cada chamada, em `verificacao_malha.py`.
+
+3. **`cstfoil` devolve posição errada da espessura máxima.** A linha 216
+   filtra o vetor de espessuras para `x > 0,05`, mas a linha 219 indexa o
+   vetor de abscissas **completo** com o índice do vetor filtrado. Para o
+   NACA 1411 devolve `x/c = 0,117` quando o valor correto é 0,30. O valor de
+   `max_thickness` está certo; só a posição está errada. **Afeta diretamente
+   a coluna `x_t/c,max` da Tab. 2 do roteiro.** O arqueamento não sofre do
+   problema, porque o vetor `cc` não é filtrado. Contornado em
+   `descritores.py`, com teste que afere contra a geometria conhecida do
+   NACA 1411.
+
+---
+
+## 12. Estrutura dos arquivos
+
+```
+otimizacao_aerofolio/
+  eulerblock/ airfoil_mod/ xfoil/     material do professor, intacto
+  Lab03_PRJ23_2026.pdf
+  campanha/                           trabalho da equipe
+    xfoil_runner.py                   interface batch com o XFoil
+    descritores.py                    descritores geométricos do perfil
+    doe_clmax_xfoil.py                DOE de cl_max
+    analise_doe_clmax.py              escolhe a restrição substituta
+    figuras_doe_clmax.py              figuras do DOE
+    estilo.py                         paleta e estilo, herdados do Lab 02
+    test_xfoil_runner.py              testes de regressão
+    resultados/                       CSVs e figuras
+```
+
+A paleta é a mesma do Lab 02 (`#2a78d6`, `#eb6834`, `#1baf7a`), verificada
+para daltonismo: pior par adjacente com ΔE 9,2 (deutan) e 27,6 (visão
+normal).
+
+---
+
+## 13. Fora do escopo
+
+- Otimização de torção da asa (é o passo seguinte; a hipótese de distribuição
+  elíptica em §3.3 é justamente a preparação para ele).
+- Otimização 3D da asa.
+- Reotimização completa da aeronave no `designTool` com as constantes
+  medidas — o Lab 03 entrega os números; a reotimização é decisão de projeto
+  posterior.
