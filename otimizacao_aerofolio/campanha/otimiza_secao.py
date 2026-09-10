@@ -55,11 +55,26 @@ RES = os.path.join(AQUI, 'resultados')
 # --- condicao de projeto (documento de projeto, secoes 3 e 4) ---------------
 MACH_N = 0.7196          # M * cos(Lambda_c/2) -- normal ao enflechamento
 
+# A raiz precisa de tratamento proprio. Com (t/c)_n = 0,2179 a M_n = 0,7196 a
+# secao opera 48 pontos de Mach alem da divergencia de arrasto, e partindo do
+# NACA 1411 reescalado o Euler DIVERGE (residuo cai ate 1e-5, o Newton-Krylov
+# encolhe o passo para 0,25 e a solucao explode para NaN).
+#
+# Sondagem (sonda_raiz.py): CFL 0,10 ja estabiliza a partida NACA (181 s), e
+# CFL 0,05 da praticamente o mesmo resultado (CD 0,0730 contra 0,0716), o que
+# indica que 0,10 ja esta na regiao estavel e nao apenas mascarando o problema.
+#
+# O RAE2822 reescalado converge ate em CFL 0,20, em 73 s, porque sua espessura
+# maxima fica em x/c = 0,376 contra 0,296 do NACA -- a assinatura supercritica.
+# Mesmo assim mantemos o NACA 1411 em todas as estacoes: e o que o roteiro
+# prescreve, e usar a mesma parametrizacao (4+4 coeficientes) em todas as
+# secoes mantem a comparacao entre elas honesta. O RAE2822 fica como
+# recomendacao no relatorio, e como referencia na polar do item 7.
 ESTACOES = {
-    # nome    eta     cl_ref   (t/c)_ref
-    'raiz':  dict(eta=0.101, cl_ref=0.5997, tc_ref=0.2179),
-    'meio':  dict(eta=0.398, cl_ref=0.7319, tc_ref=0.1772),
-    'ponta': dict(eta=0.900, cl_ref=0.7677, tc_ref=0.1082),
+    # nome    eta     cl_ref   (t/c)_ref   CFL
+    'raiz':  dict(eta=0.101, cl_ref=0.5997, tc_ref=0.2179, cfl=0.10),
+    'meio':  dict(eta=0.398, cl_ref=0.7319, tc_ref=0.1772, cfl=0.20),
+    'ponta': dict(eta=0.900, cl_ref=0.7677, tc_ref=0.1082, cfl=0.20),
 }
 
 
@@ -114,6 +129,11 @@ FTOL, MAXITER = 1e-6, 100
 # NACA 1411 -- ponto de partida indicado no roteiro
 AU_1411 = np.array([0.16146332, 0.18349204, 0.14126241, 0.18194397])
 AL_1411 = np.array([-0.1489439, -0.10330027, -0.10305128, -0.10514982])
+
+# CFLs de recuo, caso a solucao divirja durante a otimizacao. A sondagem so
+# testou o PONTO DE PARTIDA; nada garante que a geometria nao passe por
+# regioes piores no caminho, entao o avaliador recua sozinho.
+CFL_RECUO = [0.10, 0.05, 0.025]
 
 NVAR = 4
 AL_LOWER, AL_UPPER = [-1.00] * NVAR, [-0.05] * NVAR
@@ -188,8 +208,9 @@ class Avaliador:
     cada um separadamente, e sem esse cache o custo quadruplicaria.
     '''
 
-    def __init__(self, cl_ref, tc_ref, pasta):
+    def __init__(self, cl_ref, tc_ref, pasta, cfl=0.20):
         self.cl_ref, self.tc_ref = cl_ref, tc_ref
+        self.cfl = cfl
         self.pasta = pasta
         self.hist = {'xx': [], 'CD': [], 'CL': [], 'maxt': [], 'mint': [],
                      't01': [], 'tempo': []}
@@ -208,14 +229,23 @@ class Avaliador:
 
         Al, Au, alpha = desmonta(xx)
         cwd = os.getcwd()
+
+        # tenta com o CFL da estacao e recua se divergir. A sondagem so testou
+        # o ponto de partida; a geometria pode piorar no caminho.
+        cfls = [self.cfl] + [c for c in CFL_RECUO if c < self.cfl]
         try:
             os.chdir(self.pasta)
-            r = eb.run_cst(Al, Au, NCHORD, alpha, MACH_N,
-                           gamma=1.4, order=2,
-                           iter=ITER, dt=DT, CFL=CFL, use_local_dt=1,
-                           res_NK=RES_NK, res_tol=RES_TOL,
-                           reinitialize=self.reinit, plot=False,
-                           adj_funcs=['cl_jlow', 'cd_jlow'], NJ=NJ, s0=S0)
+            for tentativa, cfl in enumerate(cfls, 1):
+                r = eb.run_cst(Al, Au, NCHORD, alpha, MACH_N,
+                               gamma=1.4, order=2,
+                               iter=ITER, dt=DT, CFL=cfl, use_local_dt=1,
+                               res_NK=RES_NK, res_tol=RES_TOL,
+                               reinitialize=0 if tentativa > 1 else self.reinit,
+                               plot=False,
+                               adj_funcs=['cl_jlow', 'cd_jlow'], NJ=NJ, s0=S0)
+                if np.isfinite(r['CL']) and np.isfinite(r['CD']):
+                    break
+                print(f'      divergiu em CFL={cfl}; recuando', flush=True)
         finally:
             os.chdir(cwd)
 
@@ -274,7 +304,7 @@ def otimiza(nome_estacao, com_bluntez=True):
     os.makedirs(pasta)
 
     Al0, Au0 = ponto_de_partida(tc_ref)
-    av = Avaliador(cl_ref, tc_ref, pasta)
+    av = Avaliador(cl_ref, tc_ref, pasta, cfl=est.get('cfl', 0.20))
 
     print(f'=== ESTACAO {nome_estacao.upper()} (eta = {est["eta"]}) ===')
     print(f'  M_n = {MACH_N}   cl_ref = {cl_ref}   (t/c)_ref = {tc_ref}')
