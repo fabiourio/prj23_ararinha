@@ -263,11 +263,44 @@ atingido, nunca só o valor penalizado.
 
 ## 6. Como o cl_max entra sem quebrar o método de gradiente
 
-O `cl_max` do XFoil vem de varrer α até o solver viscoso divergir: é
-não-diferenciável e descontínuo em falhas de convergência. **Não serve como
-`g(x)` para o SLSQP.** Mas deixá-lo só para o fim é arriscado, porque nada na
-formulação impede o otimizador de afiar o bordo de ataque para reduzir
-arrasto de onda e destruir a sustentação máxima no caminho.
+Nada na formulação impede o otimizador de afiar o bordo de ataque para
+reduzir arrasto de onda e destruir a sustentação máxima no caminho — o corte
+controlado mostrou variação de 0,888 a 2,132 mexendo só no nariz. Então a
+sustentação máxima precisa entrar de alguma forma.
+
+A pergunta é se ela pode entrar **direto**, com o XFoil dentro do laço. O
+custo não é o obstáculo: uma chamada de XFoil custa ~7 s contra ~98 s de uma
+avaliação do Euler com adjunto, e nove chamadas por gradiente apenas dobrariam
+o tempo por iteração. O obstáculo é a qualidade do gradiente.
+
+**Medimos, em vez de supor** (`testa_gradiente_clmax.py`). Derivada de cl_max
+por diferença central, em cinco passos:
+
+| passo | d(cl_max)/dA_u0 | d(cl_max)/dA_u1 |
+|---|---|---|
+| 3×10⁻² | 0,918 | −1,237 |
+| 1×10⁻² | 1,050 | −1,190 |
+| 3×10⁻³ | 2,717 | 0,083 |
+| 1×10⁻³ | 7,750 | 4,400 |
+| 3×10⁻⁴ | **−7,667** | −0,167 |
+
+Espalhamento de **1.617 %** e **1.491 %**, com troca de sinal. Para comparar,
+o adjunto do eulerblock variou **0,04 %** entre passos.
+
+Dois detalhes importam:
+
+- **Não são falhas de convergência.** As 21 avaliações reportaram estol
+  capturado (`queda`); a lógica de repetição de `xfoil_runner.py` já eliminou
+  as falhas. O ruído é **intrínseco**, e vem da quantização do `max` sobre a
+  grade discreta de α. Piso medido: ~0,005 em cl_max, contra um sinal de
+  0,0006 no passo de 3×10⁻⁴ — ruído oito vezes maior que o sinal.
+- **Passo grande não salva.** Os dois maiores passos concordam dentro de 13 %,
+  mas 3×10⁻² num coeficiente de 0,19 é uma perturbação de 16 %: isso é uma
+  secante sobre uma corda enorme, não uma derivada, e mentiria exatamente
+  perto das fronteiras de restrição, que é onde o otimizador opera.
+
+**Conclusão medida: o cl_max do XFoil não serve como `g(x)` para o SLSQP.**
+É preciso um intermediário suave.
 
 Solução em três camadas:
 

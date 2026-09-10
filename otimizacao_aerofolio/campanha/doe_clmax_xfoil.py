@@ -85,7 +85,8 @@ T_MAX_FAIXA = (0.07, 0.20)
 
 def avalia(caso):
     '''Avalia um perfil: descritores geometricos + cl_max no XFoil.'''
-    idx, Au, Al = caso
+    idx, Au, Al = caso[:3]
+    faixa_t = caso[3] if len(caso) > 3 else T_MAX_FAIXA
     Au, Al = np.asarray(Au), np.asarray(Al)
 
     try:
@@ -96,7 +97,7 @@ def avalia(caso):
     # filtros de viabilidade -- evitam rodar XFoil em geometria degenerada
     if d['t_min'] < T_MIN_ACEITAVEL:
         return {'idx': idx, 'status': 'descartado_t_min', **d}
-    if not (T_MAX_FAIXA[0] <= d['t_max'] <= T_MAX_FAIXA[1]):
+    if not (faixa_t[0] <= d['t_max'] <= faixa_t[1]):
         return {'idx': idx, 'status': 'descartado_t_max', **d}
 
     try:
@@ -140,7 +141,29 @@ def casos_lhs(n=256, semente=23):
     baixo = np.array([a for a, _ in limites])
     alto = np.array([b for _, b in limites])
     X = baixo + amostra * (alto - baixo)
-    return [(ii, X[ii, :4], X[ii, 4:]) for ii in range(n)]
+    return [(ii, X[ii, :4], X[ii, 4:], T_MAX_FAIXA) for ii in range(n)]
+
+
+# Caixa deslocada para perfis GROSSOS. O estudo B foi so ate t/c = 0,194, mas
+# a estacao da raiz precisa de (t/c)_n = 0,218 -- ficaria fora da amostra, e
+# extrapolar o limiar para la seria chute.
+LIM_AU_GROSSO = [(0.12, 0.42), (0.12, 0.46), (0.12, 0.46), (0.12, 0.46)]
+LIM_AL_GROSSO = [(-0.42, -0.12), (-0.46, -0.10), (-0.46, -0.10), (-0.40, 0.05)]
+T_MAX_FAIXA_GROSSO = (0.16, 0.28)
+
+
+def casos_grossos(n=96, semente=2309):
+    '''Estudo C: cobre a faixa de espessura da estacao da raiz.'''
+    limites = LIM_AU_GROSSO + LIM_AL_GROSSO
+    amostra = qmc.LatinHypercube(d=len(limites), seed=semente).random(n)
+    baixo = np.array([a for a, _ in limites])
+    alto = np.array([b for _, b in limites])
+    X = baixo + amostra * (alto - baixo)
+    return [(ii, X[ii, :4], X[ii, 4:], T_MAX_FAIXA_GROSSO) for ii in range(n)]
+
+
+def casos_corte_com_faixa():
+    return [(i, au, al, T_MAX_FAIXA) for i, au, al in casos_corte()]
 
 
 def escreve_csv(linhas, caminho):
@@ -192,5 +215,10 @@ if __name__ == '__main__':
     os.makedirs(RES, exist_ok=True)
     n_proc = max(1, min(6, (os.cpu_count() or 4) - 2))
 
-    roda(casos_corte(), 'corte', n_proc)
-    roda(casos_lhs(), 'lhs', n_proc)
+    quais = sys.argv[1:] or ['corte', 'lhs', 'grossos']
+    if 'corte' in quais:
+        roda(casos_corte_com_faixa(), 'corte', n_proc)
+    if 'lhs' in quais:
+        roda(casos_lhs(), 'lhs', n_proc)
+    if 'grossos' in quais:
+        roda(casos_grossos(), 'grossos', n_proc)

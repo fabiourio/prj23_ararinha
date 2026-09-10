@@ -96,7 +96,13 @@ def descritores(Au, Al):
     ic = int(np.argmax(np.abs(camber)))
 
     def _em(xq):
-        return float(np.interp(xq, x, esp))
+        '''
+        Avalia a espessura DIRETAMENTE na estacao pedida, sem interpolar.
+        Precisa bater bit a bit com o t01 analitico do otimizador, senao o
+        limiar calibrado aqui nao e o mesmo que a restricao aplica la.
+        '''
+        yu_q, yl_q = _superficies(Au, Al, np.array([xq]))
+        return float(yu_q[0] - yl_q[0])
 
     # inclinacao da linha media perto do bordo de fuga (carregamento traseiro)
     m = x > 0.90
