@@ -218,46 +218,49 @@ Justificativa das estações escolhidas:
 Para cada estação *i*:
 
 ```
-min   φ(A_l, A_u, α) = c_d + ρ · max(0, 1,80 − ĉl_max(A_u, A_l))²
-s.a.  c_l(A_l, A_u, α) = cl_n,i           igualdade
+min   c_d(A_l, A_u, α)                    Euler, gradiente adjunto
+s.a.  c_l(A_l, A_u, α) = cl_n,i           condição de projeto da seção
       (t/c)_max        ≥ (t/c)_n,i        função KS, já suave no airfoil_mod
-      (t/c)_min        ≥ 0,01             superfícies não podem se cruzar
+      (t/c)_min        ≤ 0,01             bordo de fuga fino
+      (t/c)_min        ≥ 0                superfícies não se cruzam
+      t_01/√(t/c)      ≥ b_i              substituta de cl_max — §6
       batentes em A_l, A_u, α
 ```
 
 Variáveis: 4 coeficientes CST do intradorso, 4 do extradorso, e α — nove no
 total. Otimizador SLSQP, como no roteiro. `M_n = 0,7196` fixo.
 
-O `c_d` vem do código de Euler com gradiente adjunto. O `ĉl_max` é a
-substituta suave calibrada pelo DOE (§6) — analítica nos coeficientes CST,
-portanto de custo desprezível e diferenciável.
+Nota sobre a restrição de bordo de fuga: `mint ≤ 0,01` é a formulação do
+professor e mantém o bordo fino; ela **não** impede o cruzamento das
+superfícies (`mint < 0` a satisfaz), por isso acrescentamos `mint ≥ 0`.
 
-### 5.1 Por que penalidade e não restrição
+### 5.1 Por que restrição rígida, e não penalidade
 
-A sustentação máxima entra como **penalidade quadrática** no objetivo, e não
-como restrição de desigualdade, porque 1,80 é uma **meta de projeto**, não um
-limite físico (§1.2). Uma restrição rígida transformaria uma preferência em
-barreira: se 1,80 for inatingível no espaço de projeto, o SLSQP falha em vez
-de entregar o melhor compromisso disponível — e nós ficaríamos sem saber
-quanto custava chegar perto.
+Consideramos três formas de tratar a sustentação máxima:
 
-É também a aplicação direta do conteúdo da Aula 03 (funções de penalidade
-quadrática, logarítmica e inversa). A quadrática é a escolha certa aqui
-porque, ao contrário da logarítmica e da inversa, **admite ponto de partida
-inviável** — e o NACA 1411, ponto de partida do roteiro, pode perfeitamente
-não atender ao alvo em algumas estações.
+| | como | XFoil no laço | complexidade |
+|---|---|---|---|
+| **A** | batente na substituta geométrica | não | quase nula |
+| B | substituta recalibrada por XFoil a cada iteração | 1 chamada/iteração | média |
+| C | cl_max do XFoil direto como `g(x)` | sim | inviável (§6) |
 
-A penalidade é unilateral: `max(0, ·)²` não cobra nada de perfis que já
-superam 1,80, então não distorce o ótimo quando o alvo não está apertando.
+**Adotamos A.** O argumento é de economia de meios: se no ótimo a restrição
+sair **inativa**, ela não custou nada e não havia máquina a construir; se
+sair ativa e o arrasto parecer penalizado, aí sim vale montar B. Não se
+constrói máquina antes de saber se ela é necessária.
 
-**Sobre ρ.** Não há taxa de câmbio derivável entre `c_d` e `cl_max` pela
-aeronave, justamente porque a restrição de empuxo não está ativa (§1.1): no
-projeto atual `dW0/dclmax_w = 0`. Logo ρ é uma **preferência declarada**, e o
-honesto é tratá-la como tal: fixamos ρ de modo que um déficit de 0,1 em
-cl_max custe cerca de 5 contagens de arrasto (`ρ ≈ 0,05`, já que
-`0,05 · 0,1² = 5 × 10⁻⁴`) e rodamos a otimização em dois ou três valores de ρ
-para reportar a sensibilidade. O relatório traz o `cl_max` efetivamente
-atingido, nunca só o valor penalizado.
+Para medir isso, cada estação é otimizada **duas vezes** — com e sem a
+restrição de cl_max (`--sem-bluntez`). Se o ótimo irrestrito já atender o
+limiar, a restrição era inativa. Se não atender, a diferença de `c_d` entre
+as duas rodadas é o **preço exato** de manter `clmax_w = 1,80`, no mesmo
+formato em que o Lab 02 reportou que "as restrições de realismo custam
++1,9 t".
+
+Penalidade quadrática (conteúdo da Aula 03) foi considerada e descartada:
+ela exigiria escolher um peso ρ, e não há taxa de câmbio derivável entre
+`c_d` e `cl_max` pela aeronave — no projeto atual `dW0/dclmax_w = 0`, porque
+a restrição de empuxo não está ativa (§1.1). ρ seria uma preferência
+arbitrária disfarçada de número.
 
 ---
 
@@ -418,9 +421,51 @@ variáveis de projeto, e o modelo perde a robustez de extrapolação fora da
 caixa amostrada.
 
 Como diagnóstico, o limiar `t_01 ≥ 0,0368` tem **95,2 % de precisão e 52,7 %
-de cobertura** para o alvo de 1,8 (figura `doe_clmax_limiar.png`) — ou seja,
-existe também um critério geométrico simples de reserva, caso a superfície de
-resposta se mostre problemática dentro do otimizador.
+de cobertura** para o alvo de 1,8 (figura `doe_clmax_limiar.png`).
+
+### 6.4 A substituta que ficou: `t_01/√(t/c)`, por estação
+
+O `t_01` puro exige da ponta fina a mesma bluntez absoluta que da raiz
+grossa, e a cobertura despenca para 25 % nos perfis finos. Normalizar pela
+espessura inteira (`t_01/(t/c)`) é pior ainda — ρ cai de 0,756 para 0,619 —
+porque o que governa o pico de sucção é a bluntez **absoluta**, não a
+relativa. A raiz quadrada é o meio-termo que os dados escolheram:
+ρ = 0,742, precisão 95,8 %, cobertura 60,7 %.
+
+Continua diferenciável: `t_01` é linear nos coeficientes CST e `t/c` vem da
+função KS do `airfoil_mod`, suave por construção, com gradiente já disponível
+em `grads['maxt']`. O gradiente da razão é a regra do quociente, conferido
+contra diferenças finitas em `test_otimiza_secao.py`.
+
+**Limiar não-viesado por estação**, resolvendo `E[cl_max] = 1,80` na regressão
+`cl_max ~ f(bluntez, t/c)` ajustada aos 277 perfis dos dois DOEs
+(t/c de 0,076 a 0,270):
+
+| estação | (t/c)_n | limiar | partida |
+|---|---|---|---|
+| raiz | 0,2179 | **0,1220** | 0,1301 (atende) |
+| meio | 0,1772 | **0,0938** | 0,1173 (atende) |
+| ponta | 0,1082 | **0,0978** | 0,0917 (abaixo) |
+
+O limiar **não é monótono na espessura**: a raiz grossa exige nariz mais
+gordo que a MAC. É a mesma física que derrubou a mediana de cl_max no DOE de
+perfis grossos (1,676 contra 1,832 do LHS geral) — perfil muito espesso perde
+sustentação máxima por separação de bordo de fuga, e precisa compensar no
+nariz. Um limiar único, como propusemos de início, estaria errado nas duas
+pontas.
+
+**Escolha do critério: não-viesado, e não conservador.** O limiar de 95 % de
+precisão rejeita ~40 % dos perfis bons — inclusive o próprio NACA 1411, cujo
+cl_max medido é 1,98 — e cada perfil bom rejeitado é arrasto pago à toa. Como
+o cl_max do ótimo é verificado no XFoil ao final, errar centrado no alvo é
+melhor que errar sempre para o lado caro. (Sobre os dados combinados o
+critério conservador sequer existe: nenhum limiar atinge 95 % de precisão,
+porque a correlação cai de 0,742 para 0,518 ao incluir perfis grossos.)
+
+**Ressalva honesta:** o R² da superfície `cl_max ~ f(bluntez, t/c)` é 0,51 —
+dispersão grande. O limiar acerta a **média**, não cada perfil. Por isso a
+verificação em XFoil no fim é essencial, não opcional, e o laço de correção
+(apertar o limiar e re-otimizar com partida quente) faz parte do método.
 
 ---
 
