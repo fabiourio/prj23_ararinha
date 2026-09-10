@@ -124,7 +124,15 @@ BLUNTEZ_GLOBAL = 0.0979
 NCHORD, NJ, S0 = 31, 49, 0.5e-2      # malha nivel 1,0
 ITER, DT, CFL = 20000, 0.001, 0.2
 RES_NK, RES_TOL = 1e-5, 1e-8
-FTOL, MAXITER = 1e-6, 100
+# ftol PRECISA ficar acima do piso de ruido do solver, senao o criterio de
+# parada e inatingivel e o SLSQP queima avaliacoes em buscas em linha que o
+# ruido esconde. Medido na raiz: o c_d oscila entre 0,019855 e 0,019870
+# (espalhamento 1,5e-5) depois de convergido. Com ftol = 1e-6, 15x menor que
+# isso, ela convergiu na avaliacao 16 e gastou mais 123 avaliacoes sem sair
+# do lugar. 1e-5 e o valor do proprio professor, e e compativel com o ruido.
+# Perseguir mais que isso seria ilusorio de qualquer forma: o erro de malha no
+# nivel 1,0 e de 70%.
+FTOL, MAXITER = 1e-5, 100
 
 # NACA 1411 -- ponto de partida indicado no roteiro
 AU_1411 = np.array([0.16146332, 0.18349204, 0.14126241, 0.18194397])
@@ -300,8 +308,11 @@ def otimiza(nome_estacao, com_bluntez=True):
 
     sufixo = '' if com_bluntez else '_sem_bluntez'
     pasta = os.path.join(RES, f'otim_{nome_estacao}{sufixo}')
+    # ignore_errors deixa a pasta de pe se algum arquivo estiver travado (o
+    # eulerblock recem-morto ainda segura wall.dat por alguns segundos), e o
+    # makedirs seguinte estourava. exist_ok resolve.
     shutil.rmtree(pasta, ignore_errors=True)
-    os.makedirs(pasta)
+    os.makedirs(pasta, exist_ok=True)
 
     Al0, Au0 = ponto_de_partida(tc_ref)
     av = Avaliador(cl_ref, tc_ref, pasta, cfl=est.get('cfl', 0.20))
