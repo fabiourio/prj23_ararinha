@@ -1,0 +1,10 @@
+# Estacao raiz -- batentes: cusp_liberado
+# Aeronave B, M_n = 0.7196, c_l de projeto = 0.5997
+#
+Al = [-0.42036391, -0.16058527, -0.62656089, 0.28898622]
+Au = [0.26855904, 0.16702603, 0.30270399, 0.43185041]
+alpha = -0.412766  # graus
+#
+# c_l obtido  = 0.599698
+# c_d obtido  = 0.00919653
+# t/c maximo  = 0.217900 (minimo exigido 0.2179)

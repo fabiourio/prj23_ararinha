@@ -1,0 +1,10 @@
+# Estacao meio -- batentes: roteiro
+# Aeronave B, M_n = 0.7196, c_l de projeto = 0.7319
+#
+Al = [-0.18114255, -0.39564830, -0.13207871, -0.05000000]
+Au = [0.21596806, 0.06140882, 0.44267550, 0.14102986]
+alpha = 2.389316  # graus
+#
+# c_l obtido  = 0.731888
+# c_d obtido  = 0.01164378
+# t/c maximo  = 0.177200 (minimo exigido 0.1772)
