@@ -44,12 +44,22 @@ ETA_JUNC = 0.1011
 
 
 def cm_e_cd(nome, sufixo):
+    '''
+    c_d extrapolado e c_m do otimo. O c_m vem de rodar o Euler no ponto, e
+    NAO de uma tabela fixada na mao: as rodadas continuaram melhorando depois
+    que anotamos os primeiros valores, e um c_m desatualizado falsearia todo
+    o balanco de trimagem.
+    '''
+    from analisa_otimos import roda_euler
     d = carrega(f'otim_{nome}{sufixo}')
     if d is None:
-        return None
+        return None, None
     i = d['i_otimo']
     f = FATOR_MALHA.get(nome, 1.0)
-    return d['hist']['CD'][i] * f
+    Al, Au, alpha = ot.desmonta(d['xx_otimo'])
+    r = roda_euler(Al, Au, alpha, 1.0,
+                   cfl=ot.ESTACOES[nome].get('cfl', 0.20))
+    return d['hist']['CD'][i] * f, r['CM']
 
 
 def integra(cds_por_estacao):
@@ -84,18 +94,18 @@ def main():
 
     cms = {'roteiro': {}, 'cusp': {}}
     cds = {'roteiro': {}, 'cusp': {}}
-    # c_m lidos das tabelas (rodadas no nivel 1,0)
-    CM = {'raiz': (-0.0513944, -0.149806),
-          'meio': (-0.0969922, -0.165102),
-          'ponta': (-0.108717, -0.168817)}
+    print('rodando o Euler nos otimos para obter c_d e c_m atuais...',
+          flush=True)
     for nome in ot.ESTACOES:
-        cds['roteiro'][nome] = cm_e_cd(nome, '')
-        cds['cusp'][nome] = cm_e_cd(nome, '_cusp')
-        cms['roteiro'][nome], cms['cusp'][nome] = CM[nome]
-
-    if any(v is None for d in cds.values() for v in d.values()):
-        print('faltam resultados')
-        return 1
+        for var, suf in (('roteiro', ''), ('cusp', '_cusp')):
+            cd, cm = cm_e_cd(nome, suf)
+            if cd is None:
+                print(f'faltam resultados para {nome}{suf}')
+                return 1
+            cds[var][nome], cms[var][nome] = cd, cm
+        print(f'  {nome}: roteiro c_m = {cms["roteiro"][nome]:+.4f}, '
+              f'cusp c_m = {cms["cusp"][nome]:+.4f}', flush=True)
+    print()
 
     print(f'{"variante":10s} {"CDwave asa":>11s} {"c_m medio":>10s} '
           f'{"CL_emp":>8s} {"dCDi asa":>9s} {"CDi emp":>9s} {"CD trim":>9s}')
