@@ -74,7 +74,8 @@ def props(Al, Au, alpha, nome_estacao, rodar_euler=True):
     for i in range(len(Au)):
         saida[f'Au{i+1}'] = Au[i]
     if rodar_euler:
-        r = roda_euler(Al, Au, alpha, 1.0)
+        cfl = ot.ESTACOES[nome_estacao].get('cfl', 0.20)
+        r = roda_euler(Al, Au, alpha, 1.0, cfl=cfl)
         saida['cl'] = r['CL']
         saida['cd'] = r['CD']
         saida['cm'] = r['CM']
@@ -133,11 +134,13 @@ def main():
         linhas = [{'perfil': 'partida (NACA 1411 reesc.)',
                    **props(Ali, Aui, ai, nome)},
                   {'perfil': 'otimizado', **props(Alo, Auo, ao, nome)}]
-        sem = carrega(f'otim_{nome}_sem_bluntez')
-        if sem is not None:
-            Als, Aus, asx = ot.desmonta(sem['xx_otimo'])
-            linhas.append({'perfil': 'otimizado sem restr. de cl_max',
-                           **props(Als, Aus, asx, nome)})
+        for suf, rot in [('_sem_bluntez', 'otimizado sem restr. de cl_max'),
+                         ('_cusp', 'otimizado com cusp liberado (item 9)')]:
+            outro = carrega(f'otim_{nome}{suf}')
+            if outro is not None:
+                Alx, Aux, ax = ot.desmonta(outro['xx_otimo'])
+                linhas.append({'perfil': rot,
+                               **props(Alx, Aux, ax, nome)})
         partes_md.append(md(linhas, f'Tab. 2 -- estacao {nome}'))
 
     texto = '\n'.join(partes_md)

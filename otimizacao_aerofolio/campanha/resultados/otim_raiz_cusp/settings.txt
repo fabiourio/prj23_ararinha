@@ -1,5 +1,5 @@
 # alpha (rad)
--0.00446587
+-0.00720412
 # mach
 0.7196
 # reference x position
