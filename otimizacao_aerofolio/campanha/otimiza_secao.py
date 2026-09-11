@@ -146,6 +146,18 @@ CFL_RECUO = [0.10, 0.05, 0.025]
 NVAR = 4
 AL_LOWER, AL_UPPER = [-1.00] * NVAR, [-0.05] * NVAR
 AU_LOWER, AU_UPPER = [0.05] * NVAR, [1.00] * NVAR
+
+# Batente ALTERNATIVO para o ultimo coeficiente do intradorso.
+#
+# Com os batentes do roteiro (Al <= -0,05), o Al4 fica prensado no limite nas
+# TRES estacoes. Isso nao e coincidencia: o ultimo coeficiente do intradorso e
+# o que constroi o "cusp" concavo do bordo de fuga, a essencia do
+# carregamento traseiro supercritico. O RAE2822 tem Al[-1] = +0,052 --
+# POSITIVO. O batente do roteiro proibe estruturalmente essa forma.
+#
+# Soltar so esse coeficiente responde o item 9 do roteiro com experimento:
+# quanto se ganha permitindo a forma que os supercriticos de verdade usam?
+AL4_SOLTO = 0.30
 ALPHA_MIN, ALPHA_MAX = -3 * np.pi / 180, 9 * np.pi / 180
 
 
@@ -300,7 +312,7 @@ class Avaliador:
                          'tc_ref': self.tc_ref, 'mach_n': MACH_N}, fid)
 
 
-def otimiza(nome_estacao, com_bluntez=True):
+def otimiza(nome_estacao, com_bluntez=True, cusp_livre=False):
     '''
     com_bluntez=False roda o MESMO problema sem a restricao de sustentacao
     maxima. Serve para medir quanto ela custa em arrasto: se o otimo sem ela
@@ -313,6 +325,8 @@ def otimiza(nome_estacao, com_bluntez=True):
     bluntez_min = limiar_bluntez(nome_estacao) if com_bluntez else None
 
     sufixo = '' if com_bluntez else '_sem_bluntez'
+    if cusp_livre:
+        sufixo += '_cusp'
     pasta = os.path.join(RES, f'otim_{nome_estacao}{sufixo}')
     # ignore_errors deixa a pasta de pe se algum arquivo estiver travado (o
     # eulerblock recem-morto ainda segura wall.dat por alguns segundos), e o
@@ -384,8 +398,11 @@ def otimiza(nome_estacao, com_bluntez=True):
 
     cons = [{'type': 'ineq', 'fun': ineqfun, 'jac': ineqgrad},
             {'type': 'eq', 'fun': eqfun, 'jac': eqgrad}]
+    al_upper = list(AL_UPPER)
+    if cusp_livre:
+        al_upper[-1] = AL4_SOLTO      # permite o cusp concavo do bordo de fuga
     bounds = Bounds(AL_LOWER + AU_LOWER + [ALPHA_MIN],
-                    AL_UPPER + AU_UPPER + [ALPHA_MAX], keep_feasible=True)
+                    al_upper + AU_UPPER + [ALPHA_MAX], keep_feasible=True)
 
     t0 = time.time()
     res = minimize(objfun, xx0, jac=objgrad, constraints=cons, bounds=bounds,
@@ -424,8 +441,9 @@ if __name__ == '__main__':
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     estacao = args[0] if args else 'meio'
     com_bluntez = '--sem-bluntez' not in sys.argv
+    cusp_livre = '--cusp' in sys.argv
     if estacao not in ESTACOES:
         print(f'estacao invalida: {estacao}. Use: {list(ESTACOES)}')
         sys.exit(1)
     os.makedirs(RES, exist_ok=True)
-    otimiza(estacao, com_bluntez=com_bluntez)
+    otimiza(estacao, com_bluntez=com_bluntez, cusp_livre=cusp_livre)

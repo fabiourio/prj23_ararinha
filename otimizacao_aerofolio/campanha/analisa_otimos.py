@@ -68,20 +68,31 @@ def carrega(pasta):
     return d
 
 
-def roda_euler(Al, Au, alpha, nivel):
-    '''Uma avaliacao do Euler num nivel de malha, em diretorio isolado.'''
+def roda_euler(Al, Au, alpha, nivel, cfl=None):
+    '''
+    Uma avaliacao do Euler num nivel de malha, em diretorio isolado.
+
+    O cfl precisa ser o da ESTACAO: com 0,20 o perfil grosso de partida da
+    raiz diverge e a tabela sai com nan. Se nao for informado, tenta 0,20 e
+    recua, igual ao avaliador da otimizacao.
+    '''
     from eulerblock import euler_mod as eb
     nchord = int(30 * nivel) + 1
     nj = int(48 * nivel) + 1
     s0 = 48 / (nj - 1) * 0.5e-2
+    cfls = [cfl] if cfl else [0.20, 0.10, 0.05]
     tmp = tempfile.mkdtemp(prefix='pos_')
     cwd = os.getcwd()
     try:
         os.chdir(tmp)
-        r = eb.run_cst(Al, Au, nchord, alpha, ot.MACH_N,
-                       gamma=1.4, order=2, iter=20000, dt=0.001, CFL=0.2,
-                       use_local_dt=1, res_NK=1e-5, res_tol=1e-8,
-                       reinitialize=0, adj_funcs=[], plot=False, NJ=nj, s0=s0)
+        for c in cfls:
+            r = eb.run_cst(Al, Au, nchord, alpha, ot.MACH_N,
+                           gamma=1.4, order=2, iter=20000, dt=0.001, CFL=c,
+                           use_local_dt=1, res_NK=1e-5, res_tol=1e-8,
+                           reinitialize=0, adj_funcs=[], plot=False,
+                           NJ=nj, s0=s0)
+            if np.isfinite(r['CL']) and np.isfinite(r['CD']):
+                break
         return {'CL': float(r['CL']), 'CD': float(r['CD']),
                 'CM': float(r['CM']), 'nivel': nivel,
                 'Cp': np.asarray(r['distrib']['Cp']),
