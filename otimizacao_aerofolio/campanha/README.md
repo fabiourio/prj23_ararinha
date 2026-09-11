@@ -59,14 +59,21 @@ que pretendemos ter.
 | | raiz | meio | ponta |
 |---|---|---|---|
 | c_d partida | 0,0716 | 0,0560 | 0,0248 |
-| c_d otimizado | 0,0199 | 0,0118 | 0,0089 |
-| ganho (malha fina) | −71,0 % | −85,9 % | −81,7 % |
-| cl_max verificado no XFoil | — | 2,058 | 2,128 |
+| c_d otimizado | 0,0199 | 0,0116 | 0,0089 |
+| ganho | −72,3 % | −79,2 % | −64,3 % |
+| ganho em malha fina | −71,0 % | −85,9 % | −81,7 % |
+| cl_max no XFoil | 1,959 | 2,036 | 2,142 |
+| cl_max real (viés −0,24) | 1,72 | **1,80** | 1,90 |
 | restrição de cl_max | ativa | ativa | ativa |
 
-Na MAC, a restrição de sustentação máxima **custa +10,9 % de arrasto e compra
-0,79 de cl_max**: sem ela o perfil cai para cl_max = 1,264, e a aeronave
+Na MAC, a restrição de sustentação máxima **custa +9,2 % de arrasto e compra
+0,99 de cl_max**: sem ela o perfil cai para cl_max = 1,042, e a aeronave
 ficaria sem margem de empuxo na decolagem.
+
+O `cl_max real` sai do viés medido em `afere_xfoil.py`: rodando perfis NACA
+com valor experimental publicado pela nossa configuração, o XFoil lê **+0,24
+acima** do experimental (mediana de cinco perfis). O α de estol confirma:
+19-20,5° medidos contra 14-17° reais.
 
 ## Achados que valem o relatório
 
@@ -86,6 +93,30 @@ da envergadura dá CDwave = 0,00403 contra 0,00051 da fórmula — **7,9×**.
 abaixo do cl de projeto), a assinatura da otimização mono-ponto. Como o CL de
 cruzeiro varia de 0,612 a 0,417 ao longo da missão, isso justifica uma rodada
 multiponto.
+
+**Os ótimos estavam no batente, não no interior** (`batentes_ativos.py`).
+Com os batentes sugeridos pelo roteiro havia cinco batentes ativos, todos em
+coeficientes do intradorso. Soltar o último — o que constrói o *cusp* côncavo
+do bordo de fuga, que o RAE2822 tem em +0,052 e o roteiro proíbe — rende
+**28 a 41 % de arrasto** por estação, e os ótimos passam a ser interiores.
+Verificar se o ótimo é interior deveria vir **antes** de discutir o custo das
+restrições: aqui a limitação dominante valia quatro vezes mais que a
+restrição de cl_max, e estava invisível.
+
+**Mas o ganho do cusp não sobrevive à aeronave** (`custo_do_cusp.py`). O
+momento de arfagem quase dobra (c_m médio de −0,086 para −0,184), o que exige
+mais download da empenagem, que a asa compensa com mais sustentação:
+
+| | arrasto de onda | CD de trimagem |
+|---|---|---|
+| batentes do roteiro | 0,004013 | 0,000965 |
+| cusp liberado | 0,002598 | 0,002644 |
+
+Ganho de onda +0,001415, custo de trimagem −0,001680, **saldo −0,000264**.
+O perfil isolado melhora 29 % e a aeronave piora. É o caso de livro de
+otimização de subsistema sem acoplamento: o objetivo 2D não enxerga a
+empenagem, então o otimizador gastou livremente uma moeda que não paga.
+Para o cusp valer, a formulação precisa de restrição de c_m.
 
 ## Três defeitos no material fornecido
 
@@ -113,6 +144,25 @@ nível 1,0 subestima o benefício. Mas os c_d **absolutos** que forem para o
 convergiu na avaliação 16 e gastou mais 123 sem parar: o c_d oscila 1,5×10⁻⁵
 depois de convergido, quinze vezes o `ftol`. Usamos 1e-5, o valor do próprio
 professor.
+
+**Restrição redundante quebra o subproblema do SLSQP.** Acrescentamos
+`mint ≥ 0` (não cruzar superfícies) ao lado do `mint ≤ 0,01` do professor. As
+duas linhas da jacobiana são `−dmint` e `+dmint`, exatamente antiparalelas,
+deixando a matriz deficiente em posto **por construção** — o SLSQP morreu com
+"Singular matrix E in LSQ subproblem" e entregou um c_d pior. E era
+desnecessária: o `mint` converge prensado contra o teto de 0,01, ou seja o
+otimizador empurra na direção oposta ao cruzamento. Restrições redundantes
+não são inofensivas, mesmo inativas.
+
+**Ótimos planos existem e o SLSQP não sai deles.** A ponta convergiu na
+avaliação 21 e gastou mais 99: o t/c passeia de 0,1094 a 0,1111 com o c_d
+constante na sétima casa. Não é `ftol` — são projetos distintos com o mesmo
+arrasto.
+
+**Não anote número à mão.** O primeiro balanço de trimagem usou `c_m` copiados
+de rodadas parciais e concluiu que o cusp valia a pena (+13 % de saldo). Com
+os valores lidos do Euler nos ótimos convergidos, o saldo é **−19 %**. O
+atalho quase colocou a conclusão invertida no relatório.
 
 ## Arquivos
 
