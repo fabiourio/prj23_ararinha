@@ -103,20 +103,22 @@ Verificar se o ótimo é interior deveria vir **antes** de discutir o custo das
 restrições: aqui a limitação dominante valia quatro vezes mais que a
 restrição de cl_max, e estava invisível.
 
-**Mas o ganho do cusp não sobrevive à aeronave** (`custo_do_cusp.py`). O
-momento de arfagem quase dobra (c_m médio de −0,086 para −0,184), o que exige
-mais download da empenagem, que a asa compensa com mais sustentação:
+**Mas o cusp aproximadamente dobra o momento de arfagem.** Medido no Euler:
+c_m de −0,051 para −0,150 na raiz, de −0,097 para −0,165 na MAC e de −0,109
+para −0,169 na ponta.
 
-| | arrasto de onda | CD de trimagem |
-|---|---|---|
-| batentes do roteiro | 0,004013 | 0,000965 |
-| cusp liberado | 0,002598 | 0,002644 |
+O custo disso **não foi quantificado**, e por um motivo concreto: o
+`designTool` não modela o `c_m` do perfil — o `balance.py` trata CG, ponto
+neutro e margem estática, e o único momento presente é a inclinação dCm/dα da
+fuselagem. Estimar arrasto de compensação exigiria uma análise de equilíbrio
+que não fizemos (AVL ou balanço completo com CG reposicionado); o `c_m` 2D em
+torno de c/4 não é o momento da aeronave em torno do CG.
 
-Ganho de onda +0,001415, custo de trimagem −0,001680, **saldo −0,000264**.
-O perfil isolado melhora 29 % e a aeronave piora. É o caso de livro de
-otimização de subsistema sem acoplamento: o objetivo 2D não enxerga a
-empenagem, então o otimizador gastou livremente uma moeda que não paga.
-Para o cusp valer, a formulação precisa de restrição de c_m.
+Então o item 9 fica assim: o cusp entrega 29 a 54 % menos arrasto de seção e
+dobra o momento — um **trade em aberto**. O que se pode afirmar é que a função
+objetivo é 2D e não paga pelo momento, então o otimizador gasta essa moeda à
+vontade. Sempre que uma grandeza relevante fica fora do objetivo, o ótimo se
+desloca na direção de gastá-la.
 
 ## Três defeitos no material fornecido
 

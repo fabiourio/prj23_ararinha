@@ -218,33 +218,41 @@ Os ótimos passam a ser **interiores**. E o `Al4` da ponta convergiu para
 **+0,050**, praticamente o valor do RAE2822 — o otimizador chegou sozinho ao
 mesmo número de um supercrítico real.
 
-### 6.2 Mas o ganho não sobrevive à aeronave
+### 6.2 O custo: o momento de arfagem dobra
 
-O momento de arfagem quase dobra, e a nossa função objetivo é 2D: ela não
-enxerga a empenagem.
+O que está **medido** (Euler, no ponto de projeto de cada estação):
 
-| | arrasto de onda da asa | c_m médio | CD de trimagem |
+| estação | c_m com batente do roteiro | c_m com cusp | variação |
 |---|---|---|---|
-| batentes do roteiro | 0,004013 | −0,086 | 0,000965 |
-| cusp liberado | 0,002598 | −0,184 | **0,002644** |
+| raiz | −0,0514 | −0,1498 | 2,9× |
+| meio | −0,0970 | −0,1651 | 1,7× |
+| ponta | −0,1087 | −0,1688 | 1,6× |
 
-```
-ganho de arrasto de onda    +0,001415
-custo de compensação        −0,001680
-─────────────────────────────────────
-saldo líquido               −0,000264     ← PIOR
-```
+Momento mais negativo tem custo real: exige mais download da empenagem para
+equilibrar, e carrega mais torção no caixão da asa. Mas **não quantificamos
+esse custo**, e é importante ser explícito sobre por quê:
 
-**O perfil isolado melhora 29 % e a aeronave piora.** Momento maior exige mais
-download da empenagem, que a asa compensa com mais sustentação, que volta como
-arrasto induzido — na asa e na própria empenagem.
+- o `designTool` **não modela o `c_m` do perfil**. O `balance.py` calcula CG,
+  ponto neutro e margem estática; o único momento que aparece é `CMa_f`, a
+  inclinação dCm/dα da fuselagem, para estabilidade. Não há onde inserir o
+  `c_m` do aerofólio;
+- uma estimativa de arrasto de compensação exigiria uma análise de
+  equilíbrio que não fizemos — AVL, ou o balanço completo da aeronave com o
+  CG reposicionado. O `c_m` 2D em torno de c/4 **não é** o momento da
+  aeronave em torno do CG, e o CG é justamente o que se posiciona para
+  equilibrar.
 
-É o caso de livro de **otimização de subsistema sem acoplamento**: o
-otimizador gastou livremente uma moeda que não paga. Para o cusp valer, a
-formulação precisa de restrição de c_m.
+**Conclusão honesta:** o cusp entrega 29 a 54 % menos arrasto de seção e
+aproximadamente dobra o momento de arfagem. O saldo líquido no nível da
+aeronave é um **trade em aberto**, não um resultado. Para fechá-lo seria
+preciso ou incluir uma restrição de `c_m` na formulação, ou levar as duas
+variantes a uma análise de equilíbrio de verdade.
 
-*(Cálculo de ordem de grandeza: equilíbrio rígido, sem contribuição da
-fuselagem, arrasto induzido parabólico.)*
+O que se pode afirmar sem essa análise: a função objetivo é 2D e **não paga**
+pelo momento, então o otimizador gasta essa moeda livremente. Sempre que uma
+grandeza relevante fica fora do objetivo, o ótimo se desloca na direção de
+gastá-la — e é por isso que o resultado do item 9 não pode ser adotado sem o
+acoplamento.
 
 ### 6.3 A polar tem poço de arrasto estreito
 
