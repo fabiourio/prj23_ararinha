@@ -1,0 +1,7 @@
+estacao,plano,tc,Re,clmax_xfoil,clmax_corrigido,situacao
+raiz,normal,0.216764,6.06e+07,2.014,1.774,queda
+raiz,corrente,0.18351,6.06e+07,2.0306,1.7906,queda
+meio,normal,0.175958,4.23e+07,2.0385,1.7985,queda
+meio,corrente,0.148965,4.23e+07,2.0544,1.8144,queda
+ponta,normal,0.107633,1.45e+07,1.9738,1.7338,queda
+ponta,corrente,0.0911208,1.45e+07,1.8882,1.6482,queda

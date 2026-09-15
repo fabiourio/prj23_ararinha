@@ -149,9 +149,18 @@ def resumo_estacao(nome, com, sem):
             print('     manter clmax_w = 1,80 no designTool.')
 
 
+# Reynolds de decolagem POR ESTACAO. A corda varia muito ao longo da
+# envergadura -- 9,13 m na raiz contra 3,13 m na ponta -- entao o Reynolds
+# varia por um fator 4. Usar um valor unico (o da MAC, como estava antes)
+# superestima o cl_max da ponta em ~0,17 e subestima o da raiz.
+RE_DECOLAGEM_ESTACAO = {'raiz': 6.06e7, 'meio': 4.23e7, 'ponta': 1.45e7}
+
+
 def verifica_xfoil(nome, dados):
+    estacao = nome.split('/')[0]
+    Re = RE_DECOLAGEM_ESTACAO.get(estacao, RE_DECOLAGEM)
     Al, Au, _ = ot.desmonta(dados['xx_otimo'])
-    r = xr.clmax_cst(Au, Al, Re=RE_DECOLAGEM, Mach=MACH_DECOLAGEM,
+    r = xr.clmax_cst(Au, Al, Re=Re, Mach=MACH_DECOLAGEM,
                      alpha_seq=ALPHA_SEQ, timeout=900)
     ok = r['clmax'] >= CLMAX_ALVO
     print(f'  {nome:6s}: cl_max = {r["clmax"]:.4f} em alpha = '

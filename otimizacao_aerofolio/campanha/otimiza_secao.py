@@ -312,7 +312,76 @@ class Avaliador:
                          'tc_ref': self.tc_ref, 'mach_n': MACH_N}, fid)
 
 
-def otimiza(nome_estacao, com_bluntez=True, cusp_livre=False):
+def pontos_multistart(tc_alvo, estacao, n=6, semente=23):
+    '''
+    Pontos de partida DIVERSOS para verificar se o otimo e global.
+
+    O SLSQP e local. Partindo de um unico ponto -- o NACA 1411 reescalado --
+    nao sabemos se existe bacia melhor. O Lab 02 verificou isso confrontando
+    o SLSQP com o NSGA-II; aqui o equivalente barato e o multistart.
+
+    O primeiro ponto e sempre o do roteiro, para a comparacao ser direta. Os
+    demais saem de um hipercubo latino na caixa de coeficientes, reescalados
+    para a espessura exigida e filtrados pelas restricoes geometricas, para
+    nao gastar otimizacao partindo de algo inviavel.
+    '''
+    from scipy.stats import qmc
+
+    import descritores as dsc
+
+    pontos = [ponto_de_partida(tc_alvo)]
+    lim = limiar_bluntez(estacao)
+
+    lo = np.array([-0.45] * NVAR + [0.06] * NVAR)
+    hi = np.array([-0.06] * NVAR + [0.45] * NVAR)
+    # sorteio generoso: os filtros geometricos + o de sustentacao alcancavel
+    # descartam a grande maioria, entao precisamos de muitos candidatos para
+    # sair com pontos de partida realmente diversos
+    amostra = qmc.LatinHypercube(d=2 * NVAR, seed=semente).random(4000)
+    X = lo + amostra * (hi - lo)
+
+    for linha in X:
+        if len(pontos) >= n:
+            break
+        Al, Au = linha[:NVAR], linha[NVAR:]
+        # reescala a espessura preservando o arqueamento, como em
+        # ponto_de_partida
+        d = dsc.descritores(Au, Al)
+        if d['t_max'] <= 1e-6:
+            continue
+        k = tc_alvo / d['t_max']
+        meio, semi = (Au + Al) / 2, (Au - Al) / 2
+        Al2, Au2 = meio - k * semi, meio + k * semi
+        if np.any(Al2 > AL_UPPER) or np.any(Al2 < AL_LOWER):
+            continue
+        if np.any(Au2 < AU_LOWER) or np.any(Au2 > AU_UPPER):
+            continue
+        d2 = dsc.descritores(Au2, Al2)
+        if d2['t_min'] < MINT_MIN or d2['t_min'] > MINT_MAX:
+            continue
+        if bluntez(t01_de(Al2, Au2), d2['t_max']) < lim:
+            continue
+        # O ponto de partida precisa CONSEGUIR a sustentacao alvo dentro dos
+        # batentes de alpha. Pela teoria de perfil fino, alpha_L0 ~ -1 grau
+        # por 1% de arqueamento, entao um perfil de arqueamento muito negativo
+        # exige alpha alto demais. Sem este filtro, o SLSQP parte de um ponto
+        # onde a restricao de igualdade e INALCANCAVEL e a rodada se perde
+        # tentando ganhar sustentacao em vez de reduzir arrasto.
+        cl_ref = ESTACOES[estacao]['cl_ref']
+        alpha_L0 = -100.0 * d2['c_max']                  # graus, aproximado
+        alpha_nec = np.degrees(cl_ref / (2 * np.pi)) + alpha_L0
+        if not (-2.0 < alpha_nec < 7.0):
+            continue
+        # descarta pontos quase iguais a um ja escolhido
+        if any(np.linalg.norm(np.hstack([Al2, Au2]) - np.hstack(p)) < 0.08
+               for p in pontos):
+            continue
+        pontos.append((Al2, Au2))
+
+    return pontos
+
+
+def otimiza(nome_estacao, com_bluntez=True, cusp_livre=False, i_partida=0):
     '''
     com_bluntez=False roda o MESMO problema sem a restricao de sustentacao
     maxima. Serve para medir quanto ela custa em arrasto: se o otimo sem ela
@@ -327,6 +396,8 @@ def otimiza(nome_estacao, com_bluntez=True, cusp_livre=False):
     sufixo = '' if com_bluntez else '_sem_bluntez'
     if cusp_livre:
         sufixo += '_cusp'
+    if i_partida:
+        sufixo += f'_ms{i_partida}'
     pasta = os.path.join(RES, f'otim_{nome_estacao}{sufixo}')
     # ignore_errors deixa a pasta de pe se algum arquivo estiver travado (o
     # eulerblock recem-morto ainda segura wall.dat por alguns segundos), e o
@@ -334,7 +405,14 @@ def otimiza(nome_estacao, com_bluntez=True, cusp_livre=False):
     shutil.rmtree(pasta, ignore_errors=True)
     os.makedirs(pasta, exist_ok=True)
 
-    Al0, Au0 = ponto_de_partida(tc_ref)
+    if i_partida:
+        pontos = pontos_multistart(tc_ref, nome_estacao)
+        if i_partida >= len(pontos):
+            print(f'so ha {len(pontos)} pontos de partida distintos')
+            return None
+        Al0, Au0 = pontos[i_partida]
+    else:
+        Al0, Au0 = ponto_de_partida(tc_ref)
     av = Avaliador(cl_ref, tc_ref, pasta, cfl=est.get('cfl', 0.20))
 
     print(f'=== ESTACAO {nome_estacao.upper()} (eta = {est["eta"]}) ===')
@@ -348,16 +426,34 @@ def otimiza(nome_estacao, com_bluntez=True, cusp_livre=False):
     print(f'  partida: NACA 1411 reescalado, t/c = {tc_ref:.4f}, '
           f't01 = {t01_de(Al0, Au0):.5f}\n', flush=True)
 
-    # --- acha o alpha de partida com um passo de Newton usando o adjunto ---
+    # --- acha o alpha de partida com passos de Newton usando o adjunto ---
+    # Ate 6 iteracoes, e AVISA se nao convergir: partir com a restricao de
+    # igualdade violada faz o SLSQP gastar as primeiras iteracoes buscando
+    # sustentacao em vez de reduzir arrasto, e se o alvo for inalcancavel
+    # dentro dos batentes de alpha a rodada inteira se perde.
     alpha = 3.0 * np.pi / 180
-    for _ in range(2):
+    erro = np.inf
+    for _ in range(6):
         d = av(np.hstack([Al0, Au0, alpha]))
         erro = d['CL'] - cl_ref
         if abs(erro) < 5e-3 or not np.isfinite(d['dCL'][-1]):
             break
-        alpha -= erro / d['dCL'][-1]
-        alpha = float(np.clip(alpha, ALPHA_MIN, ALPHA_MAX))
-    print(f'  alpha de partida: {alpha*180/np.pi:.3f} deg\n', flush=True)
+        alpha_novo = float(np.clip(alpha - erro / d['dCL'][-1],
+                                   ALPHA_MIN, ALPHA_MAX))
+        if abs(alpha_novo - alpha) < 1e-6:      # travou num batente
+            break
+        alpha = alpha_novo
+    print(f'  alpha de partida: {alpha*180/np.pi:.3f} deg '
+          f'(erro de c_l: {erro:+.5f})', flush=True)
+    if abs(erro) > 5e-3:
+        print(f'  AVISO: o ponto de partida nao atinge c_l = {cl_ref} dentro '
+              f'de alpha em [{ALPHA_MIN*180/np.pi:.0f}, '
+              f'{ALPHA_MAX*180/np.pi:.0f}] graus.', flush=True)
+        if abs(alpha - ALPHA_MAX) < 1e-6 or abs(alpha - ALPHA_MIN) < 1e-6:
+            print('  alpha travou no batente -- a restricao de igualdade e '
+                  'INALCANCAVEL daqui. Abortando.', flush=True)
+            return None
+    print(flush=True)
 
     xx0 = np.hstack([Al0, Au0, alpha])
 
@@ -442,8 +538,13 @@ if __name__ == '__main__':
     estacao = args[0] if args else 'meio'
     com_bluntez = '--sem-bluntez' not in sys.argv
     cusp_livre = '--cusp' in sys.argv
+    i_partida = 0
+    for a in sys.argv:
+        if a.startswith('--partida='):
+            i_partida = int(a.split('=')[1])
     if estacao not in ESTACOES:
         print(f'estacao invalida: {estacao}. Use: {list(ESTACOES)}')
         sys.exit(1)
     os.makedirs(RES, exist_ok=True)
-    otimiza(estacao, com_bluntez=com_bluntez, cusp_livre=cusp_livre)
+    otimiza(estacao, com_bluntez=com_bluntez, cusp_livre=cusp_livre,
+            i_partida=i_partida)
