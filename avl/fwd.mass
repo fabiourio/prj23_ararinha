@@ -1,0 +1,11 @@
+#  Ararinha -- CG dianteiro (Lab 04, ponto de projeto do Lab 03)
+#  Massa e inercias do designTool (moment_of_inertia, fuel_frac = 0.4392,
+#  payload_frac = 1.0). Inercias calculadas em torno do CG do carregamento
+#  (x = 27.0124 m); mantidas iguais nos dois arquivos por aproximacao.
+Lunit = 1.0 m
+Munit = 1.0 kg
+Tunit = 1.0 s
+g   = 9.81
+rho = 0.38046
+#  mass        x         y      z      Ixx         Iyy         Izz         Ixy    Ixz         Iyz
+229669.3  26.0772  0.0  0.0  1.5083e+07  4.2843e+07  5.5780e+07  0.0  1.2091e+06  0.0

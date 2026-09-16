@@ -1,0 +1,122 @@
+Ararinha
+#
+# Lab 04 -- gerado por lab04_gera_avl.py a partir do designTool
+# CG dianteiro do designTool. Perfis otimizados do Lab 03 (roteiro).
+# Controles: d1 = aileron, d2 = elevator, d3 = rudder. Design: 1 = it.
+#
+0.85          # Mach
+0 0 0.0       # iYsym iZsym Zsym
+368.833 6.8995 60.1518   # Sref Cref Bref
+26.0772 0.0 0.0   # Xref Yref Zref (CG dianteiro)
+0.01489       # CDp (CD0 do designTool no ponto de projeto)
+#----------------------------------------------------------------
+SURFACE
+Wing
+#Nchordwise Cspace Nspanwise Sspace
+12 1.0 40 1.0
+YDUPLICATE
+0.0
+ANGLE
+0.0
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+15.9966  0.0000  -1.3000  9.8898  0.0000
+AFILE
+aerofolios/raiz.dat
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+18.2882  3.0407  -0.9804  9.1299  0.0000
+AFILE
+aerofolios/raiz.dat
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+25.0180  11.9702  -0.0419  6.8984  0.0000
+AFILE
+aerofolios/meio.dat
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+28.6900  16.8425  0.4702  5.6807  0.0000
+AFILE
+aerofolios/meio.dat
+CONTROL
+#name    gain  Xhinge  XYZhvec      SgnDup
+aileron  1.0   0.73    0. 0. 0.    -1.0
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+36.3968  27.0683  1.5450  3.1252  0.0000
+AFILE
+aerofolios/ponta.dat
+CONTROL
+#name    gain  Xhinge  XYZhvec      SgnDup
+aileron  1.0   0.73    0. 0. 0.    -1.0
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+38.6635  30.0759  1.8611  2.3736  0.0000
+AFILE
+aerofolios/ponta.dat
+
+#----------------------------------------------------------------
+SURFACE
+Horizontal tail
+#Nchordwise Cspace Nspanwise Sspace
+8 1.0 16 1.0
+YDUPLICATE
+0.0
+ANGLE
+0.0
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+50.1252  0.0000  2.0000  5.1667  0.0000
+NACA
+0010
+DESIGN
+#DName  Wdes
+it      1.0
+CONTROL
+#name    gain  Xhinge  XYZhvec      SgnDup
+elevator 1.0   0.70    0. 0. 0.     1.0
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+57.5222  8.6155  2.3009  2.3250  0.0000
+NACA
+0010
+DESIGN
+#DName  Wdes
+it      1.0
+CONTROL
+#name    gain  Xhinge  XYZhvec      SgnDup
+elevator 1.0   0.70    0. 0. 0.     1.0
+
+#----------------------------------------------------------------
+SURFACE
+Vertical tail
+#Nchordwise Cspace Nspanwise Sspace
+8 1.0 12 1.0
+ANGLE
+0.0
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+51.9366  0.0000  3.0000  9.1453  0.0000
+NACA
+0010
+CONTROL
+#name    gain  Xhinge  XYZhvec      SgnDup
+rudder   1.0   0.70    0. 0. 0.     0.0
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+60.7610  0.0000  12.6025  3.6581  0.0000
+NACA
+0010
+CONTROL
+#name    gain  Xhinge  XYZhvec      SgnDup
+rudder   1.0   0.70    0. 0. 0.     0.0
