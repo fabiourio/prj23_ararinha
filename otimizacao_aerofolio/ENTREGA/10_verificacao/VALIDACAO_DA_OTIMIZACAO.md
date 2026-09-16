@@ -47,3 +47,38 @@ direcoes. A de sustentacao maxima e a segunda. O perfil obtido e o minimo de
 arrasto possivel dada a espessura estrutural que a asa exige.
 
 Dados: ``cortes_meio.csv``, ``multistart_meio.csv``
+
+## 3. O poco de arrasto e estreito de verdade? (varredura fina + malha)
+
+A polar do item 7 mostra c_d caindo 40% num unico ponto -- o de projeto. Tres
+verificacoes para separar fisica de artefato:
+
+**Varredura com passo de 0,1 grau** (5x mais fino): o poco existe e os pontos
+que o cercam convergiram com residuo ~1e-9. A +0,2 grau o c_d ja sobe 26%; a
+-0,2 grau, 50%.
+
+**Residuo dos pontos suspeitos**: 6 de 21 pontos da varredura estouraram as
+20000 iteracoes. Reavaliados com CFL menor ate convergir, o c_d muda no
+maximo 0,04% -- o residuo estagnou em ciclo-limite em torno do choque, mas
+sobre o valor certo. A polar da entrega esta correta.
+
+**Refinamento de malha** (nivel 1,5): o poco sobrevive e APROFUNDA (razao
+c_d_max/c_d_min na faixa de +-0,4 grau: 1,60x -> 1,89x), e o minimo continua
+no ponto de projeto. O poco e fisica de otimizacao mono-ponto, nao artefato.
+
+Leitura de projeto: o perfil e excelente NO ponto de projeto e degrada rapido
+fora dele -- assinatura classica de otimizacao mono-ponto. A proxima iteracao
+natural e a otimizacao multiponto. E o c_l de projeto depende da hipotese de
+distribuicao eliptica, que o Lab 04 (torcao) precisa confirmar.
+
+Dados: ``poco_de_arrasto_meio.csv``, ``poco_malha_meio.csv``
+
+## 4. Alpha de trimagem da partida (item 3 do roteiro)
+
+NACA 1411 reescalado para t/c = 0,1772, trimado ao c_l de projeto por Newton
+com a derivada do adjunto (3 avaliacoes):
+
+    alpha = 3,567 graus   c_l = 0,7319   c_d = 0,06705   c_m = -0,0680
+
+Na MESMA sustentacao, o ganho da otimizacao e 0,06705 -> 0,01164 = -82,6%
+(o -79,2% citado antes comparava a partida em alpha = 3 graus, com c_l menor).
