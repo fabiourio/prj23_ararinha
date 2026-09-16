@@ -1,0 +1,30 @@
+\newpage
+\section{Incidência da empenagem horizontal}
+
+% Item 3 do roteiro: para cada arquivo, achar o it que zera a deflexao de
+% profundor na condicao de cruzeiro (mn 0.85, a c 0.5053, d2 pm 0, menu de
+% -> variavel 1). Registrar o it final e um print do plano de Trefftz.
+% PREENCHER apos as rodadas.
+
+A incidência da empenagem horizontal de cada configuração foi ajustada para
+anular a deflexão de profundor na condição de cruzeiro. Em cada arquivo
+fixou-se a meta de sustentação do ponto de projeto e a restrição de momento
+de arfagem nulo pelo profundor, e a variável de projeto \texttt{it} foi
+iterada até a deflexão residual ficar abaixo de $0{,}1^\circ$.
+
+\begin{table}[H]
+\centering
+\caption{Incidência da empenagem que anula a deflexão de profundor em cruzeiro.}\label{tab:trimagem}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lccc}
+\toprule
+Configuração & $i_t$ [graus] & $\delta_e$ residual [graus] & $\alpha$ [graus] \\
+\midrule
+CG dianteiro (\texttt{fwd.avl}) & --- & --- & --- \\
+CG traseiro (\texttt{aft.avl}) & --- & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% Inserir os prints do plano de Trefftz dos dois casos:
+% \begin{figure}[H] ... images/trefftz_fwd.png / trefftz_aft.png ... \end{figure}

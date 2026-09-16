@@ -1,0 +1,25 @@
+\newpage
+\section{Ponto neutro e margem estática}
+
+% Item 8 do roteiro. Valores preliminares abaixo obtidos com o comando st
+% em mn 0.85 e a c 0.5053 (sem trimagem). CONFIRMAR nas rodadas finais.
+
+O ponto neutro foi obtido do comando \texttt{st} do AVL na condição de
+cruzeiro, resultando em $x_{np} = 30{,}065$ m, ou 73,2\,\%MAC. As margens
+estáticas correspondentes às duas posições de CG são
+\begin{equation*}
+    SM_{\mathrm{fwd}} = \frac{x_{np} - x_{cg,\mathrm{fwd}}}{c_{\mathrm{ref}}}
+    = 57{,}8\,\%\mathrm{MAC},
+    \qquad
+    SM_{\mathrm{aft}} = \frac{x_{np} - x_{cg,\mathrm{aft}}}{c_{\mathrm{ref}}}
+    = 34{,}0\,\%\mathrm{MAC}.
+\end{equation*}
+
+Os valores são maiores que os estimados pelo \texttt{designTool} no Lab 02,
+que situa o ponto neutro em 45,4\,\%MAC (margens de 30,0\% e 6,2\%). A
+diferença é esperada e tem origem na fuselagem, que não é modelada no AVL. O
+momento desestabilizante do corpo desloca o ponto neutro real para a frente,
+e o \texttt{designTool} contabiliza esse efeito por correlação empírica.
+
+% Discutir qual estimativa e mais conservadora para o projeto e registrar
+% os numeros finais apos as rodadas definitivas.

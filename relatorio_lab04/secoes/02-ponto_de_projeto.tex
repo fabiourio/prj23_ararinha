@@ -1,0 +1,40 @@
+\newpage
+\section{Ponto de projeto}
+
+Adotou-se o mesmo ponto de projeto do Lab 03, a condição de cruzeiro com o
+peso médio da fase, $W = 229\,669{,}3$ kgf, que corresponde a cerca de 44\%
+da capacidade de combustível com 100\% de carga paga. A escolha mantém o
+$C_L$ de projeto igual ao usado na otimização dos perfis, de modo que as
+análises deste trabalho avaliam a asa exatamente na condição para a qual as
+seções foram desenhadas. A Tabela~\ref{tab:ponto_projeto} reúne os dados
+pedidos no roteiro.
+
+\begin{table}[H]
+\centering
+\caption{Dados do ponto de projeto.}\label{tab:ponto_projeto}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lcl}
+\toprule
+Parâmetro & Valor & Explicação \\
+\midrule
+$W_0$ & 2.857.571 & Peso máximo de decolagem da aeronave [N] \\
+$W$ & 2.253.056 & Peso da aeronave no ponto de projeto [N] \\
+$h$ & 10.668 & Altitude no ponto de projeto [m] \\
+$\rho_\infty$ & 0,38046 & Densidade do ar no ponto de projeto [kg/m$^3$] \\
+$a_\infty$ & 296,587 & Velocidade do som no ponto de projeto [m/s] \\
+$M$ & 0,85 & Mach no ponto de projeto \\
+$V$ & 252,1 & Velocidade no ponto de projeto [m/s] \\
+$C_L$ & 0,5053 & $C_L$ no ponto de projeto \\
+$S_{\mathrm{ref}}$ & 368,833 & Área de referência [m$^2$] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+O coeficiente de sustentação segue diretamente do equilíbrio vertical na
+condição de cruzeiro:
+\begin{equation*}
+    C_L = \frac{W}{\tfrac{1}{2}\,\rho_\infty\,V^2\,S_{\mathrm{ref}}}
+        = 0{,}5053.
+\end{equation*}
+Este é o valor usado como meta de sustentação (\texttt{a c 0.5053}) em todas
+as simulações de cruzeiro do AVL neste relatório.

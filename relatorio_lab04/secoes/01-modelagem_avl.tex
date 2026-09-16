@@ -1,0 +1,74 @@
+\newpage
+\section{Modelagem da aeronave no AVL}
+
+A aeronave da equipe foi modelada no AVL em dois arquivos de entrada,
+\texttt{fwd.avl} e \texttt{aft.avl}, que compartilham a mesma geometria e
+diferem apenas na posição do centro de gravidade usada como referência de
+momentos. Os arquivos não foram escritos à mão. Um script
+(\texttt{lab04\_gera\_avl.py}) lê a geometria convergida do
+\texttt{designTool} e escreve os dois arquivos, o que garante consistência
+com os Labs anteriores e reprodutibilidade da entrega.
+
+\begin{table}[H]
+\centering
+\caption{Cabeçalho dos arquivos de entrada do AVL.}\label{tab:avl_header}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lcl}
+\toprule
+Parâmetro & Valor & Descrição \\
+\midrule
+$S_{\mathrm{ref}}$ & 368,833 & Área de referência [m$^2$] \\
+$c_{\mathrm{ref}}$ & 6,8995 & Corda média aerodinâmica [m] \\
+$b_{\mathrm{ref}}$ & 60,1518 & Envergadura de referência [m] \\
+$X_{\mathrm{ref}}$ (\texttt{fwd.avl}) & 26,0772 & CG dianteiro [m] (15,4\,\%MAC) \\
+$X_{\mathrm{ref}}$ (\texttt{aft.avl}) & 27,7190 & CG traseiro [m] (39,2\,\%MAC) \\
+$C_{Dp}$ & 0,01489 & $C_{D0}$ por áreas molhadas do \texttt{designTool} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A asa usa os perfis otimizados no Lab 03 (família do roteiro), aplicados por
+\texttt{AFILE} nas estações de referência daquele trabalho, $\eta = 0{,}101$
+(raiz), $\eta = 0{,}398$ (meio) e $\eta = 0{,}90$ (ponta). O perfil da raiz é
+estendido até o plano de simetria e o da ponta até $\eta = 1$. Os arquivos de
+coordenadas foram reamostrados de 321 para 197 pontos por limitação do
+executável fornecido, sem perda prática porque o AVL extrai apenas a linha de
+arqueamento. As empenagens usam NACA 0010, coerente com a espessura relativa
+de 10\% definida no Lab 02. O fator \texttt{CLAF} foi mantido unitário em
+todas as seções e o arrasto viscoso entra somente pelo $C_{Dp}$ do cabeçalho,
+que recebe o $C_{D0}$ por áreas molhadas calculado pelo \texttt{designTool}
+no ponto de projeto.
+
+Três superfícies de controle foram definidas. O aileron ocupa 27\% da corda
+entre $\eta = 0{,}56$ e $\eta = 0{,}90$, fechando a fração de envergadura de
+34\% definida no Lab 02. O profundor e o leme têm charneira em 70\% da corda
+das respectivas empenagens. A incidência da empenagem horizontal é a variável
+de projeto \texttt{it} do AVL, usada nos ajustes de trimagem. A fuselagem, as
+naceles e o winglet não são modelados, como no exemplo
+\texttt{b737simple.avl} do material de aula.
+
+\subsection*{Verificação da geometria}
+
+A geometria construída pelo AVL foi conferida contra o \texttt{designTool}
+pelas áreas que o próprio programa integra sobre os painéis
+(Tabela~\ref{tab:avl_check}). O desvio de 0,55\% na asa corresponde à área
+real medida ao longo do diedro de $6^\circ$, enquanto a área projetada
+coincide exatamente com o trapézio do \texttt{designTool}. O mesmo vale para
+a empenagem horizontal com seu diedro de $2^\circ$.
+
+\begin{table}[H]
+\centering
+\caption{Verificação da geometria do AVL contra o \texttt{designTool}.}\label{tab:avl_check}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lccc}
+\toprule
+Grandeza & \texttt{designTool} & AVL & Desvio \\
+\midrule
+Área da asa [m$^2$] & 368,833 & 370,864 & $+0{,}55\%$ (diedro) \\
+Área da EH [m$^2$] & 64,546 & 64,584 & $+0{,}06\%$ (diedro) \\
+Área da EV [m$^2$] & 61,472 & 61,472 & exato \\
+Corda média geométrica da asa [m] & 6,1317 & 6,132 & exato \\
+Corda média geométrica da EH [m] & 3,7459 & 3,746 & exato \\
+\bottomrule
+\end{tabular}
+\end{table}
