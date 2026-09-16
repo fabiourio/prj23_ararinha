@@ -164,6 +164,34 @@ def fig_cp_mach(d):
 
 
 def fig_polar(d):
+    # A grade de 0,5 grau corta o canto do poco e parece falta de
+    # convergencia. Mistura a varredura fina de 0,1 grau
+    # (poco_de_arrasto_meio.csv, residuo verificado ponto a ponto) na faixa
+    # de +-1 grau do otimo, mantendo a grade grossa fora dela. Ficam de fora
+    # os dois pontos que nao convergiram nem com recuo de CFL
+    # (d_alpha = -0,1 e +0,9 -- ver poco_confirmacao.py).
+    fino = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        'resultados', 'poco_de_arrasto_meio.csv')
+    if 'otimizado' in d and os.path.isfile(fino):
+        A0 = 2.389316                      # alpha do otimo [graus]
+        alt, acl, acd = [], [], []
+        with open(fino, encoding='utf-8') as fid:
+            for lin in csv.DictReader(fid):
+                da = float(lin['d_alpha_deg'])
+                if abs(da + 0.1) < 1e-9 or abs(da - 0.9) < 1e-9:
+                    continue
+                alt.append(A0 + da)
+                acl.append(float(lin['CL']))
+                acd.append(float(lin['CD']))
+        p = d['otimizado']
+        longe = np.abs(p['alpha_deg'] - A0) > 1.05
+        d = dict(d)
+        d['otimizado'] = {
+            'alpha_deg': np.concatenate([p['alpha_deg'][longe], alt]),
+            'cl': np.concatenate([p['cl'][longe], acl]),
+            'cd': np.concatenate([p['cd'][longe], acd]),
+        }
+
     fig, ax = plt.subplots(figsize=(L80, L80 * 0.72))
     for chave, cor, marca, rot in (('RAE2822', C_PART, 's', 'RAE 2822'),
                                    ('otimizado', C_OPT, 'o', 'otimizado')):
