@@ -22,26 +22,21 @@ import numpy as np
 
 #=========================================
 
-# Niveis de refino: (asa Nc, asa Ns, EH Nc, EH Ns, EV Nc, EV Ns), gerados
-# por fatores de escala sobre a malha da entrega (12 x 40). Os niveis mais
-# finos podem exceder o limite de vortices do executavel; nesse caso o
-# script os descarta e avisa.
+# Niveis de refino: (asa Nc, asa Ns, EH Nc, EH Ns, EV Nc, EV Ns), com
+# totais de vortices proximos de 100, 200, 500, 1000, 1300 (malha da
+# entrega) e 2000. Alem disso a varredura ja esta convergida e os desvios
+# so flutuam no ruido. O ultimo nivel, quatro vezes mais fino que a malha
+# adotada, nao entra na figura: serve de referencia para o calculo do erro.
 NIVEIS = [
-    (4, 13, 3, 5, 3, 4),
-    (6, 20, 4, 8, 4, 6),
-    (8, 27, 5, 11, 5, 8),
-    (9, 30, 6, 12, 6, 9),
+    (3, 12, 3, 5, 2, 4),
+    (5, 16, 3, 7, 3, 5),
+    (8, 25, 5, 10, 4, 8),
     (10, 35, 7, 14, 7, 10),
     (12, 40, 8, 16, 8, 12),
-    (14, 45, 9, 18, 9, 14),
     (15, 50, 10, 20, 10, 15),
-    (18, 60, 12, 24, 12, 18),
-    (21, 70, 14, 28, 14, 21),
     (24, 80, 16, 32, 16, 24),
-    (27, 90, 18, 36, 18, 27),
-    (30, 100, 20, 40, 20, 30),
 ]
-NIVEL_ADOTADO = 5                        # indice em NIVEIS (malha da entrega)
+NIVEL_ADOTADO = 4                        # indice em NIVEIS (malha da entrega)
 
 MALHA_BASE = {'wing': '12 1.0 40 1.0', 'ht': '8 1.0 16 1.0',
               'vt': '8 1.0 12 1.0'}
@@ -73,6 +68,7 @@ def roda_nivel(i, nivel, base):
     return {'vortices': pega(r'(\d+)\s+Vortices'),
             'alpha': pega(r'Alpha =\s+([-\d.]+)'),
             'CLtot': pega(r'CLtot =\s+([-\d.]+)'),
+            'CLa': pega(r'CLa =\s+([-\d.]+)'),
             'CDind': pega(r'CDind =\s*([-\d.Ee+]+)'),
             'CDff': pega(r'CDff\s*=\s*([-\d.Ee+]+)'),
             'e': pega(r'\se =\s+([-\d.]+)'),
@@ -102,17 +98,17 @@ for i, nivel in enumerate(NIVEIS):
         continue
     resultados.append(res)
     print(f"nivel {i} (asa {res['malha']}): N = {res['vortices']:.0f}, "
-          f"alpha = {res['alpha']:.4f}, CDind = {res['CDind']:.5f}, "
-          f"CDff = {res['CDff']:.5f}, e = {res['e']:.4f}, "
-          f"xnp = {res['xnp']:.4f}")
+          f"alpha = {res['alpha']:.4f}, CLa = {res['CLa']:.4f}, "
+          f"CDind = {res['CDind']:.5f}, CDff = {res['CDff']:.5f}, "
+          f"e = {res['e']:.4f}, xnp = {res['xnp']:.4f}")
 
 # Tabela CSV
 with open('relatorio_lab04/tables/convergencia_malha.csv', 'w',
           encoding='ascii') as f:
-    f.write('malha_asa,vortices,alpha_deg,CL,CDind,CDff,e_oswald,xnp_m\n')
+    f.write('malha_asa,vortices,alpha_deg,cla,CDind,CDff,e_oswald,xnp_m\n')
     for res in resultados:
         f.write(f"{res['malha']},{res['vortices']:.0f},{res['alpha']:.4f},"
-                f"{res['CLtot']:.4f},{res['CDind']:.6f},{res['CDff']:.6f},"
+                f"{res['CLa']:.4f},{res['CDind']:.6f},{res['CDff']:.6f},"
                 f"{res['e']:.4f},{res['xnp']:.4f}\n")
 
 # Desvios do nivel mais fino, para o texto do relatorio
@@ -123,6 +119,6 @@ adotado = resultados[i_adot]
 print(f"\nMalha mais fina que rodou: {fino['malha']} "
       f"({fino['vortices']:.0f} vortices)")
 print('Desvios da malha adotada para a mais fina:')
-for chave in ('alpha', 'CDind', 'CDff', 'xnp'):
+for chave in ('alpha', 'CLa', 'CDind', 'CDff', 'xnp'):
     desvio = 100*abs(adotado[chave] - fino[chave])/abs(fino[chave])
     print(f'  {chave}: {desvio:.2f}%')

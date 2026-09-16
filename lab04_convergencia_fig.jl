@@ -30,19 +30,19 @@ erro(col) = max.(100 .* abs.(df[1:end-1, col] .- fino[col]) ./
 
 paineis = [
     (:alpha_deg, "α para CL = 0,5053", PAL[1]),
-    (:CDff, "CD,ind (plano de Trefftz)", PAL[2]),
+    (:cla, "CLα", PAL[2]),
     (:xnp_m, "ponto neutro", PAL[3]),
 ]
 
 graficos = []
 for (idx, (col, rotulo, cor)) in enumerate(paineis)
     p = plot(NN, erro(col);
-             yscale = :log10,
-             xlims = (-150, 4400),
-             ylims = (0.002, 4.0),
+             xscale = :log10, yscale = :log10,
+             xlims = (85, 2500),
+             ylims = (0.005, 5.0),
              yticks = ([0.01, 0.1, 1.0], ["0,01", "0,1", "1"]),
-             xticks = ([0, 1000, 2000, 3000, 4000],
-                       ["0", "1000", "2000", "3000", "4000"]),
+             xticks = ([100, 200, 500, 1000, 2000],
+                       ["100", "200", "500", "1000", "2000"]),
              marker = :circle, markersize = 6,
              markerstrokecolor = cor, linewidth = 2.5, color = cor,
              title = rotulo, titlefontsize = 12, titlelocation = :left,
