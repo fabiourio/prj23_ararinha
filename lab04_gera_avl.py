@@ -11,6 +11,12 @@ Produz em avl/:
     necessarios para analise de modos (comando mode), nao para o roteiro.
 
 Escolhas de modelagem (nao vem do designTool):
+  - arrasto viscoso apenas pelo CDp do cabecalho, que recebe o CD0 por
+    areas molhadas do designTool (orientacao do professor). Sem CDCL por
+    secao: o CD0 ja cobre o arrasto parasita da asa, e o metodo da secao
+    critica e as polares do roteiro nao dependem dele;
+  - CLAF = 1,0 em todas as secoes por enquanto (sem a correcao de
+    espessura 1 + 0,77 t/c do manual do AVL);
   - fuselagem nao modelada (VLM classico, como o b737simple.avl da aula);
   - asa com secoes nas estacoes do Lab 03: eta 0,1011 (raiz), 0,398 (meio)
     e 0,90 (ponta), com o perfil da raiz estendido ate o plano de simetria
@@ -143,8 +149,7 @@ vt_root = np.array([geom['xr_v'], 0.0, inputs['zr_v']])
 vt_tip = np.array([geom['xt_v'], 0.0, geom['zt_v']])
 cr_v, ct_v = geom['cr_v'], geom['ct_v']
 
-
-def secao_asa(eta, afile, extras=()):
+def secao_asa(eta, estacao, extras=()):
     '''Bloco SECTION da asa na estacao adimensional eta.'''
     le = wing_root + eta*(wing_tip - wing_root)
     c = cr_w + eta*(ct_w - cr_w)
@@ -152,7 +157,9 @@ def secao_asa(eta, afile, extras=()):
               '#Xle      Yle      Zle      Chord    Ainc',
               f'{le[0]:.4f}  {le[1]:.4f}  {le[2]:.4f}  {c:.4f}  0.0000',
               'AFILE',
-              f'aerofolios/{afile}']
+              f'aerofolios/{estacao}.dat',
+              'CLAF',
+              '1.0000']
     linhas += list(extras)
     return '\n'.join(linhas)
 
@@ -165,7 +172,9 @@ def secao_emp(root, tip, cr, ct, frac, extras=()):
               '#Xle      Yle      Zle      Chord    Ainc',
               f'{le[0]:.4f}  {le[1]:.4f}  {le[2]:.4f}  {c:.4f}  0.0000',
               'NACA',
-              '0010']
+              '0010',
+              'CLAF',
+              '1.0000']
     linhas += list(extras)
     return '\n'.join(linhas)
 
@@ -207,12 +216,12 @@ YDUPLICATE
 0.0
 ANGLE
 0.0''')
-    partes.append(secao_asa(0.0, 'raiz.dat'))
-    partes.append(secao_asa(0.1011, 'raiz.dat'))
-    partes.append(secao_asa(0.398, 'meio.dat'))
-    partes.append(secao_asa(0.56, 'meio.dat', AILERON))
-    partes.append(secao_asa(0.90, 'ponta.dat', AILERON))
-    partes.append(secao_asa(1.0, 'ponta.dat'))
+    partes.append(secao_asa(0.0, 'raiz'))
+    partes.append(secao_asa(0.1011, 'raiz'))
+    partes.append(secao_asa(0.398, 'meio'))
+    partes.append(secao_asa(0.56, 'meio', AILERON))
+    partes.append(secao_asa(0.90, 'ponta', AILERON))
+    partes.append(secao_asa(1.0, 'ponta'))
     partes.append('''#----------------------------------------------------------------
 SURFACE
 Horizontal tail
