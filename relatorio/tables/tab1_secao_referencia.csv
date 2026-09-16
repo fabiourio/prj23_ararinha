@@ -1,0 +1,20 @@
+parametro,valor,unidade,descricao
+h,35000,ft,altitude do ponto de projeto
+M_inf,0.85,-,Mach do ponto de projeto
+W,229669,kgf,peso da aeronave no ponto de projeto
+S_ref,368.833,m2,area de referencia da aeronave
+rho_inf,0.38046,kg/m3,densidade (ISA)
+a_inf,296.587,m/s,velocidade do som (ISA)
+mu_inf,1.4451e-05,Pa.s,viscosidade (Sutherland)
+V_inf,252.1,m/s,velocidade de voo
+q_inf,12089.7,Pa,pressao dinamica
+CL,0.5053,-,coeficiente de sustentacao da aeronave
+sweep_c2,32.158,graus,enflechamento a 50% da corda
+M_n,0.7196,-,Mach normal ao enflechamento
+eta,0.398,-,posicao da estacao MAC
+c_ref,6.899,m,corda da secao de referencia (MAC)
+c_n,5.841,m,corda no plano normal
+cl_ref,0.7319,-,cl da secao no plano normal
+Re_ref,32820000.0,-,Reynolds da secao de referencia
+tc_ref,0.1772,-,espessura relativa base
+Re_decolagem,42300000.0,-,Reynolds na decolagem (item 8)
