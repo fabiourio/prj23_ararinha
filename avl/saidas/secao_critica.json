@@ -1,0 +1,30 @@
+{
+  "fwd_livre": {
+    "alpha_max_deg": 10.977,
+    "CLmax": 0.8896,
+    "delta_e_deg": 0.0,
+    "eta_critica": 0.888,
+    "margem_residual": 0.00061
+  },
+  "fwd_trim": {
+    "alpha_max_deg": 11.013,
+    "CLmax": 0.8288,
+    "delta_e_deg": -10.656,
+    "eta_critica": 0.888,
+    "margem_residual": 0.00061
+  },
+  "aft_livre": {
+    "alpha_max_deg": 10.961,
+    "CLmax": 0.9156,
+    "delta_e_deg": 0.0,
+    "eta_critica": 0.888,
+    "margem_residual": 0.00061
+  },
+  "aft_trim": {
+    "alpha_max_deg": 10.983,
+    "CLmax": 0.8782,
+    "delta_e_deg": -6.592,
+    "eta_critica": 0.888,
+    "margem_residual": 0.00061
+  }
+}

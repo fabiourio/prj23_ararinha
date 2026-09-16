@@ -1,20 +1,16 @@
 \newpage
 \section{Método da seção crítica}
 
-% Item 4 do roteiro: CLmax de asa limpa em baixa velocidade (mn 0.2) para
-% cada CG, com e sem trimagem. Varrer alpha ate o cl_norm de alguma secao
-% da asa cruzar o clmax de perfil. Salvar fs.txt de cada caso em avl/saidas/
-% e gerar os graficos cl x y com as curvas limite de clmax.
-% PREENCHER apos as rodadas.
-
 O $C_{L\mathrm{max}}$ de asa limpa em baixa velocidade foi determinado pelo
-método da seção crítica em $M = 0{,}2$. Para cada posição de CG, com e sem a
-restrição de trimagem, o ângulo de ataque foi aumentado até que a
-distribuição de $c_{\ell,\mathrm{norm}}$ de alguma estação da asa alcançasse
-o limite de $c_{\ell\mathrm{max}}$ dos perfis obtido no Lab 03.
-
-% Graficos cl x y (um por caso ou um combinado), com as curvas de limite:
-% \begin{figure}[H] ... images/clxy_fwd_semtrim.png ... \end{figure}
+método da seção crítica em $M = 0{,}2$, com a incidência de empenagem de
+cruzeiro da seção anterior. Para cada posição de CG, com e sem a restrição
+de trimagem, o ângulo de ataque foi aumentado até a distribuição de
+coeficiente de sustentação local da asa, no plano normal ao enflechamento
+(\texttt{cl\_norm} do AVL), alcançar o limite de $c_{\ell\mathrm{max}}$ dos
+perfis otimizados. O limite usado é o do Lab 03 no plano normal, com a
+correção da calibração do XFoil: 1,774 na raiz, 1,799 no meio e 1,734 na
+ponta, interpolado linearmente entre as estações. Como o método é linear, o
+cruzamento foi resolvido por interpolação na varredura de $\alpha$.
 
 \begin{table}[H]
 \centering
@@ -24,13 +20,47 @@ o limite de $c_{\ell\mathrm{max}}$ dos perfis obtido no Lab 03.
 \toprule
 Caso & $\alpha_{\mathrm{max}}$ [graus] & $C_{L\mathrm{max}}$ & $\delta_e$ [graus] \\
 \midrule
-CG dianteiro sem trimagem & --- & --- & --- \\
-CG dianteiro com trimagem & --- & --- & --- \\
-CG traseiro sem trimagem & --- & --- & --- \\
-CG traseiro com trimagem & --- & --- & --- \\
+CG dianteiro sem trimagem & 10,98 & 0,890 & 0,0 \\
+CG dianteiro com trimagem & 11,01 & 0,829 & $-10{,}66$ \\
+CG traseiro sem trimagem & 10,96 & 0,916 & 0,0 \\
+CG traseiro com trimagem & 10,98 & 0,878 & $-6{,}59$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-% Discutir: onde comeca o estol (raiz ou ponta), se ha margem de aileron,
-% e se as caracteristicas de estol sao adequadas.
+\begin{figure}[H]
+\centering
+\caption{Distribuições de coeficiente de sustentação da asa na condição de
+estol, com a curva limite de $c_{\ell\mathrm{max}}$ dos perfis. A estrela
+marca a seção crítica.}\label{fig:clxy}
+\includegraphics[width=\linewidth]{images/05_secao_critica/clxy_estol.png}
+\end{figure}
+
+O ângulo de estol é praticamente o mesmo nos quatro casos, em torno de
+$11^\circ$, porque a distribuição de sustentação da asa quase não muda com
+o CG ou com a trimagem. O que muda é o $C_{L\mathrm{max}}$ da aeronave: a
+compensação exige força para baixo na empenagem, que subtrai sustentação
+total, e o efeito é maior no CG dianteiro, onde o braço de compensação é
+maior. Por isso o caso mais restritivo é o CG dianteiro com trimagem, com
+$C_{L\mathrm{max}} = 0{,}829$.
+
+\subsection*{Características de estol}
+
+A seção crítica fica em $\eta = 0{,}89$ em todos os casos, ou seja, o estol
+começa na ponta da asa, exatamente sobre a região do aileron, que ocupa de
+$\eta = 0{,}56$ a $\eta = 0{,}90$. Essa característica é inadequada: o
+estol de ponta compromete o comando lateral no momento em que ele é mais
+necessário e tende a gerar rolamento abrupto. A causa é a combinação do
+afilamento forte da asa ($\lambda = 0{,}24$), que concentra o carregamento
+na ponta, com a ausência de torção geométrica no modelo. A recomendação de
+projeto é introduzir torção negativa na ponta (washout) para levar o
+início do estol para dentro da envergadura, o que deve ser avaliado nos
+próximos ciclos.
+
+Os valores de $C_{L\mathrm{max}}$, entre 0,83 e 0,92, são inferiores à
+estimativa de asa limpa do \texttt{designTool}, de 1,33. Além do estol
+precoce da ponta, contribuem para a diferença o limite de
+$c_{\ell\mathrm{max}}$ ser aplicado no plano normal, o que equivale a um
+limite na direção da corrente cerca de 28\% menor, e o desconto da força de
+compensação da empenagem, efeitos que a correlação histórica do
+\texttt{designTool} não captura.

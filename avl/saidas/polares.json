@@ -1,0 +1,26 @@
+{
+  "fwd_livre": {
+    "CD_projeto": 0.02829,
+    "alpha_projeto_deg": 4.9071,
+    "delta_e_projeto_deg": 0.0,
+    "n_pontos": 30
+  },
+  "fwd_trim": {
+    "CD_projeto": 0.02829,
+    "alpha_projeto_deg": 4.9077,
+    "delta_e_projeto_deg": -0.0083,
+    "n_pontos": 29
+  },
+  "aft_livre": {
+    "CD_projeto": 0.0263,
+    "alpha_projeto_deg": 4.6006,
+    "delta_e_projeto_deg": 0.0,
+    "n_pontos": 31
+  },
+  "aft_trim": {
+    "CD_projeto": 0.02631,
+    "alpha_projeto_deg": 4.6008,
+    "delta_e_projeto_deg": -0.0031,
+    "n_pontos": 30
+  }
+}

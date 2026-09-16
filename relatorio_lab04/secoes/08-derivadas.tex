@@ -1,22 +1,18 @@
 \newpage
 \section{Derivadas de estabilidade}
 
-% Secao 3 do roteiro: derivadas para o CG traseiro (aft.avl), sem trimagem,
-% no ponto de projeto. Comandos ft, st e sb conforme as Tabelas 5 e 8 do
-% enunciado. Lembretes de conversao para o MVO:
-%   - derivadas de controle (delta_e, delta_a, delta_r, it) saem em 1/grau:
-%     multiplicar por 180/pi;
-%   - inverter o sinal de CYbeta, CYp, CYr, Cl_da, Cl_dr, Cn_da, Cn_dr;
-%   - derivadas latero-direcionais de momento saem do sb, nao do st;
-%   - inverter o sinal de zp.
-% PREENCHER as tabelas apos as rodadas.
-
-Os dados gerais da aeronave para a análise de estabilidade e controle,
-extraídos do \texttt{designTool} no ponto de projeto, estão na
-Tabela~\ref{tab:dados_gerais}. Os momentos de inércia foram calculados pela
+As derivadas foram levantadas para a configuração de CG traseiro
+(\texttt{aft.avl}) no ponto de projeto, sem restrição de trimagem: meta de
+sustentação $C_L = 0{,}5053$ em $M = 0{,}85$, profundor fixo em zero e
+incidência de empenagem de cruzeiro ($i_t = -5{,}90^\circ$), o que resulta
+em $\alpha = 4{,}60^\circ$. As derivadas longitudinais e de força lateral
+vêm do comando \texttt{st} (eixos de estabilidade), os momentos
+látero-direcionais do comando \texttt{sb} (eixos do corpo), e as derivadas
+de arrasto em relação a $q$, $i_t$ e $\delta_e$ de diferenças finitas
+centradas na mesma condição. Os dados gerais da aeronave estão na
+Tabela~\ref{tab:dados_gerais}, com os momentos de inércia calculados pela
 função auxiliar da disciplina com a fração de combustível de 44\% que
-reproduz o peso do ponto de projeto, com 100\% de carga paga, e são
-referidos ao CG desse carregamento.
+reproduz o peso do ponto de projeto e 100\% de carga paga.
 
 \begin{table}[H]
 \centering
@@ -36,8 +32,8 @@ $I_{zz}$ [kg$\cdot$m$^2$] & $5{,}578\times 10^{7}$ & \texttt{designTool} \\
 $I_{xz}$ [kg$\cdot$m$^2$] & $1{,}209\times 10^{6}$ & \texttt{designTool} \\
 $i_p$ [graus] & 0,0 & \texttt{designTool} \\
 $x_p$ [m] & 18,0 & \texttt{designTool} \\
-$z_p$ [m] & 3,0 & \texttt{designTool} (sinal invertido para o MVO) \\
-$T_{\mathrm{max}}$ [N] & 1.026.000 & \texttt{designTool} (513.000 por motor, 2 motores) \\
+$z_p$ [m] & 3,0 & \texttt{designTool}, sinal invertido para o MVO \\
+$T_{\mathrm{max}}$ [N] & 1.026.000 & \texttt{designTool}, 513.000 por motor \\
 $V$ [m/s] & 252,1 & ponto de projeto \\
 $h$ [m] & 10.668 & ponto de projeto \\
 \bottomrule
@@ -46,9 +42,10 @@ $h$ [m] & 10.668 & ponto de projeto \\
 
 \subsection*{Resultados em $\alpha = 0$ e ajuste da polar}
 
-% Tabela 6 do enunciado (CL0 e CM0 do comando ft em alpha = 0, it = 0,
-% d2 = 0) e Tabela 7 (ajuste CD = CD0 + CDa*alpha + CDa2*alpha^2 sobre os
-% dados da polar nao trimada do CG traseiro, item 5.b).
+O $C_{L0}$ e o $C_{M0}$ vêm de uma rodada com $\alpha = 0$, $i_t = 0$ e
+profundor nulo. O ajuste quadrático $C_D = C_{D0} + C_{D\alpha}\,\alpha +
+C_{D\alpha 2}\,\alpha^2$ foi feito sobre a polar não trimada do CG
+traseiro (item 5.b), com $\alpha$ em radianos.
 
 \begin{table}[H]
 \centering
@@ -58,17 +55,64 @@ $h$ [m] & 10.668 & ponto de projeto \\
 \toprule
 Parâmetro & Valor & Fonte \\
 \midrule
-$C_{L0}$ & --- & AVL \texttt{ft} \\
-$C_{M0}$ & --- & AVL \texttt{ft} \\
-$C_{D0}$ & --- & ajuste do item 5.b \\
-$C_{D\alpha}$ [1/rad] & --- & ajuste do item 5.b \\
-$C_{D\alpha 2}$ [1/rad$^2$] & --- & ajuste do item 5.b \\
+$C_{L0}$ & 0,0670 & AVL \texttt{ft} \\
+$C_{M0}$ & $-0{,}1346$ & AVL \texttt{ft} \\
+$C_{D0}$ & 0,01954 & ajuste do item 5.b \\
+$C_{D\alpha}$ [1/rad] & $-0{,}0424$ & ajuste do item 5.b \\
+$C_{D\alpha 2}$ [1/rad$^2$] & 1,5770 & ajuste do item 5.b \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection*{Tabela completa de derivadas}
 
-% Tabela 9 do enunciado, preenchida com ft, st e sb no ponto de projeto
-% (a c 0.5053, it da trimagem do aft.avl, d2 = 0). Manter as conversoes de
-% sinal e unidade indicadas nos comentarios do preambulo desta secao.
+A Tabela~\ref{tab:derivadas} apresenta os valores lidos do AVL e os
+valores finais para o MVO, já com as conversões do roteiro aplicadas: as
+derivadas de controle ($i_t$, $\delta_e$, $\delta_a$ e $\delta_r$) foram
+multiplicadas por $180/\pi$, e os sinais de $C_{Y\beta}$, $C_{Yp}$,
+$C_{Yr}$, $C_{\ell\delta a}$, $C_{\ell\delta r}$, $C_{n\delta a}$ e
+$C_{n\delta r}$ foram invertidos pela diferença de convenções.
+
+\begin{table}[H]
+\centering
+\caption{Derivadas de estabilidade para o CG traseiro no ponto de projeto.}\label{tab:derivadas}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{lccl}
+\toprule
+Parâmetro & Valor AVL & Valor MVO & Fonte e conversão \\
+\midrule
+$C_{L\alpha}$ [1/rad] & 6,4672 & 6,4672 & \texttt{st} \\
+$C_{Lq}$ [1/rad] & 10,8669 & 10,8669 & \texttt{st} \\
+$C_{Lit}$ & 0,013865 & 0,7944 & \texttt{st}, $\times 180/\pi$ \\
+$C_{L\delta e}$ & 0,007719 & 0,4423 & \texttt{st}, $\times 180/\pi$ \\
+$C_{Dq}$ [1/rad] & 0,1535 & 0,1535 & dif. finita \\
+$C_{Dit}$ & $-0{,}000170$ & $-0{,}0097$ & dif. finita, $\times 180/\pi$ \\
+$C_{D\delta e}$ & $-0{,}000090$ & $-0{,}0052$ & dif. finita, $\times 180/\pi$ \\
+$C_{M\alpha}$ [1/rad] & $-2{,}2551$ & $-2{,}2551$ & \texttt{st} \\
+$C_{Mq}$ [1/rad] & $-32{,}4502$ & $-32{,}4502$ & \texttt{st} \\
+$C_{Mit}$ & $-0{,}052910$ & $-3{,}0315$ & \texttt{st}, $\times 180/\pi$ \\
+$C_{M\delta e}$ & $-0{,}030696$ & $-1{,}7588$ & \texttt{st}, $\times 180/\pi$ \\
+$C_{Y\beta}$ [1/rad] & $-0{,}4029$ & 0,4029 & \texttt{st}, sinal invertido \\
+$C_{Yp}$ [1/rad] & 0,0251 & $-0{,}0251$ & \texttt{st}, sinal invertido \\
+$C_{Yr}$ [1/rad] & 0,4386 & $-0{,}4386$ & \texttt{st}, sinal invertido \\
+$C_{Y\delta r}$ & $-0{,}004035$ & $-0{,}2312$ & \texttt{st}, $\times 180/\pi$ \\
+$C_{\ell\beta}$ [1/rad] & $-0{,}2354$ & $-0{,}2354$ & \texttt{st} \\
+$C_{\ell p}$ [1/rad] & $-0{,}5602$ & $-0{,}5602$ & \texttt{sb} \\
+$C_{\ell r}$ [1/rad] & 0,1790 & 0,1790 & \texttt{sb} \\
+$C_{\ell\delta a}$ & $-0{,}004157$ & 0,2382 & \texttt{sb}, sinal e $\times 180/\pi$ \\
+$C_{\ell\delta r}$ & $-0{,}000505$ & 0,0289 & \texttt{sb}, sinal e $\times 180/\pi$ \\
+$C_{n\beta}$ [1/rad] & 0,1735 & 0,1735 & \texttt{st} \\
+$C_{np}$ [1/rad] & $-0{,}0905$ & $-0{,}0905$ & \texttt{sb} \\
+$C_{nr}$ [1/rad] & $-0{,}2037$ & $-0{,}2037$ & \texttt{sb} \\
+$C_{n\delta a}$ & $-0{,}000136$ & 0,0078 & \texttt{sb}, sinal e $\times 180/\pi$ \\
+$C_{n\delta r}$ & 0,002190 & $-0{,}1255$ & \texttt{sb}, sinal e $\times 180/\pi$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Duas verificações de sanidade sustentam a tabela. A derivada $C_{Lq}$
+obtida por diferença finita coincide com a do \texttt{st} em todas as
+casas apresentadas, validando o procedimento numérico usado para as
+derivadas de arrasto. E a relação $x_{np} = x_{cg} -
+c_{\mathrm{ref}}\,C_{M\alpha}/C_{L\alpha}$ reproduz o ponto neutro da
+Seção 7 com o $C_{M\alpha}$ e o $C_{L\alpha}$ da tabela.

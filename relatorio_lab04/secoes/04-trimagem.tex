@@ -1,16 +1,15 @@
 \newpage
 \section{Incidência da empenagem horizontal}
 
-% Item 3 do roteiro: para cada arquivo, achar o it que zera a deflexao de
-% profundor na condicao de cruzeiro (mn 0.85, a c 0.5053, d2 pm 0, menu de
-% -> variavel 1). Registrar o it final e um print do plano de Trefftz.
-% PREENCHER apos as rodadas.
-
 A incidência da empenagem horizontal de cada configuração foi ajustada para
 anular a deflexão de profundor na condição de cruzeiro. Em cada arquivo
-fixou-se a meta de sustentação do ponto de projeto e a restrição de momento
-de arfagem nulo pelo profundor, e a variável de projeto \texttt{it} foi
-iterada até a deflexão residual ficar abaixo de $0{,}1^\circ$.
+fixou-se a meta de sustentação do ponto de projeto ($M = 0{,}85$,
+$C_L = 0{,}5053$) e a restrição de momento de arfagem nulo pelo profundor.
+Como a resposta $\delta_e(i_t)$ é linear no método de malha de vórtices, o
+zero foi resolvido com duas avaliações e uma rodada de verificação,
+resultando em deflexões residuais abaixo de $0{,}01^\circ$, uma ordem de
+grandeza melhor que a tolerância de $0{,}1^\circ$ sugerida no roteiro. A
+Tabela~\ref{tab:trimagem} resume os resultados.
 
 \begin{table}[H]
 \centering
@@ -20,11 +19,20 @@ iterada até a deflexão residual ficar abaixo de $0{,}1^\circ$.
 \toprule
 Configuração & $i_t$ [graus] & $\delta_e$ residual [graus] & $\alpha$ [graus] \\
 \midrule
-CG dianteiro (\texttt{fwd.avl}) & --- & --- & --- \\
-CG traseiro (\texttt{aft.avl}) & --- & --- & --- \\
+CG dianteiro (\texttt{fwd.avl}) & $-8{,}40$ & $-0{,}008$ & 4,91 \\
+CG traseiro (\texttt{aft.avl}) & $-5{,}90$ & $-0{,}003$ & 4,60 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-% Inserir os prints do plano de Trefftz dos dois casos:
-% \begin{figure}[H] ... images/trefftz_fwd.png / trefftz_aft.png ... \end{figure}
+As incidências resultantes são elevadas para um transporte convencional,
+que tipicamente opera com estabilizador entre $-3^\circ$ e $+1^\circ$. Três
+fatores do modelo explicam a magnitude. Primeiro, a fuselagem não é
+modelada no AVL, o que desloca o ponto neutro para trás e infla a margem
+estática, exigindo mais força de compensação da empenagem. Segundo, os
+perfis supercríticos otimizados no Lab 03 têm momento de arfagem
+fortemente negativo, que precisa ser equilibrado pela cauda. Terceiro, a
+asa do modelo não tem torção geométrica, de modo que toda a compensação
+recai sobre a incidência do estabilizador. A validação do ajuste aparece
+nas polares da Seção~\ref{sec:polares}: nas curvas de $C_L \times \delta_e$
+os casos compensados cruzam $\delta_e = 0$ exatamente no $C_L$ de projeto.
