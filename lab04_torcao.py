@@ -41,7 +41,7 @@ import lab04_gera_avl as gera
 ETAS_VAR = [0.398, 0.56, 0.90, 1.0]
 ETA_SEGURA = 0.50                        # estol deve comecar antes daqui
 FOLGA_ALPHA = 0.5                        # [graus] de folga da regiao externa
-LIMITES = [(-6.0, 3.0)]*len(ETAS_VAR)
+LIMITES = [(-10.0, 10.0)]*len(ETAS_VAR)
 
 MACH_CRU = 0.85
 CL_PROJ = 0.5053
@@ -175,8 +175,9 @@ def objetivo(theta):
 print('Otimizando...')
 rng = np.random.default_rng(23)
 melhor = None
-partidas = [np.zeros(n), np.array([0.0, -0.5, -2.0, -3.0])]
-partidas += [rng.uniform(-4, 1, n) for _ in range(6)]
+partidas = [np.zeros(n), np.array([0.0, -0.5, -2.0, -3.0]),
+            np.array([2.0, -5.0, -5.0, -6.0])]
+partidas += [rng.uniform(-8, 3, n) for _ in range(8)]
 for x0 in partidas:
     r = minimize(objetivo, x0, method='SLSQP', bounds=LIMITES,
                  constraints=[{'type': 'ineq', 'fun': restricao}],

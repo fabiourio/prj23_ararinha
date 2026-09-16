@@ -4,8 +4,8 @@
 As derivadas foram levantadas para a configuração de CG traseiro
 (\texttt{aft.avl}) no ponto de projeto, sem restrição de trimagem: meta de
 sustentação $C_L = 0{,}5053$ em $M = 0{,}85$, profundor fixo em zero e
-incidência de empenagem de cruzeiro ($i_t = -3{,}56^\circ$), o que resulta
-em $\alpha = 5{,}40^\circ$. As derivadas longitudinais e de força lateral
+incidência de empenagem de cruzeiro ($i_t = -3{,}54^\circ$), o que resulta
+em $\alpha = 5{,}43^\circ$. As derivadas longitudinais e de força lateral
 vêm do comando \texttt{st} (eixos de estabilidade), os momentos
 látero-direcionais do comando \texttt{sb} (eixos do corpo), e as derivadas
 de arrasto em relação a $q$, $i_t$ e $\delta_e$ de diferenças finitas
@@ -56,11 +56,11 @@ trimada do CG traseiro (item 5.b), com $\alpha$ em radianos.
 \toprule
 Parâmetro & Valor & Fonte \\
 \midrule
-$C_{L0}$ & $-0{,}0569$ & AVL \texttt{ft} \\
-$C_{M0}$ & 0,0214 & AVL \texttt{ft} \\
-$C_{D0}$ & 0,01831 & ajuste do item 5.b \\
-$C_{D\alpha}$ [1/rad] & $-0{,}0674$ & ajuste do item 5.b \\
-$C_{D\alpha 2}$ [1/rad$^2$] & 1,5752 & ajuste do item 5.b \\
+$C_{L0}$ & $-0{,}0612$ & AVL \texttt{ft} \\
+$C_{M0}$ & 0,0234 & AVL \texttt{ft} \\
+$C_{D0}$ & 0,01833 & ajuste do item 5.b \\
+$C_{D\alpha}$ [1/rad] & $-0{,}0693$ & ajuste do item 5.b \\
+$C_{D\alpha 2}$ [1/rad$^2$] & 1,5755 & ajuste do item 5.b \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -82,31 +82,31 @@ $C_{n\delta r}$ foram invertidos pela diferença de convenções.
 \toprule
 Parâmetro & Valor AVL & Valor MVO & Fonte e conversão \\
 \midrule
-$C_{L\alpha}$ [1/rad] & 6,4754 & 6,4754 & \texttt{st} \\
-$C_{Lq}$ [1/rad] & 10,9194 & 10,9194 & \texttt{st} \\
+$C_{L\alpha}$ [1/rad] & 6,4758 & 6,4758 & \texttt{st} \\
+$C_{Lq}$ [1/rad] & 10,9211 & 10,9211 & \texttt{st} \\
 $C_{Lit}$ & 0,013811 & 0,7913 & \texttt{st}, $\times 180/\pi$ \\
 $C_{L\delta e}$ & 0,007676 & 0,4398 & \texttt{st}, $\times 180/\pi$ \\
-$C_{Dq}$ [1/rad] & 0,2740 & 0,2740 & dif. finita \\
+$C_{Dq}$ [1/rad] & 0,2753 & 0,2753 & dif. finita \\
 $C_{Dit}$ & 0,000430 & 0,0246 & dif. finita, $\times 180/\pi$ \\
-$C_{D\delta e}$ & 0,000235 & 0,0135 & dif. finita, $\times 180/\pi$ \\
-$C_{M\alpha}$ [1/rad] & $-2{,}2520$ & $-2{,}2520$ & \texttt{st} \\
-$C_{Mq}$ [1/rad] & $-32{,}3506$ & $-32{,}3506$ & \texttt{st} \\
+$C_{D\delta e}$ & 0,000240 & 0,0138 & dif. finita, $\times 180/\pi$ \\
+$C_{M\alpha}$ [1/rad] & $-2{,}2524$ & $-2{,}2524$ & \texttt{st} \\
+$C_{Mq}$ [1/rad] & $-32{,}3544$ & $-32{,}3544$ & \texttt{st} \\
 $C_{Mit}$ & $-0{,}052717$ & $-3{,}0205$ & \texttt{st}, $\times 180/\pi$ \\
-$C_{M\delta e}$ & $-0{,}030537$ & $-1{,}7496$ & \texttt{st}, $\times 180/\pi$ \\
-$C_{Y\beta}$ [1/rad] & $-0{,}3996$ & 0,3996 & \texttt{st}, sinal invertido \\
-$C_{Yp}$ [1/rad] & 0,0436 & $-0{,}0436$ & \texttt{st}, sinal invertido \\
-$C_{Yr}$ [1/rad] & 0,4273 & $-0{,}4273$ & \texttt{st}, sinal invertido \\
-$C_{Y\delta r}$ & $-0{,}004033$ & $-0{,}2311$ & \texttt{st}, $\times 180/\pi$ \\
-$C_{\ell\beta}$ [1/rad] & $-0{,}1981$ & $-0{,}1981$ & \texttt{st} \\
+$C_{M\delta e}$ & $-0{,}030536$ & $-1{,}7496$ & \texttt{st}, $\times 180/\pi$ \\
+$C_{Y\beta}$ [1/rad] & $-0{,}3994$ & 0,3994 & \texttt{st}, sinal invertido \\
+$C_{Yp}$ [1/rad] & 0,0446 & $-0{,}0446$ & \texttt{st}, sinal invertido \\
+$C_{Yr}$ [1/rad] & 0,4270 & $-0{,}4270$ & \texttt{st}, sinal invertido \\
+$C_{Y\delta r}$ & $-0{,}004031$ & $-0{,}2310$ & \texttt{st}, $\times 180/\pi$ \\
+$C_{\ell\beta}$ [1/rad] & $-0{,}1972$ & $-0{,}1972$ & \texttt{st} \\
 $C_{\ell p}$ [1/rad] & $-0{,}5609$ & $-0{,}5609$ & \texttt{sb} \\
-$C_{\ell r}$ [1/rad] & 0,1087 & 0,1087 & \texttt{sb} \\
-$C_{\ell\delta a}$ & $-0{,}004190$ & 0,2401 & \texttt{sb}, sinal e $\times 180/\pi$ \\
+$C_{\ell r}$ [1/rad] & 0,1072 & 0,1072 & \texttt{sb} \\
+$C_{\ell\delta a}$ & $-0{,}004189$ & 0,2400 & \texttt{sb}, sinal e $\times 180/\pi$ \\
 $C_{\ell\delta r}$ & $-0{,}000503$ & 0,0288 & \texttt{sb}, sinal e $\times 180/\pi$ \\
 $C_{n\beta}$ [1/rad] & 0,1753 & 0,1753 & \texttt{st} \\
-$C_{np}$ [1/rad] & $-0{,}0895$ & $-0{,}0895$ & \texttt{sb} \\
-$C_{nr}$ [1/rad] & $-0{,}2066$ & $-0{,}2066$ & \texttt{sb} \\
-$C_{n\delta a}$ & $-0{,}000473$ & 0,0271 & \texttt{sb}, sinal e $\times 180/\pi$ \\
-$C_{n\delta r}$ & 0,002188 & $-0{,}1254$ & \texttt{sb}, sinal e $\times 180/\pi$ \\
+$C_{np}$ [1/rad] & $-0{,}0899$ & $-0{,}0899$ & \texttt{sb} \\
+$C_{nr}$ [1/rad] & $-0{,}2067$ & $-0{,}2067$ & \texttt{sb} \\
+$C_{n\delta a}$ & $-0{,}000477$ & 0,0273 & \texttt{sb}, sinal e $\times 180/\pi$ \\
+$C_{n\delta r}$ & 0,002186 & $-0{,}1252$ & \texttt{sb}, sinal e $\times 180/\pi$ \\
 \bottomrule
 \end{tabular}
 \end{table}

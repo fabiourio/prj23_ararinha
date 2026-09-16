@@ -13,8 +13,8 @@ da asa por otimização com restrição. O problema formulado foi
 \end{equation*}
 
 em que $\theta$ reúne as torções das estações $\eta = 0{,}398$, 0,56, 0,90
-e 1,0, com a raiz fixa em zero como referência e limites de $-6^\circ$ a
-$+3^\circ$. A função objetivo é o arrasto induzido no plano de Trefftz da
+e 1,0, com a raiz fixa em zero como referência e limites folgados de
+$\pm 10^\circ$. A função objetivo é o arrasto induzido no plano de Trefftz da
 aeronave trimada no ponto de projeto ($M = 0{,}85$, $C_L = 0{,}5053$,
 arfagem compensada pelo profundor). A restrição exige que a seção crítica
 do estol em $M = 0{,}2$ fique na metade interna da asa, antes do aileron,
@@ -37,12 +37,12 @@ verificado com rodadas adicionais do AVL fora dos modelos.
 \toprule
 Estação $\eta$ & Torção [graus] & Grandeza & Sem torção & Com torção \\
 \midrule
-0,000 & 0,00 & $C_{D,\mathrm{ff}}$ em cruzeiro & 0,01027 & 0,00957 \\
-0,101 & 0,00 & $C_D$ no ponto de projeto (CG diant.) & 0,02829 & 0,02655 \\
-0,398 & $+2{,}03$ & $C_{L\mathrm{max}}$ (CG diant.\ trimado) & 0,829 & 1,036 \\
-0,560 & $-4{,}86$ & Estação crítica do estol $\eta$ & 0,89 & 0,45 \\
-0,900 & $-5{,}19$ & $i_t$ de cruzeiro (CG diant.) [graus] & $-8{,}40$ & $-6{,}06$ \\
-1,000 & $-6{,}00$ & $\alpha$ de estol [graus] & 11,0 & 14,7 \\
+0,000 & 0,00 & $C_{D,\mathrm{ff}}$ em cruzeiro & 0,01027 & 0,00955 \\
+0,101 & 0,00 & $C_D$ no ponto de projeto (CG diant.) & 0,02829 & 0,02652 \\
+0,398 & $+1{,}94$ & $C_{L\mathrm{max}}$ (CG diant.\ trimado) & 0,829 & 1,036 \\
+0,560 & $-4{,}87$ & Estação crítica do estol $\eta$ & 0,89 & 0,45 \\
+0,900 & $-5{,}18$ & $i_t$ de cruzeiro (CG diant.) [graus] & $-8{,}40$ & $-6{,}05$ \\
+1,000 & $-7{,}48$ & $\alpha$ de estol [graus] & 11,0 & 14,8 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -56,17 +56,21 @@ asa ($\eta = 0{,}45$).}\label{fig:torcao}
 \end{figure}
 
 O resultado mais importante é que a torção não custou arrasto: o washout
-reduziu o arrasto induzido de cruzeiro em 6,8\%. A asa sem torção operava
+reduziu o arrasto induzido de cruzeiro em 7,0\%. A asa sem torção operava
 com a ponta sobrecarregada em relação à distribuição elíptica, de modo que
 descarregar a ponta atende ao mesmo tempo o estol e o arrasto. O leve
 acréscimo de incidência na estação de $\eta = 0{,}398$ recompõe a
 sustentação no meio da asa e aproxima o carregamento da forma elíptica. Em
-cadeia, o $C_D$ do ponto de projeto caiu 6,2\% no CG dianteiro e a
-incidência de trimagem aliviou $2{,}3^\circ$.
+cadeia, o $C_D$ do ponto de projeto caiu 6,3\% no CG dianteiro e a
+incidência de trimagem aliviou $2{,}4^\circ$.
 
-Dois pontos merecem registro. A torção da ponta parou no limite imposto de
-$-6^\circ$, com a restrição de estol ativa, o que indica que mais washout
-ainda seria usado se o limite fosse relaxado. E o gradiente de torção
-entre $\eta = 0{,}398$ e $\eta = 0{,}56$ é forte, cerca de $7^\circ$ num
-sexto da semi-envergadura, o que sugere refinar a parametrização com mais
-estações num próximo ciclo, quando a fabricação da asa for detalhada.
+Três pontos merecem registro. O ótimo é interior aos limites de
+$\pm 10^\circ$, com apenas a restrição de estol ativa: um estudo com
+batente mais apertado, de $-6^\circ$ na ponta, entregou resultado quase
+igual ($C_{D,\mathrm{ff}} = 0{,}00957$), então a solução é pouco sensível
+a esse limite. O total de washout entre a raiz e a ponta, de
+$7{,}5^\circ$, fica na faixa praticada por transportes a jato. E o
+gradiente de torção entre $\eta = 0{,}398$ e $\eta = 0{,}56$ é forte,
+cerca de $7^\circ$ num sexto da semi-envergadura, o que sugere refinar a
+parametrização com mais estações num próximo ciclo, quando a fabricação
+da asa for detalhada.
