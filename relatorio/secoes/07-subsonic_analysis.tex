@@ -4,8 +4,14 @@
 Passamos o NACA~1411 reescalado e o otimizado no Xfoil com o Reynolds
 da decolagem, $Re = 4{,}23\times 10^{7}$. Duzentos painéis, agrupamento
 no bordo de fuga $0{,}45$. Mach desprezado, como o roteiro autoriza.
-Em cinco NACA de Abbott o Xfoil superestima $c_{\ell,\max}$ em
-$0{,}24$. A Tabela~\ref{tab:subsonico} traz o valor cru e o corrigido.
+
+O Xfoil tende a superestimar o $c_{\ell,\max}$. Para quantificar esse
+desvio, rodamos no Xfoil cinco aerofólios NACA (0009, 0012, 2412, 4412
+e 23012) que possuem $c_{\ell,\max}$ medido em túnel de vento,
+publicado por Abbott e von Doenhoff. Na média, o Xfoil previu
+$c_{\ell,\max}$ $0{,}24$ acima do experimento. Esse viés foi descontado
+dos nossos resultados, e a Tabela~\ref{tab:subsonico} traz o valor cru
+e o corrigido.
 
 \begin{table}[H]
 \centering
