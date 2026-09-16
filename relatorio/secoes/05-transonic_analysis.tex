@@ -1,0 +1,78 @@
+\newpage
+\section{Análise transônica dos perfis}
+
+As Figuras~\ref{fig:geom_overlay} a~\ref{fig:mach_overlay} sobrepõem os dois
+aerofólios da Tabela~\ref{tab:airfoils_opt} na condição de projeto
+transônica ($M_n = 0{,}7196$, $c_\ell = 0{,}7319$): a geometria, a
+distribuição de $C_p$ e a de número de Mach ao longo da corda. Juntas, elas
+contam como o otimizador comprou uma redução de $82{,}6\%$ no arrasto sem
+ceder espessura nem sustentação.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/05_transonico/geometria.png}
+    \caption{Sobreposição das geometrias: NACA~1411 reescalado (partida) e
+    perfil otimizado. Mesma espessura máxima ($t/c = 0{,}1772$); o que muda
+    é onde ela fica e como o arqueamento se distribui.}\label{fig:geom_overlay}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/05_transonico/cp.png}
+    \caption{Distribuições de $C_p$ ao longo da corda na condição de
+    projeto. A partida exibe o colapso abrupto de $C_p$ em
+    $x/c \approx 0{,}55$ típico de um choque normal forte; o otimizado
+    troca esse degrau por um platô com recompressão
+    gradual.}\label{fig:cp_overlay}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{images/05_transonico/mach.png}
+    \caption{Distribuições de número de Mach local. A região acima da linha
+    sônica ($M = 1$) é onde mora o choque: a partida atinge
+    $M \approx 1{,}5$ antes de um choque único e forte; o otimizado limita
+    o platô supersônico a $M \approx 1{,}15$--$1{,}2$ e fecha com um choque
+    fraco em $x/c \approx 0{,}62$.}\label{fig:mach_overlay}
+\end{figure}
+
+A estratégia do otimizador se lê em três movimentos coordenados:
+
+\textbf{1. Enfraquecer o choque, não eliminá-lo.} O perfil de partida
+acelera o escoamento continuamente sobre o extradorso até
+$M \approx 1{,}5$ em $x/c \approx 0{,}52$ e paga a conta num único choque
+normal forte --- e a perda de pressão de estagnação através de um choque
+cresce com o cubo de $(M^2 - 1)$, de modo que choques fortes são
+desproporcionalmente caros. O otimizado inverte a lógica: um pico de sucção
+dianteiro ($M \approx 1{,}33$ em $x/c \approx 0{,}10$) seguido de
+recompressão \emph{quase isentrópica} ao longo de um platô em
+$M \approx 1{,}15$--$1{,}2$, fechando com um choque fraco partindo de
+$M \approx 1{,}18$. A região supersônica não encolheu --- ela continua
+cobrindo mais de metade da corda --- mas a intensidade com que ela termina
+despencou, e com ela o arrasto de onda.
+
+\textbf{2. Recuar a espessura e ``desarquear'' o nariz.} Na geometria
+(Figura~\ref{fig:geom_overlay} e Tabela~\ref{tab:airfoils_opt}), a posição
+da espessura máxima recua de $x/c = 0{,}296$ para $0{,}364$ e o arqueamento
+máximo troca de sinal: de $+0{,}0101$ em $x/c = 0{,}42$ para $-0{,}0152$ em
+$x/c = 0{,}25$ --- o perfil otimizado tem arqueamento \emph{negativo} na
+metade dianteira. Extradorso mais plano adiante significa menos
+sobre-velocidade para sustentar; é isso que segura o platô em
+$M \approx 1{,}2$ em vez de deixá-lo crescer até 1,5.
+
+\textbf{3. Recuperar a sustentação atrás (\emph{aft loading}).} Arqueamento
+dianteiro negativo custa sustentação, e a igualdade
+$c_\ell = c_{\ell,\mathrm{ref}}$ não permite perdê-la. O otimizador a
+recupera no quarto traseiro da corda: o intradorso côncavo (o coeficiente
+$A_{l4}$ empurrado até o batente $-0{,}05$) mantém pressão positiva embaixo
+enquanto o extradorso ainda sustenta sucção --- visível na
+Figura~\ref{fig:cp_overlay} como a área entre as curvas de $C_p$ após
+$x/c \approx 0{,}7$. Esse carregamento traseiro é a assinatura clássica dos
+perfis supercríticos, e seu preço é o aumento do momento picador ($c_m$ de
+$-0{,}068$ para $-0{,}097$), discutido na Seção~7.
+
+Em resumo: o otimizador redesenhou o NACA~1411 num perfil supercrítico ---
+teto plano supersônico, espessura recuada, carregamento traseiro --- que é
+exatamente a solução que a indústria consagrou para esse regime, obtida
+aqui apenas pela minimização de $c_d$ com as restrições da
+Seção~4.

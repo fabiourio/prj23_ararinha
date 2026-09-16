@@ -1,0 +1,82 @@
+\newpage
+\section{Ponto de projeto e seção de referência}
+
+O ponto de projeto escolhido para a análise e otimização da asa é a condição
+de cruzeiro da aeronave, visto que esta é a situação em que a aeronave ficará
+durante maior tempo dentro de sua missão típica, especificada pelos
+pré-requisitos. Que são: altitude de $h = 35\,000$ ft ($10\,668$ m) operando a
+um Mach de $M_\infty = 0{,}85$. Nesta condição, com os cálculos de gasto de
+combustível na missão, o peso médio considerado foi de $W = 229\,669{,}3$ kgf.
+
+Como seção de referência adota-se a estação da corda média aerodinâmica
+(MAC), em $\eta = 0{,}398$, com $c_{\mathrm{ref}} = 6{,}899$ m.
+
+\subsection*{Obtenção de $c_{\ell,\mathrm{ref}}$, $M_n$ e $Re_{\mathrm{ref}}$}
+
+Do modelo de atmosfera ISA, temos, para a dada altitude,
+$\rho_\infty = 0{,}38046 \ \mathrm{kg \cdot m^{-3}}$,
+$a_\infty = 296{,}587 \ \mathrm{m \cdot s^{-1}}$ e
+$\mu_\infty = 1{,}4451 \times 10^{-5} \ \mathrm{Pa \cdot s}$. Com isso:
+
+\begin{equation*}
+    C_L = \frac{W}{\tfrac{1}{2}\,\rho_\infty\,(M_\infty a_\infty)^2\,S_{\mathrm{ref}}}
+        = 0{,}5053.
+\end{equation*}
+
+O $C_L$ da aeronave, porém, não é o $c_\ell$ que a seção de referência
+precisa sustentar. Duas correções se aplicam. Primeiro, assumindo a
+distribuição de sustentação elíptica --- o alvo de projeto da asa ---, o
+coeficiente local na estação da MAC vale
+\begin{equation*}
+    c_\ell(\eta) = \frac{4\,C_L\,S_{\mathrm{ref}}}{\pi\,b\;c(\eta)}\sqrt{1-\eta^2}
+    \quad\Rightarrow\quad c_\ell(0{,}398) = 0{,}5246,
+\end{equation*}
+superior ao $C_L$ porque, na asa afilada ($\lambda = 0{,}24$), a corda cai
+mais depressa que a carga elíptica.
+
+Segundo, o perfil é projetado no plano \emph{normal} à linha de enflechamento
+--- é nesse plano que a onda de choque se forma. Pela teoria de asas
+enflechadas, com $\Lambda_{c/2} = 32{,}158^\circ$:
+\begin{equation*}
+    M_n = M_\infty \cos\Lambda_{c/2} = 0{,}7196,
+    \qquad
+    c_{\ell,\mathrm{ref}} = \frac{c_\ell}{\cos^2\Lambda_{c/2}} = 0{,}7319.
+\end{equation*}
+
+A corda nesse plano é $c_n = c_{\mathrm{ref}}\cos\Lambda_{c/2} = 5{,}841$ m e,
+com a velocidade normal $V_n = M_n\,a_\infty$, o Reynolds da seção fica
+\begin{equation*}
+    Re_{\mathrm{ref}} = \frac{\rho_\infty\,V_n\,c_n}{\mu_\infty}
+        = 3{,}28 \times 10^{7}.
+\end{equation*}
+
+A espessura relativa da asa na estação da MAC, definida no Lab 02, é de 15\%
+na direção da corrente; no plano normal,
+$(t/c)_{\mathrm{ref}} = 0{,}15/\cos\Lambda_{c/2} = 0{,}1772$, que é a
+espessura mínima imposta como restrição na otimização.
+
+\begin{table}[H]
+\centering
+\caption{Dados para a seção de referência.}\label{tab:ref_section}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lcl}
+\toprule
+Parâmetro & Valor & Descrição \
+\midrule
+$h$                     & 35.000 & Altitude do ponto de projeto [ft] \
+$M_\infty$              & 0,85 & Mach do ponto de projeto \
+$W$                     & 229.669,3 & Peso da aeronave no ponto de projeto [kgf] \
+$S_{\mathrm{ref}}$      & 368,833 & Área de referência da aeronave [m$^2$] \
+$\rho_\infty$           & 0,38046 & Densidade do ar no ponto de projeto [kg/m$^3$] \
+$a_\infty$              & 296,587 & Velocidade do som no ponto de projeto [m/s] \
+$C_L$                   & 0,5053 & Coeficiente de sustentação da aeronave \
+$\Lambda_{c/2}$         & 32,158 & Enflechamento a meia corda [graus] \
+$M_n$                   & 0,7196 & Mach normal ao enflechamento \
+$c_{\mathrm{ref}}$      & 6,899 & Corda da seção de referência (MAC) [m] \
+$c_n$                   & 5,841 & Corda no plano normal [m] \
+$c_{\ell,\mathrm{ref}}$ & 0,7319 & Coef.\ de sustentação de projeto da seção (plano normal) \
+$Re_{\mathrm{ref}}$     & $3{,}28\times 10^{7}$ & Reynolds da seção de referência \
+$(t/c)_{\mathrm{ref}}$  & 0,1772 & Espessura relativa mínima (plano normal) \
+\bottomrule
+\end{tabular}
+\end{table}
