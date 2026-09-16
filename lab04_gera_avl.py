@@ -40,6 +40,7 @@ Depois rode o AVL de dentro da pasta avl/ (os AFILE sao relativos a ela).
 '''
 
 # IMPORTS
+import json
 import os
 
 import numpy as np
@@ -117,11 +118,6 @@ def reamostra_dat(origem, destino, n_face=99):
             f.write(f'{xx:.7f} {yy:.7f}\n')
 
 
-for destino, origem in PERFIS.items():
-    reamostra_dat(os.path.join(ORIGEM_PERFIS, origem),
-                  os.path.join('avl/aerofolios', destino))
-    print(f'avl/aerofolios/{destino} reamostrado ({2*99 - 1} pontos)')
-
 #=========================================
 # GEOMETRIA DAS SUPERFICIES
 
@@ -139,13 +135,28 @@ vt_root = np.array([geom['xr_v'], 0.0, inputs['zr_v']])
 vt_tip = np.array([geom['xt_v'], 0.0, geom['zt_v']])
 cr_v, ct_v = geom['cr_v'], geom['ct_v']
 
-def secao_asa(eta, estacao, extras=()):
+# Torcao geometrica da asa [graus] por estacao eta. O arquivo
+# avl/saidas/torcao.json e escrito por lab04_torcao.py (otimizacao de
+# torcao); sem ele, a asa sai sem torcao.
+ETAS_ASA = (0.0, 0.1011, 0.398, 0.56, 0.90, 1.0)
+if os.path.exists('avl/saidas/torcao.json'):
+    with open('avl/saidas/torcao.json', encoding='ascii') as _f:
+        TORCOES = {float(k): v for k, v in
+                   json.load(_f)['torcoes'].items()}
+else:
+    TORCOES = {eta: 0.0 for eta in ETAS_ASA}
+
+
+def secao_asa(eta, estacao, extras=(), torcoes=None):
     '''Bloco SECTION da asa na estacao adimensional eta.'''
+    if torcoes is None:
+        torcoes = TORCOES
     le = wing_root + eta*(wing_tip - wing_root)
     c = cr_w + eta*(ct_w - cr_w)
+    ainc = torcoes.get(eta, 0.0)
     linhas = ['SECTION',
               '#Xle      Yle      Zle      Chord    Ainc',
-              f'{le[0]:.4f}  {le[1]:.4f}  {le[2]:.4f}  {c:.4f}  0.0000',
+              f'{le[0]:.4f}  {le[1]:.4f}  {le[2]:.4f}  {c:.4f}  {ainc:.4f}',
               'AFILE',
               f'aerofolios/{estacao}.dat',
               'CLAF',
@@ -183,7 +194,7 @@ RUDDER = ('CONTROL',
           'rudder   1.0   0.70    0. 0. 0.     0.0')
 
 
-def monta_avl(nome_cg, xref):
+def monta_avl(nome_cg, xref, torcoes=None):
     '''Monta o texto completo de um arquivo .avl para o CG dado.'''
     partes = []
     partes.append(f'''Ararinha
@@ -206,12 +217,12 @@ YDUPLICATE
 0.0
 ANGLE
 0.0''')
-    partes.append(secao_asa(0.0, 'raiz'))
-    partes.append(secao_asa(0.1011, 'raiz'))
-    partes.append(secao_asa(0.398, 'meio'))
-    partes.append(secao_asa(0.56, 'meio', AILERON))
-    partes.append(secao_asa(0.90, 'ponta', AILERON))
-    partes.append(secao_asa(1.0, 'ponta'))
+    partes.append(secao_asa(0.0, 'raiz', torcoes=torcoes))
+    partes.append(secao_asa(0.1011, 'raiz', torcoes=torcoes))
+    partes.append(secao_asa(0.398, 'meio', torcoes=torcoes))
+    partes.append(secao_asa(0.56, 'meio', AILERON, torcoes=torcoes))
+    partes.append(secao_asa(0.90, 'ponta', AILERON, torcoes=torcoes))
+    partes.append(secao_asa(1.0, 'ponta', torcoes=torcoes))
     partes.append('''#----------------------------------------------------------------
 SURFACE
 Horizontal tail
@@ -235,16 +246,37 @@ ANGLE
     return '\n\n'.join(partes) + '\n'
 
 
-# EXECUTION
-cgs = {'dianteiro': ('fwd', bal['xcg_fwd']),
+CGS = {'dianteiro': ('fwd', bal['xcg_fwd']),
        'traseiro': ('aft', bal['xcg_aft'])}
 
-for nome_cg, (prefixo, xref) in cgs.items():
-    with open(f'avl/{prefixo}.avl', 'w', encoding='ascii') as f:
-        f.write(monta_avl(nome_cg, xref))
-    print(f'avl/{prefixo}.avl gravado (Xref = {xref:.4f} m)')
 
-print(f'\nCDp (CD0 designTool) = {CD0:.5f}')
-print(f'CL de projeto = {CL:.4f} (meta dos comandos "a c" no AVL)')
-print('Controles: d1 = aileron, d2 = elevator, d3 = rudder; design 1 = it')
-print('Rode o AVL de dentro de avl/ para os AFILE serem encontrados.')
+def gera_variante(caminho, torcoes, cg='aft'):
+    '''Escreve uma variante do arquivo do AVL com as torcoes dadas, para
+    os estudos de otimizacao (caminho relativo a raiz do repo).'''
+    nome_cg, xref = [(n, x) for n, (p, x) in CGS.items() if p == cg][0]
+    with open(caminho, 'w', encoding='ascii') as f:
+        f.write(monta_avl(nome_cg, xref, torcoes=torcoes))
+
+
+# EXECUTION
+if __name__ == '__main__':
+    for destino, origem in PERFIS.items():
+        reamostra_dat(os.path.join(ORIGEM_PERFIS, origem),
+                      os.path.join('avl/aerofolios', destino))
+        print(f'avl/aerofolios/{destino} reamostrado ({2*99 - 1} pontos)')
+
+    for nome_cg, (prefixo, xref) in CGS.items():
+        with open(f'avl/{prefixo}.avl', 'w', encoding='ascii') as f:
+            f.write(monta_avl(nome_cg, xref))
+        print(f'avl/{prefixo}.avl gravado (Xref = {xref:.4f} m)')
+
+    if any(TORCOES.values()):
+        texto = ', '.join(f'{eta}: {TORCOES[eta]:+.3f}'
+                          for eta in ETAS_ASA)
+        print(f'torcoes aplicadas [graus]: {texto}')
+    else:
+        print('asa sem torcao (avl/saidas/torcao.json nao encontrado)')
+    print(f'\nCDp (CD0 designTool) = {CD0:.5f}')
+    print(f'CL de projeto = {CL:.4f} (meta dos comandos "a c" no AVL)')
+    print('Controles: d1 = aileron, d2 = elevator, d3 = rudder; design 1 = it')
+    print('Rode o AVL de dentro de avl/ para os AFILE serem encontrados.')

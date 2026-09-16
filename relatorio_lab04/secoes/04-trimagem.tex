@@ -9,7 +9,8 @@ Como a resposta $\delta_e(i_t)$ é linear no método de malha de vórtices, o
 zero foi resolvido com duas avaliações e uma rodada de verificação,
 resultando em deflexões residuais abaixo de $0{,}01^\circ$, uma ordem de
 grandeza melhor que a tolerância de $0{,}1^\circ$ sugerida no roteiro. A
-Tabela~\ref{tab:trimagem} resume os resultados.
+Tabela~\ref{tab:trimagem} resume os resultados para a asa final, com a
+torção otimizada da Seção 6.
 
 \begin{table}[H]
 \centering
@@ -19,20 +20,20 @@ Tabela~\ref{tab:trimagem} resume os resultados.
 \toprule
 Configuração & $i_t$ [graus] & $\delta_e$ residual [graus] & $\alpha$ [graus] \\
 \midrule
-CG dianteiro (\texttt{fwd.avl}) & $-8{,}40$ & $-0{,}008$ & 4,91 \\
-CG traseiro (\texttt{aft.avl}) & $-5{,}90$ & $-0{,}003$ & 4,60 \\
+CG dianteiro (\texttt{fwd.avl}) & $-6{,}06$ & $-0{,}003$ & 5,70 \\
+CG traseiro (\texttt{aft.avl}) & $-3{,}56$ & $-0{,}0004$ & 5,40 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-As incidências resultantes são elevadas para um transporte convencional,
-que tipicamente opera com estabilizador entre $-3^\circ$ e $+1^\circ$. Três
-fatores do modelo explicam a magnitude. Primeiro, a fuselagem não é
-modelada no AVL, o que desloca o ponto neutro para trás e infla a margem
-estática, exigindo mais força de compensação da empenagem. Segundo, os
-perfis supercríticos otimizados no Lab 03 têm momento de arfagem
-fortemente negativo, que precisa ser equilibrado pela cauda. Terceiro, a
-asa do modelo não tem torção geométrica, de modo que toda a compensação
-recai sobre a incidência do estabilizador. A validação do ajuste aparece
-nas polares da Seção~\ref{sec:polares}: nas curvas de $C_L \times \delta_e$
-os casos compensados cruzam $\delta_e = 0$ exatamente no $C_L$ de projeto.
+As incidências resultantes ainda são elevadas para um transporte
+convencional, que tipicamente opera com estabilizador entre $-3^\circ$ e
+$+1^\circ$, embora a torção da asa tenha aliviado cerca de $2{,}3^\circ$
+em relação à asa sem torção. Dois fatores do modelo explicam a magnitude
+restante. Primeiro, a fuselagem não é modelada no AVL, o que desloca o
+ponto neutro para trás e infla a margem estática, exigindo mais força de
+compensação da empenagem. Segundo, os perfis supercríticos otimizados no
+Lab 03 têm momento de arfagem fortemente negativo, que precisa ser
+equilibrado pela cauda. A validação do ajuste aparece nas polares da
+Seção~\ref{sec:polares}: nas curvas de $C_L \times \delta_e$ os casos
+compensados cruzam $\delta_e = 0$ exatamente no $C_L$ de projeto.

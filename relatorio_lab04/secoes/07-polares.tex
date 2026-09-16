@@ -24,10 +24,10 @@ ponto de projeto.}\label{fig:polar}
 \toprule
 Configuração & $C_D$ em $C_L = 0{,}5053$ & Desvio do \texttt{designTool} \\
 \midrule
-CG dianteiro sem deflexões & 0,02829 & $+17{,}5\%$ \\
-CG dianteiro compensado ($C_M = 0$) & 0,02829 & $+17{,}5\%$ \\
-CG traseiro sem deflexões & 0,02630 & $+9{,}3\%$ \\
-CG traseiro compensado ($C_M = 0$) & 0,02631 & $+9{,}3\%$ \\
+CG dianteiro sem deflexões & 0,02655 & $+10{,}3\%$ \\
+CG dianteiro compensado ($C_M = 0$) & 0,02655 & $+10{,}3\%$ \\
+CG traseiro sem deflexões & 0,02595 & $+7{,}8\%$ \\
+CG traseiro compensado ($C_M = 0$) & 0,02595 & $+7{,}8\%$ \\
 \texttt{designTool} (polar do Lab 02) & 0,02407 & referência \\
 \bottomrule
 \end{tabular}
@@ -37,11 +37,13 @@ No ponto de projeto os casos com e sem compensação coincidem, porque a
 incidência da empenagem foi ajustada justamente para zerar o profundor
 nessa condição. O arrasto do AVL fica acima do \texttt{designTool} nas
 duas posições de CG, e a diferença entre elas isola o arrasto de
-compensação: o CG dianteiro paga 20 pontos de arrasto ($\Delta C_D =
-0{,}0020$) a mais que o traseiro pela força para baixo adicional na
-empenagem. O restante do desvio vem do arrasto induzido do modelo, que
-inclui a contribuição da empenagem carregada, enquanto a polar do
-\texttt{designTool} assume o fator de Oswald da asa isolada.
+compensação: o CG dianteiro paga 6 pontos de arrasto ($\Delta C_D =
+0{,}0006$) a mais que o traseiro pela força para baixo adicional na
+empenagem. Antes da otimização de torção essa penalidade era de 20
+pontos, e a redução é um dos ganhos da Seção 6. O restante do desvio vem
+do arrasto induzido do modelo, que inclui a contribuição da empenagem
+carregada, enquanto a polar do \texttt{designTool} assume o fator de
+Oswald da asa isolada.
 
 \subsection*{Curvas de sustentação}
 
@@ -67,9 +69,9 @@ o ponto de projeto.}\label{fig:cl_de}
 \includegraphics[width=0.9\linewidth]{images/06_polares/cl_de.png}
 \end{figure}
 
-Nos casos compensados, o profundor varre de $-6{,}9^\circ$ no
+Nos casos compensados, o profundor varre de $-11{,}6^\circ$ no
 $C_{L\mathrm{max}}$ a $+20{,}7^\circ$ no $C_{L\mathrm{min}} = -0{,}5$ para
-o CG dianteiro, e de $-4{,}7^\circ$ a $+12{,}2^\circ$ para o traseiro,
+o CG dianteiro, e de $-7{,}7^\circ$ a $+12{,}2^\circ$ para o traseiro,
 cruzando o zero no ponto de projeto. O gradiente é mais forte no CG
 traseiro porque a margem estática menor exige menos momento por unidade de
 $C_L$, mas a autoridade por grau de profundor é a mesma. As deflexões
@@ -77,7 +79,4 @@ ficam dentro de batentes típicos de profundor ($\pm 25^\circ$), portanto
 em níveis adequados na faixa de voo útil, embora o extremo de
 $C_{L\mathrm{min}}$ no CG dianteiro já consuma boa parte do batente e o
 conjunto incidência mais deflexão trabalhe longe do neutro pelas razões
-discutidas na Seção 4. Em baixa velocidade a demanda cresce: no
-estol trimado do CG dianteiro o profundor chega a $-10{,}7^\circ$, valor
-ainda admissível, mas que reforça a recomendação de rever a margem
-estática quando a fuselagem for incorporada à análise.
+discutidas na Seção 4.
