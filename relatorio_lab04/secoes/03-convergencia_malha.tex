@@ -38,22 +38,27 @@ $24\times 80$ & 5.248 & 3,8700 & 0,00991 & 0,00923 & 0,8979 & 30,0776 \\
 
 \begin{figure}[H]
 \centering
-\caption{Convergência das três métricas com o refino da malha. A linha
-tracejada marca a malha adotada.}\label{fig:convergencia}
-\includegraphics[width=\linewidth]{images/03_convergencia/convergencia_malha.png}
+\caption{Desvio percentual de cada métrica em relação à malha mais fina
+($24\times 80$), em escala logarítmica. A linha tracejada marca a malha
+adotada.}\label{fig:convergencia}
+\includegraphics[width=0.85\linewidth]{images/03_convergencia/convergencia_malha.png}
 \end{figure}
 
-As três métricas assentam em platô bem antes da malha mais fina. O ângulo de
-ataque varia dentro de uma banda total de $0{,}015^\circ$ ao longo de todos
-os níveis, dispersão sem significado prático. O arrasto induzido do plano de
-Trefftz, que é a medida limpa do método, estabiliza em $C_{D,\mathrm{ff}} =
-0{,}0092$ já a partir do segundo nível e a malha adotada difere da mais fina
-em 0,01\%. A integração de campo próximo oscila numa banda de cerca de 2\%
-em torno desse valor, comportamento conhecido dessa forma de cálculo, e por
-isso a curva de Trefftz é a referência para julgar a convergência. O ponto
-neutro cresce de forma monotônica e satura depois de cerca de 1.700
-vórtices. A malha adotada difere da mais fina em 0,04\%, o que corresponde a
-3,5~cm ou 0,05\,\%MAC.
+A Figura~\ref{fig:convergencia} apresenta os desvios percentuais em relação
+à malha mais fina, forma que evidencia o platô melhor que as curvas
+absolutas, cujos valores ficam registrados na
+Tabela~\ref{tab:convergencia}. O arrasto induzido do plano de Trefftz, que é
+a medida limpa do método, parte de um desvio de 2,6\% na malha mais grossa e
+cai para 0,01\% na malha adotada. O ângulo de ataque varia dentro de uma
+banda total de $0{,}015^\circ$ em todos os níveis, dispersão sem significado
+prático, e o ponto neutro converge de forma monotônica, com a malha adotada
+a 0,04\% da mais fina, o que corresponde a 3,5~cm ou 0,05\,\%MAC. Da malha
+adotada em diante os desvios das três métricas permanecem abaixo de 0,15\% e
+deixam de cair de forma sistemática, o que caracteriza o piso de ruído do
+método. A integração de campo próximo do arrasto induzido, registrada na
+tabela, oscila numa banda de cerca de 2\% sem tendência com o refino,
+comportamento conhecido dessa forma de cálculo, e por isso a curva de
+Trefftz é a referência para julgar a convergência.
 
 A malha adotada nos arquivos da entrega, com $12\times 40$ painéis na asa e
 1.312 vórtices no total, foi portanto considerada convergida para os

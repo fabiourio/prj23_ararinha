@@ -121,41 +121,35 @@ with open('relatorio_lab04/tables/convergencia_malha.csv', 'w',
                 f"{res['CLtot']:.4f},{res['CDind']:.6f},{res['CDff']:.6f},"
                 f"{res['e']:.4f},{res['xnp']:.4f}\n")
 
-# Figura: tres paineis contra o numero de vortices. O painel central
-# compara o induzido de campo proximo (ruidoso) com o do plano de
-# Trefftz (liso), que e o que evidencia o plato.
+# Figura: desvio percentual de cada metrica em relacao a malha mais fina,
+# em escala log. Os valores brutos ficam na tabela; o desvio evidencia o
+# plato melhor que as curvas absolutas.
 NN = [res['vortices'] for res in resultados]
 i_adot = next(i for i, res in enumerate(resultados)
               if res['malha'] == malha_adotada)
-fig, eixos = plt.subplots(1, 3, figsize=(12, 3.6))
+fino = resultados[-1]
 
-for ax in eixos:
-    style_axes(ax)
-    ax.axvline(NN[i_adot], color=INK2, linewidth=0.8, linestyle=(0, (4, 3)))
-    ax.set_xlabel('numero de vortices', fontsize=9, color=INK2)
-
-eixos[0].plot(NN, [res['alpha'] for res in resultados], '-o',
-              color=PAL[0], linewidth=2, markersize=5)
-eixos[0].set_title(r'$\alpha$ para $C_L = 0{,}5053$  [graus]',
-                   fontsize=10, loc='left')
-eixos[0].annotate('malha adotada', xy=(NN[i_adot], 1.0),
-                  xycoords=('data', 'axes fraction'), fontsize=8,
-                  color=INK2, ha='left', va='top', xytext=(NN[i_adot]*1.1, 0.98),
-                  textcoords=('data', 'axes fraction'))
-
-eixos[1].plot(NN, [res['CDind'] for res in resultados], '-o',
-              color=PAL[0], linewidth=2, markersize=5,
-              label='campo proximo')
-eixos[1].plot(NN, [res['CDff'] for res in resultados], '-s',
-              color=PAL[1], linewidth=2, markersize=5,
-              label='plano de Trefftz')
-eixos[1].set_title(r'$C_{D,\mathrm{ind}}$', fontsize=10, loc='left')
-eixos[1].legend(fontsize=8, frameon=False, loc='center right')
-
-eixos[2].plot(NN, [res['xnp'] for res in resultados], '-o',
-              color=PAL[0], linewidth=2, markersize=5)
-eixos[2].set_title(r'$x_{np}$  [m]', fontsize=10, loc='left')
-
+fig, ax = plt.subplots(figsize=(8, 4.5))
+style_axes(ax)
+SERIES = [('alpha', r'$\alpha$', PAL[0], 'o'),
+          ('CDff', r'$C_{D,\mathrm{ind}}$ (Trefftz)', PAL[1], 's'),
+          ('xnp', r'$x_{np}$', PAL[2], '^')]
+for chave, rotulo, cor, marcador in SERIES:
+    erro = [100*abs(res[chave] - fino[chave])/abs(fino[chave])
+            for res in resultados[:-1]]
+    erro = np.maximum(erro, 1e-4)        # piso para a escala log
+    ax.plot(NN[:-1], erro, '-' + marcador, color=cor, linewidth=2,
+            markersize=6, label=rotulo)
+ax.set_yscale('log')
+ax.axvline(NN[i_adot], color=INK2, linewidth=0.8, linestyle=(0, (4, 3)))
+ax.annotate('malha adotada', xy=(NN[i_adot], 1.0),
+            xycoords=('data', 'axes fraction'), fontsize=8, color=INK2,
+            ha='left', va='top', xytext=(NN[i_adot]*1.06, 0.98),
+            textcoords=('data', 'axes fraction'))
+ax.set_xlabel('numero de vortices', fontsize=9, color=INK2)
+ax.set_ylabel(f'desvio da malha mais fina ({fino["malha"]})  [%]',
+              fontsize=9, color=INK2)
+ax.legend(fontsize=9, frameon=False, loc='upper right')
 fig.tight_layout()
 salvar(fig, 'relatorio_lab04/images/03_convergencia/convergencia_malha.png')
 
