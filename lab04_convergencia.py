@@ -6,9 +6,8 @@ fwd.avl e roda o AVL na condicao do ponto de projeto (M = 0,85 com meta
 de CL = 0,5053) em cada nivel. As metricas acompanhadas sao o alpha de
 equilibrio, o arrasto induzido, o fator de Oswald e o ponto neutro.
 
-Gera:
-  - relatorio_lab04/tables/convergencia_malha.csv
-  - relatorio_lab04/images/03_convergencia/convergencia_malha.png
+Gera relatorio_lab04/tables/convergencia_malha.csv. A figura do relatorio
+sai desse CSV pelo script Julia lab04_convergencia_fig.jl.
 
 Rodar da raiz do repo:  python lab04_convergencia.py
 (requer avl/fwd.avl atualizado; rode lab04_gera_avl.py antes se preciso)
@@ -18,13 +17,8 @@ Rodar da raiz do repo:  python lab04_convergencia.py
 import os
 import re
 import subprocess
-import sys
 
 import numpy as np
-
-sys.path.insert(0, os.path.join('otimizacao_aerofolio', 'campanha'))
-import matplotlib.pyplot as plt          # noqa: E402
-from estilo import PAL, INK2, style_axes, salvar  # noqa: E402
 
 #=========================================
 
@@ -121,40 +115,10 @@ with open('relatorio_lab04/tables/convergencia_malha.csv', 'w',
                 f"{res['CLtot']:.4f},{res['CDind']:.6f},{res['CDff']:.6f},"
                 f"{res['e']:.4f},{res['xnp']:.4f}\n")
 
-# Figura: desvio percentual de cada metrica em relacao a malha mais fina,
-# em escala log. Os valores brutos ficam na tabela; o desvio evidencia o
-# plato melhor que as curvas absolutas.
-NN = [res['vortices'] for res in resultados]
-i_adot = next(i for i, res in enumerate(resultados)
-              if res['malha'] == malha_adotada)
-fino = resultados[-1]
-
-fig, ax = plt.subplots(figsize=(8, 4.5))
-style_axes(ax)
-SERIES = [('alpha', r'$\alpha$', PAL[0], 'o'),
-          ('CDff', r'$C_{D,\mathrm{ind}}$ (Trefftz)', PAL[1], 's'),
-          ('xnp', r'$x_{np}$', PAL[2], '^')]
-for chave, rotulo, cor, marcador in SERIES:
-    erro = [100*abs(res[chave] - fino[chave])/abs(fino[chave])
-            for res in resultados[:-1]]
-    erro = np.maximum(erro, 1e-4)        # piso para a escala log
-    ax.plot(NN[:-1], erro, '-' + marcador, color=cor, linewidth=2,
-            markersize=6, label=rotulo)
-ax.set_yscale('log')
-ax.axvline(NN[i_adot], color=INK2, linewidth=0.8, linestyle=(0, (4, 3)))
-ax.annotate('malha adotada', xy=(NN[i_adot], 1.0),
-            xycoords=('data', 'axes fraction'), fontsize=8, color=INK2,
-            ha='left', va='top', xytext=(NN[i_adot]*1.06, 0.98),
-            textcoords=('data', 'axes fraction'))
-ax.set_xlabel('numero de vortices', fontsize=9, color=INK2)
-ax.set_ylabel(f'desvio da malha mais fina ({fino["malha"]})  [%]',
-              fontsize=9, color=INK2)
-ax.legend(fontsize=9, frameon=False, loc='upper right')
-fig.tight_layout()
-salvar(fig, 'relatorio_lab04/images/03_convergencia/convergencia_malha.png')
-
 # Desvios do nivel mais fino, para o texto do relatorio
 fino = resultados[-1]
+i_adot = next(i for i, res in enumerate(resultados)
+              if res['malha'] == malha_adotada)
 adotado = resultados[i_adot]
 print(f"\nMalha mais fina que rodou: {fino['malha']} "
       f"({fino['vortices']:.0f} vortices)")
