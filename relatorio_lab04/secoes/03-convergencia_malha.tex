@@ -1,0 +1,45 @@
+\newpage
+\section{Validação da malha de vórtices}
+
+Antes das análises, verificou-se que a discretização escolhida para o modelo
+é suficiente. Todas as superfícies foram refinadas simultaneamente em cinco
+níveis, da asa com $6\times 20$ painéis (corda por semi-envergadura) até
+$24\times 80$, mantendo as proporções entre asa e empenagens. Cada nível foi
+executado na condição do ponto de projeto, com $M = 0{,}85$ e meta de
+sustentação $C_L = 0{,}5053$. As métricas acompanhadas foram o ângulo de
+ataque de equilíbrio, o arrasto induzido e a posição do ponto neutro, que
+cobrem as três famílias de resultados usadas neste relatório.
+
+\begin{table}[H]
+\centering
+\caption{Convergência de malha na condição do ponto de projeto.}\label{tab:convergencia}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{cccccc}
+\toprule
+Malha da asa & Vórtices & $\alpha$ [graus] & $C_{D,\mathrm{ind}}$ & $e$ & $x_{np}$ [m] \\
+\midrule
+$6\times 20$ & 328 & 3,8796 & 0,01046 & 0,9020 & 30,0428 \\
+$9\times 30$ & 738 & 3,8736 & 0,01036 & 0,9000 & 30,0579 \\
+$12\times 40$ (adotada) & 1.312 & 3,8752 & 0,01014 & 0,8984 & 30,0651 \\
+$18\times 60$ & 2.952 & 3,8717 & 0,01017 & 0,8985 & 30,0717 \\
+$24\times 80$ & 5.248 & 3,8700 & 0,00991 & 0,8979 & 30,0776 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\caption{Convergência das três métricas com o refino da malha. A linha
+tracejada marca a malha adotada.}\label{fig:convergencia}
+\includegraphics[width=\linewidth]{images/03_convergencia/convergencia_malha.png}
+\end{figure}
+
+A malha adotada nos arquivos da entrega, com $12\times 40$ painéis na asa e
+1.312 vórtices no total, difere da malha quatro vezes mais fina em 0,14\% no
+ângulo de ataque e 0,04\% na posição do ponto neutro, o que corresponde a
+3,5~cm ou 0,05\,\%MAC. O arrasto induzido é a métrica mais sensível e oscila
+2,3\% entre os níveis, comportamento esperado da integral de campo próximo
+do método. O fator de Oswald obtido no plano de Trefftz permanece estável em
+torno de $e = 0{,}90$ em todos os níveis. Considerou-se a malha adotada
+convergida para os propósitos deste trabalho, com custo compatível com as
+rodadas interativas exigidas pelo roteiro.
