@@ -4,14 +4,15 @@
 O perfil de partida adotado é o NACA 1411, conforme o roteiro. Como a asa
 exige, na estação de referência, a espessura relativa mínima de
 $(t/c)_{\mathrm{ref}} = 0{,}1772$ no plano normal
-(Tabela~\ref{tab:ref_section}), o perfil foi reescalado na direção da
-espessura --- multiplicando as ordenadas do extradorso e do intradorso pelo
-fator $0{,}1772/0{,}11$ --- antes de qualquer análise. Sem esse
-reescalonamento, partida e otimizado não seriam comparáveis: teriam
-espessuras estruturais diferentes.
+(Tabela~\ref{tab:ref_section}), o perfil foi reescalado antes de qualquer
+análise, multiplicando a distribuição de espessura pelo fator
+$0{,}1772/0{,}11$ e preservando a linha de arqueamento. Reescalar as
+ordenadas completas inflaria também o arqueamento e mudaria a sustentação
+do perfil de partida. Sem esse reescalonamento, partida e otimizado não
+seriam comparáveis, por terem espessuras estruturais diferentes.
 
-O procedimento para encontrar o ângulo de ataque de projeto foi o seguinte:
-fixado $M_n = 0{,}7196$ no \texttt{single\_run}, o solver Euler foi executado
+O procedimento para encontrar o ângulo de ataque de projeto foi o seguinte.
+Fixado $M_n = 0{,}7196$ no \texttt{single\_run}, o solver Euler foi executado
 na mesma malha usada na otimização (malha-O de $31\times 49$ pontos) e a
 variável \texttt{alpha} foi ajustada pelo método de Newton, usando a derivada
 $\partial c_\ell/\partial \alpha$ fornecida pelo método adjunto, até que o
@@ -22,6 +23,6 @@ convergência exigiu apenas 3 avaliações, partindo de $\alpha = 3^\circ$
 O ângulo encontrado foi $\alpha = 3{,}567^\circ$, com $c_\ell = 0{,}7319$,
 confirmando o casamento com o $c_{\ell,\mathrm{ref}}$ da
 Tabela~\ref{tab:ref_section}. Nessa condição o perfil de partida apresenta
-$c_d = 0{,}06705$ e $c_m = -0{,}0680$ --- arrasto elevado, dominado pelo
+$c_d = 0{,}06705$ e $c_m = -0{,}0680$. O arrasto é elevado, dominado pelo
 arrasto de onda de um choque forte no extradorso, como será visto na
 Seção~5. É esse o número que a otimização da Seção~4 ataca.

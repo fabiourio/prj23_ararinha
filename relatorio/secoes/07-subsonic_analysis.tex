@@ -5,7 +5,7 @@ Passamos o NACA~1411 reescalado e o otimizado no Xfoil com o Reynolds
 da decolagem, $Re = 4{,}23\times 10^{7}$. Duzentos painéis, agrupamento
 no bordo de fuga $0{,}45$. Mach desprezado, como o roteiro autoriza.
 Em cinco NACA de Abbott o Xfoil superestima $c_{\ell,\max}$ em
-$0{,}24$; a Tabela~\ref{tab:subsonico} traz o valor cru e o corrigido.
+$0{,}24$. A Tabela~\ref{tab:subsonico} traz o valor cru e o corrigido.
 
 \begin{table}[H]
 \centering
@@ -36,48 +36,49 @@ $c_m$ médio ($-2^\circ$ a $4^\circ$) & $-0{,}0222$ & $-0{,}0500$ \\
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{images/07_subsonico/cl_cd.png}
-    \caption{O $c_{d,\min}$ do otimizado é $0{,}00419$ em
-    $\alpha=-4^\circ$ ($c_\ell<0$); em $c_\ell\sim 1{,}2$ as polares
-    se encostam. O ganho visível não é decolagem.}\label{fig:cl_cd}
+    \caption{O $c_{d,\min}$ do otimizado ocorre em $\alpha=-4^\circ$,
+    fora de condição de pista. Em $c_\ell\sim 1{,}2$ as polares se
+    encostam.}\label{fig:cl_cd}
 \end{figure}
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{images/07_subsonico/cm_alpha.png}
-    \caption{$c_m$ médio $-0{,}022\to -0{,}050$ entre $-2^\circ$ e
-    $4^\circ$ ($Re=4{,}23\times 10^{7}$).}\label{fig:cm_alpha}
+    \caption{$c_m$ médio de $-0{,}022$ para $-0{,}050$ entre $-2^\circ$
+    e $4^\circ$ ($Re=4{,}23\times 10^{7}$).}\label{fig:cm_alpha}
 \end{figure}
 
 O $c_{\ell,\max}$ cru sobe de $1{,}93$ a $2{,}15$. Corrigido o viés,
-$1{,}912 \ge 1{,}80$: a hipótese \texttt{clmax\_w} do dimensionamento
+$1{,}912 \ge 1{,}80$, e a hipótese \texttt{clmax\_w} do dimensionamento
 segue coberta. Entre $c_\ell = 0{,}5$ e $1{,}5$ o NACA tem $c_d$ de 1 a
-$13\,\%$ menor: pedágio do desenho supercrítico no subsônico. Não pesa
-na missão --- o cruzeiro é transônico e a decolagem vive em $c_\ell$
-alto, onde só o otimizado ainda voa. O $c_{d,\min} = 0{,}00419$ do
-otimizado ocorre em $\alpha = -4^\circ$, com $c_\ell < 0$: não é pista.
+$13\,\%$ menor. É o pedágio do desenho supercrítico no subsônico. Não
+pesa na missão, pois o cruzeiro é transônico e a decolagem vive em
+$c_\ell$ alto, onde só o otimizado ainda voa. O
+$c_{d,\min} = 0{,}00419$ do otimizado ocorre em $\alpha = -4^\circ$,
+com $c_\ell < 0$, fora de qualquer condição de pista.
 
 O $c_m$ médio entre $-2^\circ$ e $4^\circ$ passa de $-0{,}0222$ para
 $-0{,}0500$ (Figura~\ref{fig:cm_alpha}). A carga traseira do cruzeiro
-transônico aparece aqui como nariz-baixo maior. Dá para trimar. Custa
-arrasto de compensação na aeronave, que esta polar 2D não vê.
+transônico aparece aqui como nariz-baixo maior. Custa arrasto de
+compensação na aeronave, que esta polar 2D não vê.
 
 \subsection*{Adaptação da otimização para o regime subsônico}
 
-Duas mudanças de formulação. A primeira solta o batente
-$A_{l4} = -0{,}05$ e deixa o cusp. A segunda tira a substituta de
-$c_{\ell,\max}$.
+Duas mudanças de formulação foram testadas. A primeira solta o batente
+$A_{l4} = -0{,}05$ e deixa o cusp aparecer. A segunda tira a substituta
+de $c_{\ell,\max}$.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{images/05_transonico/geometria_item9.png}
-    \caption{Cusp liberado contra a formulação da equipe: a diferença
+    \caption{Cusp liberado contra a formulação da equipe. A diferença
     está no último quarto da corda.}\label{fig:geom_item9}
 \end{figure}
 
 \begin{table}[H]
 \centering
 \caption{Três formulações na estação da MAC. A primeira linha é a
-formulação da equipe (roteiro mais a substituta).}\label{tab:item9}
+formulação da equipe.}\label{tab:item9}
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lcccc}
 \toprule
@@ -90,14 +91,14 @@ Sem restrição de $c_{\ell,\max}$ & $0{,}01066$ & $0{,}990$ & $8{,}6^\circ$ & $
 \end{tabular}
 \end{table}
 
-Com o cusp, o $c_d$ transônico cai para $0{,}00822$ ($-29\,\%$ sobre o
-ótimo da equipe) e o $c_m$ Euler no ponto de projeto vai de $-0{,}097$
-para $-0{,}165$; o $|c_m|$ médio no Xfoil quase dobra. Não adotamos
-esse perfil: o objetivo 2D não paga momento, então o solver gasta essa
-moeda até o fundo. Sem o balanço da aeronave com o CG, o $-29\,\%$ de
-seção não é ganho de missão.
+Com o cusp, o $c_d$ transônico cai para $0{,}00822$, uma redução de
+$29\,\%$ sobre o ótimo da equipe. Em troca, o $c_m$ Euler no ponto de
+projeto vai de $-0{,}097$ para $-0{,}165$ e o $|c_m|$ médio no Xfoil
+quase dobra. Não adotamos esse perfil. O objetivo 2D não paga momento,
+então o solver gasta essa moeda até o fundo. Sem o balanço da aeronave
+com o CG, a redução de seção não é ganho de missão.
 
 Sem a substituta o $c_d$ transônico fica em $0{,}01066$, um pouco
-abaixo de $0{,}01164$ --- mas o $c_{\ell,\max}$ cai para $0{,}99$ e o
+abaixo de $0{,}01164$, mas o $c_{\ell,\max}$ cai para $0{,}99$ e o
 estol para $8{,}6^\circ$. A decolagem deixa de fechar. Essa formulação
 está fora.

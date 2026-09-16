@@ -11,14 +11,14 @@ $\pm 1^\circ$ do ótimo. Sobrepusemos o RAE~2822, mais fino
     \centering
     \includegraphics[width=0.8\textwidth]{images/06_polar/polar_transonica.png}
     \caption{Polar transônica: poço em $c_d = 0{,}01164$,
-    $c_\ell = 0{,}7319$ ($\alpha = 2{,}389^\circ$); grade de
+    $c_\ell = 0{,}7319$ ($\alpha = 2{,}389^\circ$). Grade de
     $0{,}5^\circ$ complementada por passo de $0{,}1^\circ$ perto do
     ótimo. O RAE~2822 ($t/c \approx 0{,}12$) sobe sem
     poço.}\label{fig:polar_transonica}
 \end{figure}
 
-O ponto de projeto é um poço. No $\alpha$ ótimo, $c_d = 0{,}01164$;
-meio grau acima, $0{,}02069$; meio grau abaixo, $0{,}01864$. A
+O ponto de projeto é um poço. No $\alpha$ ótimo, $c_d = 0{,}01164$.
+Meio grau acima, $0{,}02069$. Meio grau abaixo, $0{,}01864$. A
 $\pm 0{,}2^\circ$ o $c_d$ já sobe $26$ e $50\,\%$.
 
 Três verificações sustentam a polar. Os pontos que estagnaram antes da
@@ -28,21 +28,21 @@ fundo ($1{,}60\times$ para $1{,}89\times$ em $\pm 0{,}4^\circ$), com o
 mínimo ainda no ponto de projeto. E o ótimo em si foi validado por
 multistart e cortes na Seção~4. Uma lacuna fica declarada: logo abaixo
 do ótimo (entre $-0{,}05^\circ$ e $-0{,}15^\circ$) o Euler entra em
-ciclo-limite e não converge para nenhum CFL testado; o trecho é ligado
-por reta na figura.
+ciclo-limite e não converge para nenhum CFL testado. Esse trecho é
+ligado por reta na figura.
 
 O RAE~2822 tem $c_d$ menor em quase toda a polar, o que se espera de
 um perfil $46\,\%$ mais fino. Usá-lo na nossa asa, porém, não fecharia
-o avião: a estação da MAC exige $t/c = 0{,}1772$ no plano normal
+o avião, pois a estação da MAC exige $t/c = 0{,}1772$ no plano normal
 ($15\,\%$ na corrente), espessura que dimensiona longarina, peso de
-asa e volume de combustível no Lab~02 --- e os cortes da Seção~4
-mostram que nenhuma direção de projeto reduz o nosso $c_d$ sem afinar
-o perfil. O RAE entra como referência de forma da polar, não de nível:
-ele é o que a otimização entrega quando a estrutura pede $12\,\%$ de
+asa e volume de combustível no Lab~02. Os cortes da Seção~4 mostram
+que nenhuma direção de projeto reduz o nosso $c_d$ sem afinar o
+perfil. O RAE entra como referência de forma da polar, não de nível.
+Ele é o que a otimização entrega quando a estrutura pede $12\,\%$ de
 espessura, e o nosso é o equivalente para $17{,}7\,\%$.
 
 Na missão o $c_\ell$ de seção vai de cerca de $0{,}89$ no começo da
-perna de cruzeiro a $0{,}60$ no fim; o poço está em $0{,}73$ e fora
+perna de cruzeiro a $0{,}60$ no fim. O poço está em $0{,}73$ e fora
 dele o arrasto sobe depressa. Uma rodada multiponto nessa faixa de
 $c_\ell$ é o próximo passo, junto com a realimentação do $c_\ell$ de
 projeto quando a torção da asa (próximo laboratório) confirmar a

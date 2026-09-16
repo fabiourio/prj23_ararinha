@@ -32,14 +32,14 @@ que evita bordos de fuga espessos sem função aerodinâmica, e uma restrição
 $t_{01}/\sqrt{(t/c)_{\max}} \ge 0{,}0938$, em que $t_{01}$ é a espessura do
 perfil em $x/c = 0{,}01$. Essa métrica de ``afiamento do nariz'' foi
 calibrada contra um DOE de 256 perfis analisados no Xfoil e é o descritor
-geométrico diferenciável que melhor prevê o $c_{\ell,\max}$; o limiar
+geométrico diferenciável que melhor prevê o $c_{\ell,\max}$. O limiar
 $0{,}0938$ corresponde a $c_{\ell,\max} \ge 1{,}80$, valor assumido para
 \texttt{clmax\_w} no dimensionamento da aeronave. A Seção~7 mostra o que
 acontece sem ela.
 
 O ponto de partida é o NACA~1411 reescalado da Seção~3 e o otimizador é o
 SLSQP, com gradientes de $c_\ell$ e $c_d$ calculados pelo método adjunto e
-tolerância \texttt{ftol} $= 10^{-5}$ --- valor escolhido acima do piso de
+tolerância \texttt{ftol} $= 10^{-5}$. O valor fica acima do piso de
 ruído do solver Euler ($1{,}5\times10^{-5}$ em $c_d$, aferido repetindo a
 mesma avaliação em malhas perturbadas), pois uma tolerância mais apertada
 apenas queimaria avaliações perseguindo ruído numérico.
@@ -73,32 +73,32 @@ $x_{h/c,\max}$  & $0{,}418$    & $0{,}247$    & Posição do arqueamento máximo
 \end{table}
 
 A otimização convergiu em 19 avaliações do Euler, em 20,6~minutos. Na
-comparação justa --- os dois perfis na \emph{mesma} sustentação de
-projeto ---, o arrasto caiu de $c_d = 0{,}06705$ para
+comparação justa, com os dois perfis na \emph{mesma} sustentação de
+projeto, o arrasto caiu de $c_d = 0{,}06705$ para
 $c_d = 0{,}01164$, uma redução de $\mathbf{82{,}6\%}$. A
 Figura~\ref{fig:opt_hist} mostra o histórico: a queda grande acontece nas
 primeiras $\sim$8 avaliações, quando o otimizador desmonta o choque forte
-do perfil de partida; o restante é ajuste fino dentro do poço.
+do perfil de partida. O restante é ajuste fino dentro do poço.
 
 Quanto às restrições, todas as três não-triviais terminaram
 \textbf{ativas}: a igualdade de sustentação (por construção), a espessura
-mínima ($(t/c)_{\max} = 0{,}17720$, exatamente no limite --- o otimizador
-afinaria o perfil se pudesse, pois espessura custa arrasto de onda) e a
-substituta de $c_{\ell,\max}$ ($0{,}09382$, exatamente sobre o limiar --- o
-otimizador afiaria o nariz se pudesse, ao custo do estol). Um batente
-também terminou ativo: $A_{l4} = -0{,}05$, o coeficiente que controla o
-côncavo do intradorso traseiro (\emph{cusp}); o roteiro o limita
+mínima ($(t/c)_{\max} = 0{,}17720$, exatamente no limite, sinal de que o
+otimizador afinaria o perfil se pudesse, pois espessura custa arrasto de
+onda) e a substituta de $c_{\ell,\max}$ ($0{,}09382$, exatamente sobre o
+limiar, sinal de que o otimizador afiaria o nariz se pudesse, ao custo do
+estol). Um batente também terminou ativo, o $A_{l4} = -0{,}05$, coeficiente
+que controla o côncavo do intradorso traseiro (\emph{cusp}). O roteiro o limita
 justamente para conter o $c_m$, e a Seção~7 quantifica essa troca.
 
 Duas verificações dão confiança de que esse é, de fato, o ótimo do
 problema, e não um acidente numérico. Primeiro, \emph{multistart}: seis
 pontos de partida geometricamente distintos, com $c_d$ inicial variando por
-um fator 2,5, convergiram todos para o mesmo ponto --- espalhamento de
+um fator 2,5, convergiram todos para o mesmo ponto, com espalhamento de
 $2{,}6\times10^{-6}$ em $c_d$, seis vezes menor que o piso de ruído do
 solver. Segundo, cortes unidimensionais em torno do ótimo: deslocando cada
 coeficiente CST de até $\pm0{,}06$ com o $c_\ell$ re-trimado, nenhuma das 41
-direções avaliadas (de 48 planejadas; 7 caem fora dos batentes) reduz o
-arrasto sem violar uma restrição: a espessura barra 24 direções, a
+direções avaliadas (de 48 planejadas, 7 caem fora dos batentes) reduz o
+arrasto sem violar uma restrição. A espessura barra 24 direções, a
 substituta de $c_{\ell,\max}$ barra 13 (quatro por ambas), uma sai do alvo
 de $c_\ell$ e nas 7 restantes o arrasto simplesmente piora. O perfil obtido
 é o mínimo de arrasto possível dada a espessura estrutural que a asa exige.
@@ -109,7 +109,7 @@ de $c_\ell$ e nas 7 restantes o arrasto simplesmente piora. O perfil obtido
     \caption{Histórico de convergência da otimização: $c_d$ (escala
     logarítmica), $c_\ell$, $(t/c)_{\max}$ e a substituta de
     $c_{\ell,\max}$ ao longo das avaliações do Euler. As linhas tracejadas
-    marcam o alvo de sustentação e os limites das restrições; note
+    marcam o alvo de sustentação e os limites das restrições. Note
     $(t/c)_{\max}$ e a substituta terminando sobre os respectivos limites
     (restrições ativas).}\label{fig:opt_hist}
 \end{figure}
