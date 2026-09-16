@@ -5,10 +5,11 @@ Produz em avl/:
   - fwd.avl e aft.avl (item 1 do roteiro): mesma geometria, mudando apenas
     o Xref (CG dianteiro ou traseiro do designTool). CDp recebe o CD0 do
     designTool no ponto de projeto e as asas usam os perfis otimizados do
-    Lab 03 (familia roteiro, ja copiados em avl/aerofolios/).
-  - fwd.mass e aft.mass: massa, CG e inercias do ponto de projeto do Lab 03
-    (peso medio de cruzeiro, fuel_frac ~0,44, 100%% de carga paga). So sao
-    necessarios para analise de modos (comando mode), nao para o roteiro.
+    Lab 03 (familia roteiro, reamostrados em avl/aerofolios/).
+    O Mach do cabecalho (0,85) e apenas o default: cada analise define o
+    seu em tempo de execucao (m -> mn), como nos roteiros do professor.
+    Nao geramos .mass: o roteiro nao usa (so seria preciso no comando
+    mode) e as inercias para o MVO saem de lab04_dados.py.
 
 Escolhas de modelagem (nao vem do designTool):
   - arrasto viscoso apenas pelo CDp do cabecalho, que recebe o CD0 por
@@ -47,7 +48,6 @@ from designTool.standard_airplane import standard_airplane
 from designTool.analyze import analyze
 from designTool.aerodynamics import aerodynamics
 from designTool.auxiliary import atmosphere
-from designTool.moment_of_inertia import moment_of_inertia
 from designTool.constants import gravity
 
 #=========================================
@@ -63,7 +63,6 @@ inputs = airplane['inputs']
 geom = airplane['geometry']
 tm = airplane['thrust_matching']
 bal = airplane['balance']
-ew = airplane['empty_weight']
 
 h = inputs['altitude_cruise']
 M = inputs['Mach_cruise']
@@ -75,19 +74,10 @@ S_w = inputs['S_w']
 
 W = W_DESIGN_KGF*gravity
 CL = W/(q_inf*S_w)
-fuel_frac = (W - tm['W_empty'] - inputs['W_payload'] - inputs['W_crew'])/tm['W_fuel']
 
 # CD0 para o cabecalho CDp
 _, _, dragDict = aerodynamics(airplane, Mach=M, altitude=h, CL=CL)
 CD0 = dragDict['CD0']
-
-# Inercias e CG do carregamento do ponto de projeto
-moment_of_inertia(airplane, fuel_frac=fuel_frac, payload_frac=1.0)
-moi = airplane['moment_of_inertia']
-xcg_ponto = (tm['W_empty']*ew['xcg_empty'] + fuel_frac*tm['W_fuel']*bal['xcg_fuel']
-             + inputs['W_payload']*inputs['xcg_payload']
-             + inputs['W_crew']*inputs['xcg_crew'])/W
-massa = W/gravity
 
 #=========================================
 # PERFIS DA ASA
@@ -245,25 +235,6 @@ ANGLE
     return '\n\n'.join(partes) + '\n'
 
 
-def monta_mass(nome_cg, xref):
-    '''Arquivo .mass: aeronave inteira como um unico item, com as inercias
-    do ponto de projeto. As inercias foram calculadas em torno do CG do
-    carregamento do ponto de projeto (x = %.4f m); usar o mesmo valor nos
-    dois CGs e uma aproximacao (diferenca da ordem de 0,5%% em Iyy).''' % xcg_ponto
-    return f'''#  Ararinha -- CG {nome_cg} (Lab 04, ponto de projeto do Lab 03)
-#  Massa e inercias do designTool (moment_of_inertia, fuel_frac = {fuel_frac:.4f},
-#  payload_frac = 1.0). Inercias calculadas em torno do CG do carregamento
-#  (x = {xcg_ponto:.4f} m); mantidas iguais nos dois arquivos por aproximacao.
-Lunit = 1.0 m
-Munit = 1.0 kg
-Tunit = 1.0 s
-g   = {gravity}
-rho = {rho:.5f}
-#  mass        x         y      z      Ixx         Iyy         Izz         Ixy    Ixz         Iyz
-{massa:.1f}  {xref:.4f}  0.0  0.0  {moi['Ixx']:.4e}  {moi['Iyy']:.4e}  {moi['Izz']:.4e}  0.0  {moi['Ixz']:.4e}  0.0
-'''
-
-
 # EXECUTION
 cgs = {'dianteiro': ('fwd', bal['xcg_fwd']),
        'traseiro': ('aft', bal['xcg_aft'])}
@@ -271,10 +242,7 @@ cgs = {'dianteiro': ('fwd', bal['xcg_fwd']),
 for nome_cg, (prefixo, xref) in cgs.items():
     with open(f'avl/{prefixo}.avl', 'w', encoding='ascii') as f:
         f.write(monta_avl(nome_cg, xref))
-    with open(f'avl/{prefixo}.mass', 'w', encoding='ascii') as f:
-        f.write(monta_mass(nome_cg, xref))
-    print(f'avl/{prefixo}.avl e avl/{prefixo}.mass gravados '
-          f'(Xref = {xref:.4f} m)')
+    print(f'avl/{prefixo}.avl gravado (Xref = {xref:.4f} m)')
 
 print(f'\nCDp (CD0 designTool) = {CD0:.5f}')
 print(f'CL de projeto = {CL:.4f} (meta dos comandos "a c" no AVL)')

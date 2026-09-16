@@ -5,8 +5,7 @@
 | Item | O que e |
 |---|---|
 | `avl.exe` | Executavel do AVL (3.37), fornecido na disciplina |
-| `fwd.avl` / `aft.avl` | Entradas do AVL, CG dianteiro (26,0772 m) e traseiro (27,7190 m). Gerados por `lab04_gera_avl.py` (raiz do repo) -- nao editar na mao |
-| `fwd.mass` / `aft.mass` | Massa, CG e inercias do ponto de projeto (so para o comando `mode`) |
+| `fwd.avl` / `aft.avl` | Entradas do AVL, CG dianteiro (26,0772 m) e traseiro (27,7190 m). Gerados por `lab04_gera_avl.py` (raiz do repo) -- nao editar na mao. O Mach 0,85 do cabecalho e so o default: defina o da analise com `m` -> `mn` |
 | `aerofolios/` | Perfis otimizados do Lab 03 (familia roteiro), reamostrados para 197 pontos (limite IBX deste build) |
 | `dados_lab04.md` | Ponto de projeto, CGs, polar e inercias extraidos do designTool (`lab04_dados.py`) |
 | `saidas/` | Despejos das rodadas: `fs.txt`, prints do plano de Trefftz, etc. |
