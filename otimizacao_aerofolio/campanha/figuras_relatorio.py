@@ -127,7 +127,9 @@ def fig_geometria(d):
         ax.set_aspect('equal')
         ax.set_xlim(-0.02, 1.02)
         eixo(ax)
-        ax.legend(loc='lower right', handlelength=2.4)
+        # legenda ACIMA do quadro: dentro dele qualquer canto encosta no perfil
+        ax.legend(loc='lower center', bbox_to_anchor=(0.5, 1.0), ncol=2,
+                  handlelength=2.4, borderaxespad=0.2)
         salva(fig, '05_transonico', arq)
 
 
