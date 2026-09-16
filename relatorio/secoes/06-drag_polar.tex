@@ -1,65 +1,49 @@
 \newpage
 \section{Polar de arrasto transônica}
 
-Para levantar a polar transônica do perfil otimizado, o \texttt{single\_run}
-foi adaptado para varrer o ângulo de ataque no intervalo
-$\alpha_{\mathrm{proj}} \pm 2^\circ$ em passos de $0{,}5^\circ$, mantendo o
-mesmo solver, malha e critérios de convergência da otimização, e coletando
-$c_\ell$ e $c_d$ de cada simulação Euler. A mesma varredura foi aplicada ao
-RAE~2822 --- perfil supercrítico clássico, cujos coeficientes CST acompanham
-o \texttt{single\_run} --- como referência de comparação. A
-Figura~\ref{fig:polar_transonica} sobrepõe as duas polares, com o ponto de
-projeto destacado.
+Adaptamos o \texttt{single\_run} para varrer $\alpha$ em
+$2{,}389^\circ \pm 2^\circ$, passo de $0{,}5^\circ$, no mesmo
+$M_n = 0{,}7196$, complementado por uma varredura de $0{,}1^\circ$ em
+$\pm 1^\circ$ do ótimo. Sobrepusemos o RAE~2822, mais fino
+($t/c \approx 0{,}12$), rodado nos mesmos ângulos.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{images/06_polar/polar_transonica.png}
-    \caption{Polar de arrasto transônica $c_\ell \times c_d$ do perfil
-    otimizado com o ponto de projeto destacado, sobreposta à do RAE~2822
-    ($M_n = 0{,}7196$).}\label{fig:polar_transonica}
+    \caption{Polar transônica: poço em $c_d = 0{,}01164$,
+    $c_\ell = 0{,}7319$ ($\alpha = 2{,}389^\circ$); grade de
+    $0{,}5^\circ$ complementada por passo de $0{,}1^\circ$ perto do
+    ótimo. O RAE~2822 ($t/c \approx 0{,}12$) sobe sem
+    poço.}\label{fig:polar_transonica}
 \end{figure}
 
-A peculiaridade da polar salta à vista: o perfil otimizado tem um
-\emph{poço de arrasto} (``drag bucket'') estreito e profundo, centrado
-exatamente no $c_\ell$ de projeto. Meio grau abaixo do ponto de projeto o
-$c_d$ sobe $60\%$; meio grau acima, $76\%$. Uma varredura mais fina, com
-passo de $0{,}1^\circ$, mostra que a degradação começa imediatamente:
-$+0{,}2^\circ$ já custa $+26\%$ de arrasto.
+O ponto de projeto é um poço. No $\alpha$ ótimo, $c_d = 0{,}01164$;
+meio grau acima, $0{,}02069$; meio grau abaixo, $0{,}01864$. A
+$\pm 0{,}2^\circ$ o $c_d$ já sobe $26$ e $50\,\%$.
 
-Um resultado tão localizado exige verificação antes de ser aceito, e três
-foram feitas. Primeiro, o resíduo de cada ponto da varredura foi
-inspecionado: os pontos que estagnaram antes da tolerância foram reavaliados
-com CFL reduzido até a convergência plena, e o $c_d$ mudou no máximo
-$0{,}04\%$ --- a polar não é artefato de convergência. Segundo, o poço
-sobrevive ao refinamento de malha: no nível 1,5 ele fica inclusive
-\emph{mais} profundo (razão entre o maior e o menor $c_d$ na faixa de
-$\pm0{,}4^\circ$ subindo de $1{,}60$ para $1{,}89$), com o mínimo
-permanecendo no ponto de projeto --- o otimizador não explorou uma
-peculiaridade da malha grossa. Terceiro, o próprio ótimo foi validado por
-multistart e cortes unidimensionais (Seção~4).
+Três verificações sustentam a polar. Os pontos que estagnaram antes da
+tolerância foram reavaliados com CFL reduzido até convergir: o $c_d$
+muda no máximo $0{,}04\,\%$. No nível 1,5 de malha o poço fica mais
+fundo ($1{,}60\times$ para $1{,}89\times$ em $\pm 0{,}4^\circ$), com o
+mínimo ainda no ponto de projeto. E o ótimo em si foi validado por
+multistart e cortes na Seção~4. Uma lacuna fica declarada: logo abaixo
+do ótimo (entre $-0{,}05^\circ$ e $-0{,}15^\circ$) o Euler entra em
+ciclo-limite e não converge para nenhum CFL testado; o trecho é ligado
+por reta na figura.
 
-O poço estreito é bom ou ruim para o projeto? É a assinatura esperada ---
-e conhecida na literatura --- da otimização \emph{mono-ponto}: o otimizador
-molda o teto supersônico da Figura~\ref{fig:mach_overlay} para uma condição
-específica de $M$ e $c_\ell$, e qualquer desvio reconstrói o choque que ele
-desmontou. No ponto de projeto, isso é excelente: é onde a aeronave passa a
-maior parte da missão. Fora dele, é um risco real: variações de peso ao
-longo do cruzeiro, rajadas, manobras e mudanças de altitude deslocam o
-$c_\ell$ da seção, e a margem de \emph{buffet} fica estreita. Há ainda uma
-dependência de projeto: o $c_\ell$ de cada estação foi derivado assumindo
-distribuição de sustentação elíptica, que a torção da asa (próximo
-laboratório) precisa confirmar --- se a distribuição real se desviar, o
-perfil operará fora do fundo do poço. As duas respostas naturais, deixadas
-como próximos passos, são a otimização \emph{multiponto} (minimizar uma
-média ponderada de $c_d$ em 2--3 condições vizinhas, alargando o poço ao
-custo de alguns \emph{counts} no ponto nominal) e a realimentação do
-$c_\ell$ de projeto após o laboratório de torção.
+O RAE~2822 tem $c_d$ menor em quase toda a polar, o que se espera de
+um perfil $46\,\%$ mais fino. Usá-lo na nossa asa, porém, não fecharia
+o avião: a estação da MAC exige $t/c = 0{,}1772$ no plano normal
+($15\,\%$ na corrente), espessura que dimensiona longarina, peso de
+asa e volume de combustível no Lab~02 --- e os cortes da Seção~4
+mostram que nenhuma direção de projeto reduz o nosso $c_d$ sem afinar
+o perfil. O RAE entra como referência de forma da polar, não de nível:
+ele é o que a otimização entrega quando a estrutura pede $12\,\%$ de
+espessura, e o nosso é o equivalente para $17{,}7\,\%$.
 
-Quanto à comparação com o RAE~2822, ela pede honestidade sobre espessura: o
-RAE~2822 tem $t/c = 0{,}121$, enquanto o nosso perfil carrega
-$t/c = 0{,}1772$ --- $46\%$ mais espessura, imposta pela restrição
-estrutural da asa. Espessura custa arrasto de onda, e ainda assim o perfil
-otimizado atinge, no seu ponto de projeto, um $c_d$ da mesma ordem do
-RAE~2822 no mesmo $c_\ell$. A polar do RAE~2822 é visivelmente mais larga
---- vantagem de um perfil desenhado (e refinado ao longo de décadas) para
-robustez fora de projeto, e não para um único ponto.
+Na missão o $c_\ell$ de seção vai de cerca de $0{,}89$ no começo da
+perna de cruzeiro a $0{,}60$ no fim; o poço está em $0{,}73$ e fora
+dele o arrasto sobe depressa. Uma rodada multiponto nessa faixa de
+$c_\ell$ é o próximo passo, junto com a realimentação do $c_\ell$ de
+projeto quando a torção da asa (próximo laboratório) confirmar a
+distribuição elíptica assumida.

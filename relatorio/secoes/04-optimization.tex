@@ -72,19 +72,19 @@ $x_{h/c,\max}$  & $0{,}418$    & $0{,}247$    & Posição do arqueamento máximo
 \end{tabular}
 \end{table}
 
-A otimização convergiu em 31 avaliações do Euler, totalizando cerca de
-20~minutos. Na comparação justa --- os dois perfis na \emph{mesma}
-sustentação de projeto ---, o arrasto caiu de $c_d = 0{,}06705$ para
+A otimização convergiu em 19 avaliações do Euler, em 20,6~minutos. Na
+comparação justa --- os dois perfis na \emph{mesma} sustentação de
+projeto ---, o arrasto caiu de $c_d = 0{,}06705$ para
 $c_d = 0{,}01164$, uma redução de $\mathbf{82{,}6\%}$. A
 Figura~\ref{fig:opt_hist} mostra o histórico: a queda grande acontece nas
-primeiras $\sim$15 avaliações, quando o otimizador desmonta o choque forte
+primeiras $\sim$8 avaliações, quando o otimizador desmonta o choque forte
 do perfil de partida; o restante é ajuste fino dentro do poço.
 
 Quanto às restrições, todas as três não-triviais terminaram
 \textbf{ativas}: a igualdade de sustentação (por construção), a espessura
 mínima ($(t/c)_{\max} = 0{,}17720$, exatamente no limite --- o otimizador
 afinaria o perfil se pudesse, pois espessura custa arrasto de onda) e a
-substituta de $c_{\ell,\max}$ ($0{,}09415$ contra o limiar $0{,}0938$ --- o
+substituta de $c_{\ell,\max}$ ($0{,}09382$, exatamente sobre o limiar --- o
 otimizador afiaria o nariz se pudesse, ao custo do estol). Um batente
 também terminou ativo: $A_{l4} = -0{,}05$, o coeficiente que controla o
 côncavo do intradorso traseiro (\emph{cusp}); o roteiro o limita
@@ -96,11 +96,12 @@ pontos de partida geometricamente distintos, com $c_d$ inicial variando por
 um fator 2,5, convergiram todos para o mesmo ponto --- espalhamento de
 $2{,}6\times10^{-6}$ em $c_d$, seis vezes menor que o piso de ruído do
 solver. Segundo, cortes unidimensionais em torno do ótimo: deslocando cada
-coeficiente CST de até $\pm0{,}06$ com o $c_\ell$ re-trimado, nenhuma das 44
-direções avaliadas reduz o arrasto sem violar uma restrição (a espessura
-barra 24 direções, a substituta de $c_{\ell,\max}$ barra 13, e nas 7
-restantes o arrasto simplesmente piora). O perfil obtido é o mínimo de
-arrasto possível dada a espessura estrutural que a asa exige.
+coeficiente CST de até $\pm0{,}06$ com o $c_\ell$ re-trimado, nenhuma das 41
+direções avaliadas (de 48 planejadas; 7 caem fora dos batentes) reduz o
+arrasto sem violar uma restrição: a espessura barra 24 direções, a
+substituta de $c_{\ell,\max}$ barra 13 (quatro por ambas), uma sai do alvo
+de $c_\ell$ e nas 7 restantes o arrasto simplesmente piora. O perfil obtido
+é o mínimo de arrasto possível dada a espessura estrutural que a asa exige.
 
 \begin{figure}[H]
     \centering
