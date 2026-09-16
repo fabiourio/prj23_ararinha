@@ -1,0 +1,7 @@
+grandeza,naca1411_reescalado,otimizado
+cl_alpha [1/grau],0.104569,0.114947
+cl_max (XFoil),1.932700,2.151600
+alpha_estol [graus],21.500000,25.500000
+cd_min,0.005310,0.004190
+cm medio (-2 a 4 graus),-0.022217,-0.050031
+"cl_max (corrigido, vies -0.24)",1.692700,1.911600

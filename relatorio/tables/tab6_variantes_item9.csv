@@ -1,0 +1,4 @@
+formulacao,cd_transonico,clmax_xfoil,cd_min,alpha_estol_deg,cm_medio,largura_bacia_cl
+batentes do roteiro,0.011644,2.1516,0.00419,25.5,-0.0500,0.000
+cusp liberado,0.008215,2.2071,0.00482,23.5,-0.0914,0.463
+sem restricao de cl_max,0.010663,0.9903,0.00476,8.6,-0.0316,0.367
