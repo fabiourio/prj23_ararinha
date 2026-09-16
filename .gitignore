@@ -39,3 +39,6 @@ opt_results*.pickle
 build/
 log_*.txt
 historico.pickle
+
+# Subprodutos do designTool (analyze com plot=True)
+3dview.png
