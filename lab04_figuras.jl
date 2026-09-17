@@ -88,16 +88,27 @@ tors = [torcao["torcoes"][string(e)] for e in etas_t]
 etas_c = sort(parse.(Float64, collect(keys(torcao["controle"]))))
 tors_c = [torcao["controle"][string(e)] for e in etas_c]
 
-pt1 = plot(; xlabel = "η = 2y/b", ylabel = "torção  [graus]",
-           title = "distribuição de torção otimizada (spline pelos nós)",
+# Angulo de incidencia da asa em relacao a fuselagem [graus]. Com i_w = 4,
+# a atitude da fuselagem no cruzeiro fica em ~+1 grau (alpha de cruzeiro de
+# ~5 graus menos i_w). A torcao (relativa a raiz) e a mesma curva, deslocada
+# de i_w: e a incidencia ABSOLUTA que a figura mostra.
+IW = 4.0
+
+pt1 = plot(; xlabel = "η = 2y/b",
+           ylabel = "incidência da asa  i_w + θ  [graus]",
+           title = "incidência da asa (i_w = 4° em relação à fuselagem)",
            titlefontsize = 11, titlelocation = :left,
            legend = false, xlims = (0, 1), estilo...)
+hline!(pt1, [IW]; color = "#c3c2b7", linewidth = 0.8, linestyle = :dash)
 hline!(pt1, [0.0]; color = "#c3c2b7", linewidth = 0.8)
-plot!(pt1, etas_t, tors; color = PAL[1], linewidth = 2.4)
-scatter!(pt1, etas_c, tors_c; color = PAL[1], markersize = 7,
+plot!(pt1, etas_t, tors .+ IW; color = PAL[1], linewidth = 2.4)
+scatter!(pt1, etas_c, tors_c .+ IW; color = PAL[1], markersize = 7,
          markerstrokecolor = INK)
-scatter!(pt1, [0.0], [0.0]; color = "white", markersize = 7,
+scatter!(pt1, [0.0], [IW]; color = "white", markersize = 7,
          markerstrokecolor = INK)
+annotate!(pt1, 0.03, IW + 0.4, text("raiz = i_w = 4°", 8, INK2, :left))
+annotate!(pt1, 0.5, 0.4, text("referência da fuselagem (0°)", 8,
+                              INK2, :left))
 
 antes = CSV.read("relatorio_lab04/tables/clxy_fwd_livre_semtorcao.csv",
                  DataFrame)

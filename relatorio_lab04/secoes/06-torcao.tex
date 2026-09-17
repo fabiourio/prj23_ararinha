@@ -58,11 +58,26 @@ Estação $\eta$ & Torção [graus] & Grandeza & Sem torção & Com torção \\
 
 \begin{figure}[H]
 \centering
-\caption{Distribuição de torção otimizada, com os nós da spline marcados, e
-o efeito sobre o estol: a seção crítica migra da ponta ($\eta = 0{,}87$)
-para a metade interna da asa ($\eta = 0{,}42$).}\label{fig:torcao}
+\caption{À esquerda, a incidência da asa ao longo da envergadura,
+$i_w + \theta(\eta)$, com ângulo de incidência da raiz $i_w = 4^\circ$ em
+relação à fuselagem (a torção $\theta$ da Tab.~\ref{tab:torcao} é a mesma
+curva referida à raiz, $i_w = 0$). À direita, o efeito sobre o estol: a
+seção crítica migra da ponta ($\eta = 0{,}87$) para a metade interna da asa
+($\eta = 0{,}42$).}\label{fig:torcao}
 \includegraphics[width=\linewidth]{images/06_torcao/torcao_antes_depois.png}
 \end{figure}
+
+Convém distinguir duas grandezas. A torção geométrica $\theta$ é medida em
+relação à seção da raiz, e por isso $\theta(0) = 0$ por definição, o que a
+otimização preserva. O ângulo de incidência da asa $i_w$, por outro lado, é
+o ângulo da raiz em relação à fuselagem, escolhido para a fuselagem voar em
+atitude adequada no cruzeiro. Somar $i_w$ a toda a asa equivale a girar a
+asa inteira, o que o ângulo de ataque de equilíbrio absorve, sem alterar o
+arrasto nem o estol, de modo que $i_w$ não é determinado pela análise
+aerodinâmica isolada. Adotando o valor típico $i_w = 4^\circ$, a fuselagem
+voa a cerca de $+1^\circ$ no cruzeiro (o $\alpha$ de projeto de $5^\circ$
+menos $i_w$), e a incidência da asa vai de $+4^\circ$ na raiz a $-2{,}7^\circ$
+na ponta, como mostra a Fig.~\ref{fig:torcao}.
 
 A distribuição resultante combina um leve wash-in de $+2{,}5^\circ$ na
 região interna, que recompõe a sustentação no meio da asa e aproxima o
