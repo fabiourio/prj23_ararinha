@@ -1,0 +1,4 @@
+Wing 8 20
+Horizontal tail 16 10
+Vertical tail 8 6
+vortices 832
