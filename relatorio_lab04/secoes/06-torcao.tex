@@ -83,3 +83,21 @@ ligeiramente menor, mas com uma distribuição serrilhada sem sentido
 construtivo. A parametrização adotada privilegia uma asa fabricável, com
 washout total de $6{,}7^\circ$ entre a raiz e a ponta, dentro da faixa
 praticada por transportes a jato.
+
+\subsection*{Verificação da otimização}
+
+Como a incidência de empenagem que trima a aeronave depende da torção, e o
+estol e o arrasto dependem dessa incidência, torção e trimagem formam um
+sistema acoplado. A otimização foi resolvida como um ponto fixo: a cada
+iteração externa a aeronave é re-trimada com a torção corrente antes de os
+modelos serem reconstruídos. O laço convergiu em duas iterações, com a
+torção variando menos de $0{,}02^\circ$ por estação entre elas, o que
+confirma que o acoplamento não desloca a solução.
+
+O ótimo foi ainda validado de forma independente dos modelos substitutos.
+Em torno da solução, catorze perturbações das torções de controle foram
+avaliadas diretamente no AVL, cada uma re-trimada e submetida ao método da
+seção crítica. Nenhuma perturbação que preserva a margem de estol reduz o
+arrasto induzido, o que caracteriza um mínimo local sujeito à restrição. As
+perturbações que apresentam arrasto menor violam a margem de estol, isto é,
+trocam segurança por arrasto, e por isso são descartadas.

@@ -1,18 +1,18 @@
 {
   "fwd": {
-    "it_deg": -4.4817,
+    "it_deg": -4.4793,
     "delta_e_residual_deg": -0.00123,
-    "alpha_deg": 5.3774,
+    "alpha_deg": 5.381,
     "CL": 0.5053,
-    "CD": 0.02678,
+    "CD": 0.02679,
     "Cm": 0.0
   },
   "aft": {
-    "it_deg": -1.9832,
+    "it_deg": -1.9807,
     "delta_e_residual_deg": 0.00036,
-    "alpha_deg": 5.0717,
+    "alpha_deg": 5.0753,
     "CL": 0.5053,
-    "CD": 0.02676,
+    "CD": 0.02677,
     "Cm": 0.0
   }
 }

@@ -53,7 +53,7 @@ CLAF
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-25.0180  11.9702  -0.0419  6.8984  -0.4160
+25.0180  11.9702  -0.0419  6.8984  -0.4170
 AFILE
 aerofolios/sec_0398.dat
 CLAF
@@ -61,7 +61,7 @@ CLAF
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-26.7634  14.2861  0.2015  6.3196  -2.7260
+26.7634  14.2861  0.2015  6.3196  -2.7300
 AFILE
 aerofolios/sec_0475.dat
 CLAF
@@ -69,7 +69,7 @@ CLAF
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-28.6900  16.8425  0.4702  5.6807  -4.7860
+28.6900  16.8425  0.4702  5.6807  -4.7970
 AFILE
 aerofolios/sec_0560.dat
 CLAF
@@ -80,7 +80,7 @@ aileron  1.0   0.73    0. 0. 0.    -1.0
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-30.7301  19.5493  0.7547  5.0043  -5.6610
+30.7301  19.5493  0.7547  5.0043  -5.6840
 AFILE
 aerofolios/sec_0650.dat
 CLAF
@@ -91,7 +91,7 @@ aileron  1.0   0.73    0. 0. 0.    -1.0
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-32.9967  22.5569  1.0708  4.2526  -5.6860
+32.9967  22.5569  1.0708  4.2526  -5.7150
 AFILE
 aerofolios/sec_0750.dat
 CLAF
@@ -102,7 +102,7 @@ aileron  1.0   0.73    0. 0. 0.    -1.0
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-34.6968  24.8126  1.3079  3.6889  -5.7090
+34.6968  24.8126  1.3079  3.6889  -5.7250
 AFILE
 aerofolios/sec_0825.dat
 CLAF
@@ -113,7 +113,7 @@ aileron  1.0   0.73    0. 0. 0.    -1.0
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-36.3968  27.0683  1.5450  3.1252  -6.0360
+36.3968  27.0683  1.5450  3.1252  -6.0200
 AFILE
 aerofolios/sec_0900.dat
 CLAF
@@ -124,7 +124,7 @@ aileron  1.0   0.73    0. 0. 0.    -1.0
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-37.5301  28.5721  1.7031  2.7494  -6.3680
+37.5301  28.5721  1.7031  2.7494  -6.3250
 AFILE
 aerofolios/sec_0950.dat
 CLAF
@@ -132,7 +132,7 @@ CLAF
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-38.6635  30.0759  1.8611  2.3736  -6.7430
+38.6635  30.0759  1.8611  2.3736  -6.6700
 AFILE
 aerofolios/sec_1000.dat
 CLAF
