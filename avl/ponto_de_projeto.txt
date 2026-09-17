@@ -1,0 +1,5 @@
+# estado no ponto de projeto, asa sem torção
+M 0.85
+CL 0.5053
+fwd.avl alpha 3.91127 CD 0.02544 CDff 0.0097127 e 0.8331 Cm -0.29791 xnp 27.340538
+aft.avl alpha 3.91127 CD 0.02544 CDff 0.0097127 e 0.8331 Cm -0.17778 xnp 27.345997

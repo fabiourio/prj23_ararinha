@@ -1,49 +1,39 @@
-# Vamos rodar tudo que o LAB 04 exige dentro desse .jl e gerar os gráficos para o relatório.
+# Vamos rodar tudo que o LAB 04 exige dentro desse .jl e gerar os gráficos
+# para o relatório. A malha já vem pronta e verificada (ver
+# convergencia_malha.jl) e os dados do designTool vêm de
+# dados_designtool.json (ver dados_designtool.py).
 #
 # Rodar de dentro da pasta avl/:   julia lab04.jl
 #
-# ETAPA 1 -- CONVERGÊNCIA DE MALHA
-#
-# Em malha de vórtices, corda e envergadura convergem grandezas diferentes:
-# o número de painéis na envergadura governa a distribuição de sustentação
-# (CL, arrasto induzido), e o número na corda governa a distribuição de
-# pressão ao longo dela (Cm, ponto neutro, derivadas de controle). Por isso
-# as varreduras são separadas: primeiro a corda com a envergadura fixa,
-# depois a envergadura com a corda já escolhida.
-#
-# O arrasto induzido é julgado pelo CDff do plano de Trefftz, e não pela
-# integração de campo próximo (CDind), que oscila com o refino sem
-# tendência clara.
+# ETAPA 1 -- PONTO DE PROJETO
+# Estabelece a condição de referência e levanta a distribuição de
+# sustentação da asa sem torção, que é a linha de base da otimização de
+# torção.
 
 using Printf
 using Plots
+using JSON
 
 gr()
 
 # --------------------------------------------------------------------
 # CONFIGURAÇÃO
 
-const AVL      = "./avl.exe"
-const BASE     = "aft.avl"          # geometria de referência do estudo
-const VARIANTE = "_malha.avl"       # arquivo temporário de cada nível
+const AVL = "./avl.exe"
+const DADOS = JSON.parsefile("dados_designtool.json")
+const PP = DADOS["ponto_de_projeto"]
 
-const MACH    = 0.85                # ponto de projeto
-const CL_PROJ = 0.5053
-const MAC     = 6.8995              # corda de referência [m]
+const MACH    = PP["M"]
+const CL_PROJ = round(PP["CL"], digits = 4)
+const SREF    = PP["Sref"]
+const BREF    = DADOS["referencia"]["Bref"]
+const CREF    = DADOS["referencia"]["Cref"]
+const SEMI    = BREF/2
 
-# Tolerâncias para considerar a malha convergida (desvio contra a malha
-# mais fina da varredura).
-const TOL_ALPHA = 0.05              # [graus]
-const TOL_CDFF  = 0.01              # relativo (1% ~ 1 count)
-const TOL_XNP   = 0.005*MAC         # [m]  (0,5 %MAC)
-const TOL_CLA   = 0.01              # relativo
-const TOL_CMDE  = 0.01              # relativo
-
-# Estilo das figuras (mesmo dos relatórios anteriores da equipe)
 const PAL   = ["#2a78d6", "#eb6834", "#1baf7a"]
+const INK   = "#0b0b0b"
 const INK2  = "#52514e"
-const GRIDC = "#e1e0d9"
-const ESTILO = (framestyle = :axes, gridcolor = GRIDC, gridalpha = 1.0,
+const ESTILO = (framestyle = :axes, gridcolor = "#e1e0d9", gridalpha = 1.0,
                 gridlinewidth = 0.7, foreground_color_axis = INK2,
                 foreground_color_border = "#c3c2b7",
                 foreground_color_text = INK2, tickfontsize = 9,
@@ -51,20 +41,18 @@ const ESTILO = (framestyle = :axes, gridcolor = GRIDC, gridalpha = 1.0,
                 background_color = :white)
 
 # --------------------------------------------------------------------
-# INFRAESTRUTURA: rodar o AVL e ler números da saída
+# INFRAESTRUTURA
 
 function roda_avl(cmds::AbstractString)
     tmp = "_cmds.txt"
     write(tmp, cmds)
-    saida = try
-        read(pipeline(`$AVL`, stdin = tmp), String)
+    try
+        return read(pipeline(`$AVL`, stdin = tmp), String)
     finally
         rm(tmp, force = true)
     end
-    return saida
 end
 
-"Último número que casa com o padrão, ou NaN."
 function num(txt::AbstractString, pat::Regex)
     m = collect(eachmatch(pat, txt))
     isempty(m) && return NaN
@@ -72,181 +60,168 @@ function num(txt::AbstractString, pat::Regex)
 end
 
 """
-Escreve uma variante do arquivo base com outras malhas.
-`malhas` mapeia o nome da superfície para (Nchordwise, Nspanwise).
-Superfícies fora do dicionário (nacele) ficam intactas.
+Roda um caso no ponto de projeto. `restricao` é o comando de arfagem
+("d2 d2 0" para profundor fixo, "d2 pm 0" para arfagem compensada) e `it`
+é a incidência da empenagem.
 """
-function escreve_variante(base, destino, malhas::Dict{String,Tuple{Int,Int}})
-    saida = String[]
-    sup = ""
-    espera_nome = false
-    espera_malha = false
-    for ln in readlines(base)
-        t = strip(ln)
-        if t == "SURFACE"
-            espera_nome = true
-            push!(saida, ln)
-        elseif espera_nome && !isempty(t) && !startswith(t, "#")
-            sup = t
-            espera_nome = false
-            espera_malha = haskey(malhas, sup)
-            push!(saida, ln)
-        elseif espera_malha && !isempty(t) && !startswith(t, "#")
-            nc, ns = malhas[sup]
-            push!(saida, "$nc 1.0 $ns 1.0")
-            espera_malha = false
-        else
-            push!(saida, ln)
-        end
-    end
-    write(destino, join(saida, "\n") * "\n")
-end
-
-"Roda um nível de malha e devolve as métricas de convergência."
-function mede(malhas::Dict{String,Tuple{Int,Int}})
-    escreve_variante(BASE, VARIANTE, malhas)
-    cmds = join(["load $VARIANTE", "oper", "m", "mn $MACH", "",
-                 "a c $CL_PROJ", "x", "st", "", "", "quit"], "\n") * "\n"
-    s = roda_avl(cmds)
-    rm(VARIANTE, force = true)
-
-    # O bloco st termina antes da linha do ponto neutro: a razão de
-    # estabilidade espiral logo abaixo também contém "Cnb" e contaminaria
-    # a leitura.
+function caso(arquivo; restricao = "d2 d2 0", it = 0.0, faixas = false)
+    cmds = ["load $arquivo", "oper", "m", "mn $MACH", "",
+            "de", "1 $it", "", restricao, "a c $CL_PROJ", "x"]
+    faixas && append!(cmds, ["fs", ""])
+    append!(cmds, ["st", "", "", "quit"])
+    s = roda_avl(join(cmds, "\n") * "\n")
     st = split(split(s, "Stability-axis derivatives")[end], "Neutral point")[1]
-
-    return (vortices = num(s, r"(\d+)\s+Vortices"),
-            alpha    = num(s, r"Alpha\s*=\s*([-\d.]+)"),
-            CL       = num(s, r"CLtot\s*=\s*([-\d.]+)"),
-            CDff     = num(s, r"CDff\s*=\s*([-\d.Ee+]+)"),
-            CDind    = num(s, r"CDind\s*=\s*([-\d.Ee+]+)"),
-            CLa      = num(st, r"CLa\s*=\s*([-\d.]+)"),
-            CMa      = num(st, r"Cma\s*=\s*([-\d.]+)"),
-            CMde     = num(st, r"Cmd2\s*=\s*([-\d.]+)"),
-            xnp      = num(s,  r"Xnp\s*=\s*([-\d.]+)"))
+    return (saida = s,
+            alpha = num(s, r"Alpha\s*=\s*([-\d.]+)"),
+            CL    = num(s, r"CLtot\s*=\s*([-\d.]+)"),
+            CD    = num(s, r"CDtot\s*=\s*([-\d.]+)"),
+            CDff  = num(s, r"CDff\s*=\s*([-\d.Ee+]+)"),
+            CDind = num(s, r"CDind\s*=\s*([-\d.Ee+]+)"),
+            CDvis = num(s, r"CDvis\s*=\s*([-\d.Ee+]+)"),
+            e     = num(s, r"\se =\s+([-\d.]+)"),
+            Cm    = num(s, r"Cmtot\s*=\s*([-\d.]+)"),
+            de    = num(s, r"elevator\s*=\s*([-\d.]+)"),
+            CLa   = num(st, r"CLa\s*=\s*([-\d.]+)"),
+            CMa   = num(st, r"Cma\s*=\s*([-\d.]+)"),
+            xnp   = num(s, r"Xnp\s*=\s*([-\d.]+)"))
 end
+
+"""
+Distribuição por faixas da asa direita: η, corda, c·cl e cl local.
+As colunas do bloco `fs` do AVL são, depois do índice da faixa:
+Yle, Chord, Area, c·cl, ai, cl_norm, cl, cd, cdv, cm_c/4, cm_LE, C.P.x/c.
+A saída do AVL usa terminador de linha do Windows, então a classe final
+precisa aceitar o retorno de carro (por isso \\s e não apenas espaço).
+"""
+function faixas_asa(saida)
+    trecho = split(saida, r"Surface # 1\s+Wing")[2]
+    bloco = String(split(trecho, "Surface # 2")[1])
+    linhas = [[parse(Float64, v) for v in split(strip(m.match))[2:end]]
+              for m in eachmatch(r"^\s*\d+(?:\s+[-\dEe.+]+){12}\s*$"m, bloco)]
+    isempty(linhas) && error("não achei as faixas da asa na saída do AVL")
+    d = reduce(hcat, linhas)'
+    return (eta = d[:, 1]./SEMI, corda = d[:, 2], ccl = d[:, 4], cl = d[:, 7])
+end
+
+# ====================================================================
+# ETAPA 1 -- PONTO DE PROJETO
+# ====================================================================
+
+println("="^78)
+println("ETAPA 1 -- PONTO DE PROJETO")
+println("="^78)
+@printf("  W0  = %10.1f N   (%.1f kgf)\n", PP["W0_N"], PP["W0_N"]/9.81)
+@printf("  W   = %10.1f N   (%.1f kgf, %.0f%% de combustível, 100%% de carga)\n",
+        PP["W_N"], PP["W_kgf"], 100*PP["fuel_frac"])
+@printf("  h   = %10.1f m\n", PP["h_m"])
+@printf("  rho = %10.5f kg/m3      a = %.2f m/s\n", PP["rho"], PP["a_inf"])
+@printf("  M   = %10.2f            V = %.1f m/s\n", PP["M"], PP["V"])
+@printf("  CL  = %10.4f            Sref = %.3f m2\n", PP["CL"], SREF)
 
 # --------------------------------------------------------------------
-# RELATÓRIO DE UMA VARREDURA
+# Estado da aeronave sem torção nos dois CGs
 
-const METRICAS = [(:alpha, "α [graus]",  :abs, TOL_ALPHA),
-                  (:CDff,  "CDff",       :rel, TOL_CDFF),
-                  (:xnp,   "xnp [m]",    :abs, TOL_XNP),
-                  (:CLa,   "CLα [1/rad]", :rel, TOL_CLA),
-                  (:CMde,  "CMδe",       :rel, TOL_CMDE)]
-
-desvio(v, ref, tipo) = tipo === :rel ? abs(v - ref)/abs(ref) : abs(v - ref)
-
-"Imprime a tabela da varredura e devolve o índice do nível recomendado."
-function analisa(titulo, rotulos, res)
-    fino = res[end]
-    println("\n", "="^78)
-    println(titulo)
-    println("="^78)
-    @printf("%-12s %8s %9s %10s %10s %10s %10s\n",
-            "malha", "vórtices", "α [°]", "CDff", "xnp [m]", "CLα", "CMδe")
-    for (r, x) in zip(rotulos, res)
-        @printf("%-12s %8.0f %9.4f %10.6f %10.4f %10.4f %10.5f\n",
-                r, x.vortices, x.alpha, x.CDff, x.xnp, x.CLa, x.CMde)
-    end
-
-    # Desvio contra a malha mais fina
-    println("\ndesvio contra a malha mais fina ($(rotulos[end])):")
-    @printf("%-12s %10s %10s %10s %10s %10s   %s\n",
-            "malha", "α [°]", "CDff", "xnp [m]", "CLα", "CMδe", "dentro da tol.")
-    ok_idx = Int[]
-    for (i, (r, x)) in enumerate(zip(rotulos, res))
-        ds = [desvio(getfield(x, k), getfield(fino, k), t) for (k, _, t, _) in METRICAS]
-        tols = [tol for (_, _, _, tol) in METRICAS]
-        ok = all(ds .<= tols)
-        ok && push!(ok_idx, i)
-        @printf("%-12s %10.4f %10.2e %10.4f %10.2e %10.2e   %s\n",
-                r, ds[1], ds[2], ds[3], ds[4], ds[5], ok ? "sim" : "não")
-    end
-
-    # Sanidade: as variações entre níveis sucessivos devem estar caindo.
-    println("\nvariação entre níveis sucessivos (CDff relativo, xnp [m]):")
-    for i in 2:length(res)
-        dc = desvio(res[i].CDff, res[i-1].CDff, :rel)
-        dx = desvio(res[i].xnp,  res[i-1].xnp,  :abs)
-        @printf("  %-12s -> %-12s   CDff %8.2e   xnp %7.4f\n",
-                rotulos[i-1], rotulos[i], dc, dx)
-    end
-
-    escolhido = isempty(ok_idx) ? length(res) : minimum(ok_idx)
-    println("\n>> malha recomendada: $(rotulos[escolhido]) " *
-            "($(Int(res[escolhido].vortices)) vórtices)")
-    return escolhido
+println("\n", "-"^78)
+println("ESTADO NO PONTO DE PROJETO (asa sem torção, profundor neutro)")
+println("-"^78)
+@printf("%-16s %8s %9s %9s %9s %8s %9s %9s\n",
+        "arquivo", "α [°]", "CD", "CDff", "CDind", "e", "Cm", "xnp [m]")
+casos = Dict{String,Any}()
+for f in ("fwd.avl", "aft.avl")
+    r = caso(f; faixas = true)
+    casos[f] = r
+    @printf("%-16s %8.3f %9.5f %9.6f %9.6f %8.4f %9.5f %9.4f\n",
+            f, r.alpha, r.CD, r.CDff, r.CDind, r.e, r.Cm, r.xnp)
 end
 
-function figura(titulo, rotulos, res, arquivo)
-    fino = res[end]
-    nn = [x.vortices for x in res[1:end-1]]
-    p = plot(; xlabel = "número de vórtices",
-             ylabel = "desvio da malha mais fina",
-             title = titulo, titlefontsize = 11, titlelocation = :left,
-             yscale = :log10, legend = :topright, ESTILO...)
-    series = [(:CDff, "CDff", :rel, PAL[1], :circle),
-              (:xnp, "xnp", :abs, PAL[2], :square),
-              (:CLa, "CLα", :rel, PAL[3], :utriangle)]
-    for (k, rot, tipo, cor, mk) in series
-        d = [max(desvio(getfield(x, k), getfield(fino, k), tipo), 1e-6)
-             for x in res[1:end-1]]
-        plot!(p, nn, d; color = cor, linewidth = 2, marker = mk,
-              markersize = 5, markerstrokecolor = cor, label = rot)
+ref_dt = DADOS["polar_designtool"]
+@printf("\n  comparação com o designTool no mesmo ponto:\n")
+@printf("    CD0 (parasita)   AVL usa %.5f (CDp do cabeçalho) | designTool %.5f\n",
+        casos["aft.avl"].CDvis, ref_dt["CD0"])
+@printf("    CD induzido      AVL %.5f (Trefftz)              | designTool %.5f\n",
+        casos["aft.avl"].CDff, ref_dt["CDind"])
+@printf("    CD total         AVL %.5f                        | designTool %.5f  (%+.1f%%)\n",
+        casos["aft.avl"].CD, ref_dt["CD"],
+        100*(casos["aft.avl"].CD/ref_dt["CD"] - 1))
+@printf("    fator de Oswald  AVL %.4f                         | designTool %.4f\n",
+        casos["aft.avl"].e, ref_dt["e"])
+# A diferença de arrasto induzido tem uma causa identificada: o designTool
+# credita ao winglet um alongamento efetivo maior que o geométrico, e o
+# modelo do AVL não tem winglet.
+@printf("\n    o designTool usa alongamento efetivo %.3f contra %.3f geométrico\n",
+        ref_dt["AR_eff"], ref_dt["AR_geom"])
+@printf("    (winglet, %+.0f%%), que o modelo do AVL não tem. Conferindo:\n",
+        100*(ref_dt["AR_eff"]/ref_dt["AR_geom"] - 1))
+@printf("      CL²/(π AR_eff e) = %.5f  reproduz o CDind do designTool\n",
+        CL_PROJ^2/(pi*ref_dt["AR_eff"]*ref_dt["e"]))
+@printf("      com o AR geométrico daria %.5f, próximo do que o AVL calcula\n",
+        CL_PROJ^2/(pi*ref_dt["AR_geom"]*ref_dt["e"]))
+
+# --------------------------------------------------------------------
+# Distribuição de sustentação contra a elíptica
+#
+# Para sustentação total fixa, a distribuição que minimiza o arrasto
+# induzido de uma asa isolada é a elíptica. Comparar a distribuição atual
+# com ela mostra onde a asa está sobrecarregada, que é exatamente a
+# informação que a otimização de torção vai usar.
+#
+# Carga por envergadura: L'(y) = q c(y) cl(y). Na elíptica,
+# L'(η) = L'(0) sqrt(1 - η²) com L'(0) = 4 q Sref CL / (π b), de modo que
+# normalizando c·cl por 4 Sref CL / (π b) a elíptica vira sqrt(1 - η²).
+
+r = casos["aft.avl"]
+fx = faixas_asa(r.saida)
+norma = 4*SREF*r.CL/(pi*BREF)
+carga = fx.ccl ./ norma
+eliptica = sqrt.(max.(0.0, 1 .- fx.eta.^2))
+
+excesso = carga .- eliptica
+i_max = argmax(excesso)
+println("\n", "-"^78)
+println("DISTRIBUIÇÃO DE SUSTENTAÇÃO CONTRA A ELÍPTICA (linha de base)")
+println("-"^78)
+@printf("  maior excesso sobre a elíptica: %+.3f em η = %.3f\n",
+        excesso[i_max], fx.eta[i_max])
+@printf("  carga na ponta (η > 0,8): %+.3f em média sobre a elíptica\n",
+        sum(excesso[fx.eta .> 0.8])/count(fx.eta .> 0.8))
+@printf("  fator de Oswald atual: e = %.4f  (elíptica daria e = 1)\n", r.e)
+@printf("  arrasto induzido atual: %.6f\n", r.CDff)
+@printf("  mínimo teórico (e = 1): %.6f  ->  margem de %.1f counts\n",
+        r.CL^2/(pi*BREF^2/SREF), 1e4*(r.CDff - r.CL^2/(pi*BREF^2/SREF)))
+println("""
+  A margem acima é um LIMITE SUPERIOR otimista, não uma meta. Ela supõe
+  carga elíptica na asa isolada, e a aeronave real não chega lá por três
+  motivos: a empenagem carrega para compensar a arfagem, e o ótimo do
+  conjunto asa mais empenagem não é a asa elíptica; a fuselagem e as
+  naceles perturbam o carregamento; e a restrição de estol vai impedir
+  parte do alívio de ponta. O valor serve para dimensionar a expectativa
+  da otimização de torção, que atua justamente sobre o excesso de carga
+  na ponta mostrado acima.""")
+
+p = plot(; xlabel = "η = 2y/b", ylabel = "carga normalizada  c·cl / (4 S CL / π b)",
+         title = "distribuição de sustentação da asa sem torção",
+         titlefontsize = 11, titlelocation = :left, legend = :bottomleft,
+         xlims = (0, 1), ESTILO...)
+plot!(p, fx.eta, eliptica; color = INK, linewidth = 2, linestyle = :dash,
+      label = "elíptica (arrasto induzido mínimo)")
+plot!(p, fx.eta, carga; color = PAL[1], linewidth = 2.4, marker = :circle,
+      markersize = 3, markerstrokecolor = PAL[1], label = "asa sem torção")
+plot!(p, fx.eta, excesso; color = PAL[2], linewidth = 2,
+      label = "excesso sobre a elíptica")
+hline!(p, [0.0]; color = "#c3c2b7", linewidth = 0.8, label = "")
+savefig(plot(p; size = (860, 520), dpi = 200), "ponto_projeto_carga.png")
+println("\nfigura: ponto_projeto_carga.png")
+
+# --------------------------------------------------------------------
+# Guarda o estado de referência para as etapas seguintes
+open("ponto_de_projeto.txt", "w") do io
+    println(io, "# estado no ponto de projeto, asa sem torção")
+    println(io, "M $MACH")
+    println(io, "CL $CL_PROJ")
+    for f in ("fwd.avl", "aft.avl")
+        c = casos[f]
+        println(io, "$f alpha $(c.alpha) CD $(c.CD) CDff $(c.CDff) ",
+                "e $(c.e) Cm $(c.Cm) xnp $(c.xnp)")
     end
-    savefig(plot(p; size = (800, 480), dpi = 200), arquivo)
-    println("figura: ", arquivo)
 end
-
-# ====================================================================
-# VARREDURA A -- CORDA (envergadura fixa)
-# ====================================================================
-# O refino na corda é o que resolve a distribuição de pressão: Cm, ponto
-# neutro e, sobretudo, as derivadas de controle (a charneira do profundor
-# precisa cair entre painéis bem resolvidos).
-
-NC = [4, 6, 8, 10, 12, 16]
-res_c = [mede(Dict("Wing" => (nc, 24),
-                   "Horizontal tail" => (nc, 12),
-                   "Vertical tail" => (nc, 8))) for nc in NC]
-rot_c = ["$(nc) x corda" for nc in NC]
-i_c = analisa("VARREDURA A -- refino na CORDA (envergadura fixa: 24/12/8)",
-              rot_c, res_c)
-NC_ESCOLHIDO = NC[i_c]
-figura("convergência no refino da corda", rot_c, res_c,
-       "convergencia_corda.png")
-
-# ====================================================================
-# VARREDURA B -- ENVERGADURA (corda já escolhida)
-# ====================================================================
-# O refino na envergadura resolve a distribuição de sustentação, que é o
-# que governa o arrasto induzido e o CLmax pelo método da seção crítica.
-
-NS = [8, 12, 16, 24, 32, 40]
-res_s = [mede(Dict("Wing" => (NC_ESCOLHIDO, ns),
-                   "Horizontal tail" => (NC_ESCOLHIDO, max(4, ns ÷ 2)),
-                   "Vertical tail" => (NC_ESCOLHIDO, max(4, ns ÷ 3))))
-         for ns in NS]
-rot_s = ["$(ns) x enverg." for ns in NS]
-i_s = analisa("VARREDURA B -- refino na ENVERGADURA (corda: $NC_ESCOLHIDO)",
-              rot_s, res_s)
-NS_ESCOLHIDO = NS[i_s]
-figura("convergência no refino da envergadura", rot_s, res_s,
-       "convergencia_envergadura.png")
-
-# ====================================================================
-# RECOMENDAÇÃO
-# ====================================================================
-println("\n", "="^78)
-println("MALHA RECOMENDADA PARA AS ANÁLISES DO LAB 04")
-println("="^78)
-@printf("  asa                %2d x %2d\n", NC_ESCOLHIDO, NS_ESCOLHIDO)
-@printf("  empenagem horiz.   %2d x %2d\n", NC_ESCOLHIDO, max(4, NS_ESCOLHIDO ÷ 2))
-@printf("  empenagem vert.    %2d x %2d\n", NC_ESCOLHIDO, max(4, NS_ESCOLHIDO ÷ 3))
-@printf("  total              %d vórtices\n", res_s[i_s].vortices)
-println("\nTolerâncias usadas (contra a malha mais fina de cada varredura):")
-@printf("  α    %.2f graus\n", TOL_ALPHA)
-@printf("  CDff %.1f%%\n", 100*TOL_CDFF)
-@printf("  xnp  %.1f%%MAC (%.3f m)\n", 100*TOL_XNP/MAC, TOL_XNP)
-@printf("  CLα e CMδe  %.1f%%\n", 100*TOL_CLA)
+println("gravado: ponto_de_projeto.txt")
