@@ -209,12 +209,12 @@ plot!(p, fx.eta, carga; color = PAL[1], linewidth = 2.4, marker = :circle,
 plot!(p, fx.eta, excesso; color = PAL[2], linewidth = 2,
       label = "excesso sobre a elíptica")
 hline!(p, [0.0]; color = "#c3c2b7", linewidth = 0.8, label = "")
-savefig(plot(p; size = (860, 520), dpi = 200), "ponto_projeto_carga.png")
+savefig(plot(p; size = (860, 520), dpi = 200), "resultados/ponto_projeto_carga.png")
 println("\nfigura: ponto_projeto_carga.png")
 
 # --------------------------------------------------------------------
 # Guarda o estado de referência para as etapas seguintes
-open("ponto_de_projeto.txt", "w") do io
+open("resultados/ponto_de_projeto.txt", "w") do io
     println(io, "# estado no ponto de projeto, asa sem torção")
     println(io, "M $MACH")
     println(io, "CL $CL_PROJ")

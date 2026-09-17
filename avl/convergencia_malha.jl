@@ -255,7 +255,7 @@ ref_s, banda_s, i_s = tabela(
     "ETAPA 1 -- refino na ENVERGADURA (corda fixa em 8)", rot_s, res_s)
 NS_ESC = NS[i_s]
 figura("arrasto contra o refino na envergadura", "painéis na semi-envergadura",
-       NS, res_s, ref_s, banda_s, i_s, "conv_envergadura.png")
+       NS, res_s, ref_s, banda_s, i_s, "resultados/conv_envergadura.png")
 
 # ====================================================================
 # ETAPA 2 -- CORDA: o arrasto é insensível a ela
@@ -269,7 +269,7 @@ rot_c = ["$nc painéis" for nc in NC]
 ref_c, banda_c, i_c = tabela(
     "ETAPA 2 -- refino na CORDA (envergadura fixa em $NS_ESC)", rot_c, res_c)
 figura("arrasto contra o refino na corda", "painéis na corda",
-       NC, res_c, ref_c, banda_c, i_c, "conv_corda.png")
+       NC, res_c, ref_c, banda_c, i_c, "resultados/conv_corda.png")
 
 uteis = [x.CDff for (nc, x) in zip(NC, res_c) if nc >= 4]
 faixa_cd = 100*(maximum(uteis) - minimum(uteis))/ref_c
@@ -350,7 +350,7 @@ println("\ncritérios:")
         NS_ESC, 100*banda_s)
 @printf("  corda pelos MOMENTOS/CONTROLE -> asa %d, EH %d\n", m[W][1], m[H][1])
 
-open("malha_adotada.txt", "w") do io
+open("resultados/malha_adotada.txt", "w") do io
     for s in (W, H, V)
         println(io, "$s $(m[s][1]) $(m[s][2])")
     end
