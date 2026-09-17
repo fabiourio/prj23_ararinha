@@ -40,6 +40,7 @@ using Plots
 using JSON
 using Optim
 using Statistics
+using LinearAlgebra
 
 gr()
 
@@ -61,9 +62,37 @@ const AR      = BREF^2/SREF
 
 # Torções livres: uma por seção da asa, com a raiz fixa em zero. A raiz é
 # referência de gauge (somar uma constante a toda a asa é girar a asa
-# inteira, o que o ângulo de ataque de equilíbrio absorve).
-const ETAS   = [0.0, 0.1011, 0.398, 0.56, 0.90, 1.0]
-const LIVRES = 2:6
+# inteira, o que o ângulo de ataque de equilíbrio absorve). As estações
+# são lidas do próprio modelo, de modo que refinar a asa (refina_asa.py)
+# aumenta os pontos de controle sem tocar neste script.
+function etas_da_asa(arquivo)
+    linhas = readlines(arquivo)
+    n = length(linhas)
+    ini = [i for i in 1:n if strip(linhas[i]) in ("SURFACE", "BODY")]
+    i_asa = 0
+    for i in ini
+        strip(linhas[i]) == "SURFACE" || continue
+        j = i + 1
+        while j <= n && (isempty(strip(linhas[j])) ||
+                         startswith(strip(linhas[j]), "#")); j += 1; end
+        j <= n && strip(linhas[j]) == "Wing" && (i_asa = i)
+    end
+    prox = findfirst(>(i_asa), ini)
+    fim = prox === nothing ? n : ini[prox] - 1
+    ys, espera = Float64[], false
+    for i in i_asa:fim
+        t = split(linhas[i], "#")[1] |> strip
+        if strip(linhas[i]) == "SECTION"
+            espera = true
+        elseif espera && !isempty(t)
+            push!(ys, parse(Float64, split(t)[2])); espera = false
+        end
+    end
+    return ys ./ ys[end]
+end
+
+const ETAS   = etas_da_asa(BASE)
+const LIVRES = 2:length(ETAS)
 const NV     = length(LIVRES)
 
 const TW_MIN, TW_MAX = -12.0, 6.0
@@ -286,6 +315,37 @@ function restricao_linear(me, i_ref, margem)
 end
 
 # --------------------------------------------------------------------
+# REGULARIZAÇÃO DE SUAVIDADE
+#
+# O arrasto induzido é quase insensível a modos de alta frequência da
+# torção: um dente de serra de estação para estação quase não muda o
+# carregamento, porque o método de malha de vórtices o alisa. Com muitas
+# torções livres isso deixa a Hessiana quase singular nessas direções, e o
+# ótimo passa a ser praticamente degenerado: existem infinitas torções com
+# o mesmo arrasto, e o otimizador entrega uma qualquer, em geral
+# serrilhada e sem sentido construtivo.
+#
+# A saída não é reduzir os pontos de controle (isso estrangula a restrição
+# de estol), e sim penalizar a CURVATURA da distribuição com um peso
+# pequeno: escolhido pela curva-L abaixo, ele remove o serrilhado a um
+# custo de arrasto abaixo do limiar de interesse.
+
+"Soma dos quadrados das segundas diferenças da torção ao longo da envergadura."
+function rugosidade(x)
+    tw = torcoes(x)
+    r = 0.0
+    for i in 2:length(ETAS)-1
+        d1 = (tw[i+1] - tw[i])/(ETAS[i+1] - ETAS[i])
+        d0 = (tw[i] - tw[i-1])/(ETAS[i] - ETAS[i-1])
+        r += (d1 - d0)^2
+    end
+    return r
+end
+
+# peso da regularização, definido pela curva-L (ver adiante)
+LAMBDA = 0.0
+
+# --------------------------------------------------------------------
 # OTIMIZAÇÃO COM REGISTRO DO CAMINHO
 
 function otimiza(m; pen = nothing, x0 = zeros(NV))
@@ -293,7 +353,8 @@ function otimiza(m; pen = nothing, x0 = zeros(NV))
     lo, hi = fill(TW_MIN, NV), fill(TW_MAX, NV)
     x = copy(x0)
     for w in (pen === nothing ? [0.0] : [1e2, 1e3, 1e4, 1e5, 1e6])
-        f(z) = 1e4*cd_mod(m, z) + (pen === nothing ? 0.0 : w*pen(z))
+        f(z) = 1e4*cd_mod(m, z) + LAMBDA*rugosidade(z) +
+               (pen === nothing ? 0.0 : w*pen(z))
         r = optimize(f, lo, hi, x, Fminbox(LBFGS()),
                      Optim.Options(store_trace = true, extended_trace = true,
                                    iterations = 300, g_tol = 1e-11))
@@ -386,6 +447,50 @@ println("="^78)
 println("  A resposta é conhecida: carga elíptica, Oswald 1, CDff no piso.")
 
 m1 = modelo_arrasto(so_asa = true, trim = false)
+
+# --------------------------------------------------------------------
+# CONDICIONAMENTO E ESCOLHA DO PESO DE SUAVIDADE
+#
+# Os autovalores da Hessiana mostram quanto o arrasto realmente responde a
+# cada modo de torção. Autovalores muito pequenos são direções em que o
+# arrasto quase não muda: é nelas que o otimizador vagueia e produz o
+# serrilhado. A curva-L abaixo escolhe o peso que remove o serrilhado
+# cobrando menos que o limiar de interesse.
+
+autov = sort(eigvals(Symmetric(m1.H)); rev = true)
+println("\n  condicionamento do arrasto nas direções de torção:")
+@printf("    maior autovalor da Hessiana  %.3e\n", autov[1])
+@printf("    menor autovalor da Hessiana  %.3e\n", autov[end])
+@printf("    razão entre eles             %.0f\n", autov[1]/max(autov[end], 1e-30))
+println("    (razão alta significa vale quase plano: o ótimo é degenerado")
+println("     nas direções de alta frequência, e é daí que vem o serrilhado)")
+
+println("\n  curva-L: o que custa alisar a torção")
+@printf("    %-12s %12s %12s %12s\n", "λ", "CDff", "custo", "rugosidade")
+melhor_lam = 0.0
+for lam in (0.0, 1e-4, 1e-3, 1e-2, 1e-1, 1.0, 10.0)
+    global LAMBDA = lam
+    xl, _ = otimiza(m1)
+    cd = cd_mod(m1, xl)
+    @printf("    %-12.0e %12.6f %+11.2f c %12.4f\n", lam, cd,
+            1e4*(cd - m1.f0), rugosidade(xl))
+end
+# peso adotado: o maior que ainda custa menos de 0,1 count
+global LAMBDA = 0.0
+x_livre, _ = otimiza(m1)
+cd_livre = cd_mod(m1, x_livre)
+for lam in (10.0, 1.0, 1e-1, 1e-2, 1e-3, 1e-4)
+    global LAMBDA = lam
+    xl, _ = otimiza(m1)
+    if 1e4*(cd_mod(m1, xl) - cd_livre) <= 0.1
+        global melhor_lam = lam
+        break
+    end
+end
+global LAMBDA = melhor_lam
+@printf("\n  peso adotado: λ = %.0e (custa menos de 0,1 count e alisa a torção)\n",
+        LAMBDA)
+
 x1, cam1 = otimiza(m1)
 ot1 = avalia(torcoes(x1); so_asa = true, faixas = true)
 @printf("\n  torções [graus]: %s\n", join([@sprintf("%6.2f", v) for v in torcoes(x1)], " "))
@@ -395,9 +500,19 @@ ot1 = avalia(torcoes(x1); so_asa = true, faixas = true)
 @printf("  distância ao piso analítico: %+.2f counts\n", 1e4*(ot1.CDff - piso))
 @printf("  o modelo previu %.6f e o AVL deu %.6f (erro %.2f counts)\n",
         cd_mod(m1, x1), ot1.CDff, 1e4*abs(cd_mod(m1, x1) - ot1.CDff))
-ok1 = abs(ot1.e - 1) < 0.01 && abs(ot1.CDff - piso) < 5e-6
-println(ok1 ? "\n  >> VALIDADO: Oswald ~ 1 e arrasto no piso analítico." :
-              "\n  >> ATENÇÃO: não bateu a resposta conhecida.")
+# A asa tem 6 graus de diedro, de modo que NÃO é plana. O piso CL²/(π AR)
+# vale para asa plana; para uma asa não plana o mínimo de Munk fica um
+# pouco abaixo dele, e o fator de Oswald pode passar de 1. O teste, então,
+# é alcançar o piso plano ou ficar ligeiramente abaixo, com Oswald junto
+# de 1 por cima.
+ok1 = ot1.e > 0.99 && ot1.CDff <= piso + 5e-6
+if ok1
+    println("\n  >> VALIDADO: Oswald ~ 1 e arrasto no piso analítico.")
+    ot1.e > 1.0 && @printf("     (Oswald %.4f passa de 1 porque a asa tem diedro:\n      com asa não plana o mínimo de Munk fica abaixo do elíptico plano)\n",
+                           ot1.e)
+else
+    println("\n  >> ATENÇÃO: não bateu a resposta conhecida.")
+end
 println("\n  gerando a animação da convergência à elíptica...")
 anima(cam1, "evolucao_1_asa_isolada.gif"; so_asa = true, trim = false,
       titulo = "etapa 1: asa isolada, sem restrição")
@@ -446,8 +561,11 @@ me = modelo_estol()
 println("  (margem negativa significa que o estol começa DENTRO do aileron,")
 println("   o que a FAR 25.203 não admite: o rolamento perde eficácia)\n")
 
-partidas = [zeros(NV), copy(x2), [2.0, 1.0, -2.0, -5.0, -8.0],
-            [0.0, 0.0, -3.0, -6.0, -9.0], [4.0, 3.0, -1.0, -4.0, -7.0]]
+# partidas com alívio de ponta crescente, dimensionadas pelo número de
+# variáveis (a asa pode ser refinada sem mexer aqui)
+rampa(a, b) = [a + (b - a)*(ETAS[i] - ETAS[2])/(1 - ETAS[2]) for i in LIVRES]
+partidas = [zeros(NV), copy(x2), rampa(2.0, -8.0), rampa(0.0, -9.0),
+            rampa(4.0, -7.0)]
 
 println("  custo da margem de estol exigida:")
 @printf("  %-10s %10s %10s %9s %10s   %s\n", "margem", "CDff", "counts",

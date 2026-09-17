@@ -1,0 +1,29 @@
+PONTO DE PROJETO RECOMENDADO PARA A TORÇÃO DA ASA
+
+vínculos: torção não crescente da raiz para a ponta,
+          salto máximo de 2 graus entre estações vizinhas,
+          estol iniciando fora do aileron (FAR 25.203),
+          margem de 0 grau de ângulo de ataque
+
+CDff   0.010126  (-8.56 counts contra a asa sem torção)
+CDvis  0.014890
+Oswald 0.8014
+estol começa em η = 0.520 (aileron de 0.56 a 0.90)
+profundor de trimagem -1.45 graus
+salto máximo 2.0 graus, faixa total 5.8 graus
+
+η        torção [graus]
+0.0000      0.00
+0.1011     -0.00
+0.2200     -0.00
+0.3200     -0.00
+0.3980     -0.00
+0.4800     -0.98
+0.5600     -2.98
+0.7000     -4.98
+0.8200     -5.53
+0.9000     -5.82
+1.0000     -5.82
+
+ALTERNATIVA MAIS ROBUSTA, com 0.5 grau de margem de estol:
+CDff 0.011160 (+1.78 counts), torções 0.00 -0.00 -0.00 -0.00 -0.00 -0.00 -5.13 -6.55 -6.55 -6.55 -6.55

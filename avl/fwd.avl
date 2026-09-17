@@ -27,6 +27,7 @@ YDUPLICATE
 ANGLE
 0.0
 
+
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
 15.9966  0.0000  -2.5000  9.8898  0.0000
@@ -45,17 +46,63 @@ CLAF
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-25.0180  11.9702  -1.2419  6.8984  0.0000
+20.9833  6.6167  -1.8046  8.2362  0.0000
 AFILE
-airfoils/centro.dat
+airfoils/gerado/eta_0220.dat
 CLAF
 1.0000
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-28.6900  16.8425  -0.7298  5.6807  0.0000
+23.2500  9.6243  -1.4884  7.4846  0.0000
 AFILE
-airfoils/centro.dat
+airfoils/gerado/eta_0320.dat
+CLAF
+1.0000
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+25.0180  11.9702  -1.2419  6.8984  0.0000
+AFILE
+airfoils/gerado/eta_0398.dat
+CLAF
+1.0000
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+26.8767  14.4364  -0.9827  6.2820  0.0000
+AFILE
+airfoils/gerado/eta_0480.dat
+CLAF
+1.0000
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+28.6901  16.8425  -0.7298  5.6807  0.0000
+AFILE
+airfoils/gerado/eta_0560.dat
+CLAF
+1.0000
+CONTROL
+#name    gain  Xhinge  XYZhvec      SgnDup
+aileron  1.0   0.73    0. 0. 0.    -1.0
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+31.8634  21.0531  -0.2872  4.6285  0.0000
+AFILE
+airfoils/gerado/eta_0700.dat
+CLAF
+1.0000
+CONTROL
+#name    gain  Xhinge  XYZhvec      SgnDup
+aileron  1.0   0.73    0. 0. 0.    -1.0
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+34.5835  24.6622  0.0921  3.7265  0.0000
+AFILE
+airfoils/gerado/eta_0820.dat
 CLAF
 1.0000
 CONTROL
@@ -81,7 +128,6 @@ airfoils/ponta.dat
 CLAF
 1.0000
 
-#----------------------------------------------------------------
 SURFACE
 Horizontal tail
 #Nchordwise Cspace Nspanwise Sspace
