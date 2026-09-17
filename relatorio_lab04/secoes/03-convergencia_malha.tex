@@ -2,9 +2,9 @@
 \section{Validação da malha de vórtices}
 
 Antes das análises, verificou-se que a discretização escolhida para o modelo
-é suficiente. Todas as superfícies foram refinadas simultaneamente em seis
-níveis, com totais de cerca de 100 a 2.000 vórtices, mantendo as proporções
-entre asa e empenagens. Uma sétima malha, quatro vezes mais fina que a
+é suficiente. Todas as superfícies foram refinadas simultaneamente em cinco
+níveis, com totais de cerca de 200 a 2.000 vórtices, mantendo as proporções
+entre asa e empenagens. Uma sexta malha, quatro vezes mais fina que a
 adotada, foi executada apenas para servir de referência no cálculo dos
 desvios. Cada nível rodou na condição do ponto de projeto, com $M = 0{,}85$
 e meta de sustentação $C_L = 0{,}5053$. As métricas acompanhadas cobrem as
@@ -22,13 +22,12 @@ com a torção da Seção 6).}\label{tab:convergencia}
 Malha da asa & Vórtices & $\alpha$ [graus] & $C_{L\alpha}$ [1/rad] &
 $C_{D,\mathrm{ind}}$ & $C_{D,\mathrm{ff}}$ (Trefftz) & $x_{np}$ [m] \\
 \midrule
-$3\times 12$ & 110 & 5,0179 & 6,4097 & 0,01260 & 0,00998 & 29,9450 \\
-$5\times 16$ & 217 & 5,0374 & 6,4356 & 0,01275 & 0,01051 & 30,0340 \\
-$8\times 25$ & 532 & 4,9972 & 6,4655 & 0,01191 & 0,01021 & 30,0616 \\
-$10\times 35$ & 966 & 5,0069 & 6,4595 & 0,01177 & 0,01037 & 30,0720 \\
-$12\times 40$ (adotada) & 1.312 & 4,9984 & 6,4706 & 0,01170 & 0,01037 & 30,0712 \\
-$15\times 50$ & 2.050 & 4,9940 & 6,4774 & 0,01158 & 0,01033 & 30,0769 \\
-$24\times 80$ (referência) & 5.248 & 4,9875 & 6,4821 & 0,01128 & 0,01032 & 30,0840 \\
+$5\times 16$ & 217 & 4,8577 & 6,4395 & 0,01349 & 0,01096 & 30,0503 \\
+$8\times 25$ & 532 & 4,8549 & 6,4735 & 0,01279 & 0,01088 & 30,0780 \\
+$10\times 35$ & 966 & 4,8439 & 6,4735 & 0,01280 & 0,01090 & 30,0851 \\
+$12\times 40$ (adotada) & 1.312 & 4,8291 & 6,4790 & 0,01246 & 0,01085 & 30,0924 \\
+$15\times 50$ & 2.050 & 4,8338 & 6,4798 & 0,01244 & 0,01088 & 30,0945 \\
+$24\times 80$ (referência) & 5.248 & 4,8287 & 6,4859 & 0,01201 & 0,01088 & 30,0996 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -44,10 +43,10 @@ adotada.}\label{fig:convergencia}
 A Figura~\ref{fig:convergencia} apresenta o desvio percentual em relação à
 malha de referência das três métricas que exibem transiente de convergência
 na faixa varrida. As três caem de forma consistente com o refino, de cerca
-de 1\% na malha mais grossa para menos de 0,2\% na mais fina. Na malha
-adotada, o ângulo de ataque difere da referência em 0,22\%, a derivada
-$C_{L\alpha}$ em 0,18\% e o ponto neutro em 0,04\%, o que corresponde a
-1,3~cm ou 0,2\,\%MAC.
+de 0,6\% na malha mais grossa para menos de 0,15\% na mais fina. Na malha
+adotada, o ângulo de ataque difere da referência em 0,01\%, a derivada
+$C_{L\alpha}$ em 0,11\% e o ponto neutro em 0,02\%, o que corresponde a
+0,7~cm ou 0,1\,\%MAC.
 
 O arrasto induzido do plano de Trefftz, que é a medida limpa do método,
 parte de um desvio de 3,6\% na malha mais grossa e cai para 0,45\% na

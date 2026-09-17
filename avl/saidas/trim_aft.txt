@@ -12,23 +12,23 @@ Vortex Lattice Output -- Total Forces
 
  Run case:  -unnamed-                              
 
-  Alpha =   5.43146     pb/2V =  -0.00000     p'b/2V =  -0.00000
+  Alpha =   5.07168     pb/2V =  -0.00000     p'b/2V =  -0.00000
   Beta  =   0.00000     qc/2V =   0.00000
   Mach  =     0.850     rb/2V =  -0.00000     r'b/2V =  -0.00000
 
-  CXtot =   0.02201     Cltot =  -0.00001     Cl'tot =  -0.00001
-  CYtot =   0.00001     Cmtot =  -0.00000
-  CZtot =  -0.50549     Cntot =  -0.00000     Cn'tot =  -0.00000
+  CXtot =   0.01802     Cltot =  -0.00001     Cl'tot =  -0.00001
+  CYtot =   0.00001     Cmtot =   0.00000
+  CZtot =  -0.50569     Cntot =  -0.00000     Cn'tot =  -0.00000
 
   CLtot =   0.50530
-  CDtot =   0.02593
-  CDvis =   0.01489     CDind = 0.0110446
-  CLff  =   0.50504     CDff  = 0.0095495    | Trefftz
-  CYff  =  -0.00000         e =    0.8667    | Plane  
+  CDtot =   0.02676
+  CDvis =   0.01489     CDind = 0.0118659
+  CLff  =   0.50490     CDff  = 0.0101134    | Trefftz
+  CYff  =   0.00000         e =    0.8179    | Plane  
 
    aileron         =   0.00000
-   elevator        =  -0.00034
+   elevator        =   0.00036
    rudder          =   0.00000
 
-   it              =  -3.54494
+   it              =  -1.98315
  

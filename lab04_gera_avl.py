@@ -88,16 +88,13 @@ CD0 = dragDict['CD0']
 # espacamento cosseno (o AVL so usa a linha de arqueamento, entao nao ha
 # perda pratica de fidelidade).
 ORIGEM_PERFIS = 'otimizacao_aerofolio/ENTREGA/02_perfis_otimizados'
-PERFIS = {'raiz.dat': 'raiz_roteiro.dat',
-          'meio.dat': 'meio_roteiro.dat',
-          'ponta.dat': 'ponta_roteiro.dat'}
 
 
-def reamostra_dat(origem, destino, n_face=99):
-    '''Reamostra um .dat Selig (TE -> LE -> TE) com cosseno em x por face.'''
+def reamostra_pts(origem, n_face=99):
+    '''Reamostra um .dat Selig (TE -> LE -> TE) com cosseno em x por face
+    e devolve o array de coordenadas.'''
     with open(origem) as f:
         linhas = f.read().split('\n')
-    nome = linhas[0].strip()
     pts = np.array([[float(v) for v in ln.split()]
                     for ln in linhas[1:] if ln.strip()])
     i_le = int(np.argmin(pts[:, 0]))
@@ -110,12 +107,42 @@ def reamostra_dat(origem, destino, n_face=99):
             np.linspace(0, np.pi, n_face)))/2
         faces.append(np.column_stack([x_novo, np.interp(x_novo, x, y)]))
     # Remonta no sentido original: TE -> LE (face 1) + LE -> TE (face 2)
-    face1 = faces[0][::-1]
-    curva = np.vstack([face1, faces[1][1:]])
-    with open(destino, 'w', encoding='ascii') as f:
-        f.write(nome + '\n')
-        for xx, yy in curva:
-            f.write(f'{xx:.7f} {yy:.7f}\n')
+    return np.vstack([faces[0][::-1], faces[1][1:]])
+
+
+# Estacoes dos perfis do Lab 03 e a mistura linear entre elas que o AVL
+# faria por conta propria entre secoes: com secoes intermediarias, cada
+# uma precisa do seu proprio arquivo de coordenadas ja interpolado.
+EST_PERFIS = ((0.1011, 'raiz_roteiro.dat'), (0.398, 'meio_roteiro.dat'),
+              (0.90, 'ponta_roteiro.dat'))
+
+
+def nome_perfil(eta):
+    return f'sec_{int(round(eta*1000)):04d}.dat'
+
+
+def gera_perfis():
+    '''Escreve em avl/aerofolios/ um .dat por estacao da asa, misturando
+    linearmente os perfis do Lab 03 entre as estacoes de referencia.'''
+    bases = [(eta, reamostra_pts(os.path.join(ORIGEM_PERFIS, arq)))
+             for eta, arq in EST_PERFIS]
+    for eta in ETAS_ASA:
+        if eta <= bases[0][0]:
+            curva = bases[0][1]
+        elif eta >= bases[-1][0]:
+            curva = bases[-1][1]
+        else:
+            for (e0, p0), (e1, p1) in zip(bases, bases[1:]):
+                if e0 <= eta <= e1:
+                    w = (eta - e0)/(e1 - e0)
+                    curva = (1 - w)*p0 + w*p1
+                    break
+        destino = os.path.join('avl/aerofolios', nome_perfil(eta))
+        with open(destino, 'w', encoding='ascii') as f:
+            f.write(f'ARARINHA ETA {eta}\n')
+            for xx, yy in curva:
+                f.write(f'{xx:.7f} {yy:.7f}\n')
+    print(f'{len(ETAS_ASA)} perfis por estacao gravados em avl/aerofolios/')
 
 
 #=========================================
@@ -135,10 +162,11 @@ vt_root = np.array([geom['xr_v'], 0.0, inputs['zr_v']])
 vt_tip = np.array([geom['xt_v'], 0.0, geom['zt_v']])
 cr_v, ct_v = geom['cr_v'], geom['ct_v']
 
-# Torcao geometrica da asa [graus] por estacao eta. O arquivo
-# avl/saidas/torcao.json e escrito por lab04_torcao.py (otimizacao de
-# torcao); sem ele, a asa sai sem torcao.
-ETAS_ASA = (0.0, 0.1011, 0.398, 0.56, 0.90, 1.0)
+# Estacoes da asa (secoes do AVL). A torcao geometrica [graus] por estacao
+# vem de avl/saidas/torcao.json, escrito por lab04_torcao.py (otimizacao
+# com parametrizacao polinomial suave); sem ele, a asa sai sem torcao.
+ETAS_ASA = (0.0, 0.1011, 0.2, 0.3, 0.398, 0.475, 0.56, 0.65, 0.75,
+            0.825, 0.90, 0.95, 1.0)
 if os.path.exists('avl/saidas/torcao.json'):
     with open('avl/saidas/torcao.json', encoding='ascii') as _f:
         TORCOES = {float(k): v for k, v in
@@ -147,7 +175,7 @@ else:
     TORCOES = {eta: 0.0 for eta in ETAS_ASA}
 
 
-def secao_asa(eta, estacao, extras=(), torcoes=None):
+def secao_asa(eta, extras=(), torcoes=None):
     '''Bloco SECTION da asa na estacao adimensional eta.'''
     if torcoes is None:
         torcoes = TORCOES
@@ -158,7 +186,7 @@ def secao_asa(eta, estacao, extras=(), torcoes=None):
               '#Xle      Yle      Zle      Chord    Ainc',
               f'{le[0]:.4f}  {le[1]:.4f}  {le[2]:.4f}  {c:.4f}  {ainc:.4f}',
               'AFILE',
-              f'aerofolios/{estacao}.dat',
+              f'aerofolios/{nome_perfil(eta)}',
               'CLAF',
               '1.0000']
     linhas += list(extras)
@@ -217,12 +245,9 @@ YDUPLICATE
 0.0
 ANGLE
 0.0''')
-    partes.append(secao_asa(0.0, 'raiz', torcoes=torcoes))
-    partes.append(secao_asa(0.1011, 'raiz', torcoes=torcoes))
-    partes.append(secao_asa(0.398, 'meio', torcoes=torcoes))
-    partes.append(secao_asa(0.56, 'meio', AILERON, torcoes=torcoes))
-    partes.append(secao_asa(0.90, 'ponta', AILERON, torcoes=torcoes))
-    partes.append(secao_asa(1.0, 'ponta', torcoes=torcoes))
+    for eta in ETAS_ASA:
+        extras = AILERON if 0.56 <= eta <= 0.90 else ()
+        partes.append(secao_asa(eta, extras, torcoes=torcoes))
     partes.append('''#----------------------------------------------------------------
 SURFACE
 Horizontal tail
@@ -260,10 +285,7 @@ def gera_variante(caminho, torcoes, cg='aft'):
 
 # EXECUTION
 if __name__ == '__main__':
-    for destino, origem in PERFIS.items():
-        reamostra_dat(os.path.join(ORIGEM_PERFIS, origem),
-                      os.path.join('avl/aerofolios', destino))
-        print(f'avl/aerofolios/{destino} reamostrado ({2*99 - 1} pontos)')
+    gera_perfis()
 
     for nome_cg, (prefixo, xref) in CGS.items():
         with open(f'avl/{prefixo}.avl', 'w', encoding='ascii') as f:

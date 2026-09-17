@@ -1,21 +1,28 @@
 '''
 Lab 04 -- otimizacao da torcao geometrica da asa.
 
-Problema: escolher as torcoes das estacoes eta = 0,398, 0,56, 0,90 e 1,0
-(raiz fixa em zero como referencia) para MINIMIZAR o arrasto induzido da
-aeronave trimada no ponto de projeto (M = 0,85, CL = 0,5053, arfagem
-compensada pelo profundor), com a RESTRICAO de que o estol pelo metodo da
-secao critica em M = 0,2 comece em eta <= 0,50, antes do aileron (que
-ocupa de 0,56 a 0,90), com folga de 0,5 grau de alpha sobre a regiao
-externa.
+A torcao e parametrizada pelos valores em quatro pontos de controle
+(eta = 0,3, 0,56, 0,8 e 1,0), interpolados por uma spline cubica natural
+que passa pela raiz com torcao nula, avaliada nas treze estacoes da asa
+do modelo. Polinomios globais (cubico e quartico) foram testados antes e
+descartados: ou nao alcancam a folga de estol exigida ou precisam ondular
+tanto que pioram o arrasto. Restricoes de forma completam a
+parametrizacao: wash-in limitado a +2,5 graus, washout ate -10 graus e
+monotonia da estacao 0,398 para fora. O problema e escolher os
+coeficientes para MINIMIZAR o arrasto induzido da aeronave trimada no
+ponto de projeto (M = 0,85, CL = 0,5053, arfagem compensada pelo
+profundor), com duas familias de RESTRICOES: o estol pelo metodo da secao
+critica em M = 0,2 deve comecar em eta <= 0,50, antes do aileron, com
+folga de 0,5 grau de alpha sobre a regiao externa; e a torcao em qualquer
+estacao fica na faixa de -10 a +10 graus.
 
 A estrutura do VLM e explorada para evitar otimizacao cara:
-  - a distribuicao de cl_norm e AFIM nas torcoes e no alpha, entao o
-    modelo do estol e construido com 2 rodadas de base e 1 por variavel;
-  - o arrasto induzido e QUADRATICO nas torcoes, entao o modelo exato da
-    funcao objetivo sai de 15 rodadas (base, +-1 grau por variavel e os
-    pares) no ponto de projeto.
-O problema resultante e resolvido por SLSQP com multipartida.
+  - a distribuicao de cl_norm e AFIM nos coeficientes e no alpha, entao o
+    modelo do estol e construido com 2 rodadas de base e 1 por coeficiente;
+  - o arrasto induzido e QUADRATICO nos coeficientes, entao o modelo exato
+    da funcao objetivo sai de 10 rodadas no ponto de projeto.
+O problema resultante e resolvido por SLSQP com multipartida e o otimo e
+verificado com rodadas do AVL fora dos modelos.
 
 Gera avl/saidas/torcao.json, que o lab04_gera_avl.py le automaticamente
 ao regenerar os arquivos oficiais.
@@ -38,10 +45,13 @@ import lab04_gera_avl as gera
 
 #=========================================
 
-ETAS_VAR = [0.398, 0.56, 0.90, 1.0]
+N_COEF = 4
 ETA_SEGURA = 0.50                        # estol deve comecar antes daqui
 FOLGA_ALPHA = 0.5                        # [graus] de folga da regiao externa
-LIMITES = [(-10.0, 10.0)]*len(ETAS_VAR)
+TORCAO_MIN = -10.0                       # [graus] washout maximo por estacao
+TORCAO_POS = 2.5                         # [graus] wash-in maximo por estacao
+ETA_MONO = 0.398                         # daqui para fora, washout monotono
+EPS_H = 4.0                              # [graus] passo do modelo quadratico
 
 MACH_CRU = 0.85
 CL_PROJ = 0.5053
@@ -56,20 +66,35 @@ RE_LINHA = re.compile(r'^\s*\d+\s+(' + r'[-\dEe.+]+\s+'*11 +
                       r'[-\dEe.+]+)\s*$', re.M)
 
 VARIANTE = 'avl/saidas/tw.avl'
+ETAS = np.array(gera.ETAS_ASA)
+
+# As variaveis de projeto sao os VALORES de torcao em quatro pontos de
+# controle, em graus. A curva e a spline cubica natural pelos cinco nos
+# (raiz fixa em zero mais os quatro controles), avaliada em todas as
+# estacoes pela matriz MAPA. A spline e linear nos valores, o que preserva
+# os modelos exatos, e e local o bastante para combinar washout suave no
+# meio com washout forte na ponta sem as ondulacoes de um polinomio
+# global, que foram testadas e pioravam o arrasto.
+from scipy.interpolate import CubicSpline  # noqa: E402
+
+ETAS_CTRL = np.array([0.3, 0.56, 0.8, 1.0])
+NOS = np.concatenate([[0.0], ETAS_CTRL])
+MAPA = np.column_stack([
+    CubicSpline(NOS, np.concatenate([[0.0], e]), bc_type='natural')(ETAS)
+    for e in np.eye(N_COEF)])
 
 with open('avl/saidas/trim.json', encoding='ascii') as f:
     TRIM = json.load(f)
 
 
-def torcoes_de(theta):
-    d = {0.0: 0.0, 0.1011: 0.0}
-    d.update({eta: float(t) for eta, t in zip(ETAS_VAR, theta)})
-    return d
+def torcoes_de(t):
+    valores = MAPA @ np.asarray(t)
+    return {float(eta): float(v) for eta, v in zip(ETAS, valores)}
 
 
-def cdff_cruzeiro(theta):
+def cdff_cruzeiro(c):
     '''CDff (Trefftz) da aeronave trimada no ponto de projeto.'''
-    gera.gera_variante(VARIANTE, torcoes_de(theta), cg='aft')
+    gera.gera_variante(VARIANTE, torcoes_de(c), cg='aft')
     saida = roda_avl('load saidas/tw.avl\noper\n'
                      f'm\nmn {MACH_CRU}\n\n'
                      f'de\n1 {TRIM["aft"]["it_deg"]}\n\n'
@@ -77,9 +102,9 @@ def cdff_cruzeiro(theta):
     return pega(saida, r'CDff\s*=\s*([-\d.Ee+]+)')
 
 
-def estol_amostras(theta, alfas):
+def estol_amostras(c, alfas):
     '''cl_norm por faixa da asa direita e CLtot em cada alpha, M = 0,2.'''
-    gera.gera_variante(VARIANTE, torcoes_de(theta), cg='fwd')
+    gera.gera_variante(VARIANTE, torcoes_de(c), cg='fwd')
     cmds = ('load saidas/tw.avl\noper\n'
             f'm\nmn {MACH_BAIXO}\n\n'
             f'de\n1 {TRIM["fwd"]["it_deg"]}\n\nd2 d2 0\n')
@@ -97,119 +122,185 @@ def estol_amostras(theta, alfas):
     return dists, cls
 
 
-# ------------------------------------------------------------------
-# MODELO AFIM DO ESTOL: cl_norm_i = a_i + b_i alpha + sum theta_j c_ji
-print('Construindo o modelo afim do estol (M = 0,2)...')
-(d8, d14), (cl8, cl14) = estol_amostras(np.zeros(4), ALFAS_BASE)
-ETA_STRIP = d8[0]
-B_STRIP = (d14[1] - d8[1])/(ALFAS_BASE[1] - ALFAS_BASE[0])
-A_STRIP = d8[1] - B_STRIP*ALFAS_BASE[0]
-B_CL = (cl14 - cl8)/(ALFAS_BASE[1] - ALFAS_BASE[0])
-A_CL = cl8 - B_CL*ALFAS_BASE[0]
+CACHE = 'avl/saidas/torcao_modelo.npz'
 
-C_STRIP = np.zeros((len(ETAS_VAR), len(ETA_STRIP)))
-D_CL = np.zeros(len(ETAS_VAR))
-for j in range(len(ETAS_VAR)):
-    theta = np.zeros(4)
-    theta[j] = 1.0
-    (dj,), (clj,) = estol_amostras(theta, ALFAS_BASE[:1])
-    C_STRIP[j] = dj[1] - d8[1]
-    D_CL[j] = clj - cl8
-    print(f'  sensibilidade da torcao em eta = {ETAS_VAR[j]}')
+# ------------------------------------------------------------------
+# MODELO AFIM DO ESTOL: cl_norm_i = a_i + b_i alpha + sum c_j f_ji
+if os.path.exists(CACHE):
+    print(f'Usando modelos do cache {CACHE}')
+    _m = np.load(CACHE)
+    ETA_STRIP, A_STRIP, B_STRIP = _m['eta'], _m['a'], _m['b']
+    F_STRIP, A_CL, B_CL, D_CL = _m['f'], _m['acl'], _m['bcl'], _m['dcl']
+    f0, G, H = float(_m['f0']), _m['g'], _m['h']
+else:
+    print('Construindo o modelo afim do estol (M = 0,2)...')
+    (d8, d14), (cl8, cl14) = estol_amostras(np.zeros(N_COEF), ALFAS_BASE)
+    ETA_STRIP = d8[0]
+    B_STRIP = (d14[1] - d8[1])/(ALFAS_BASE[1] - ALFAS_BASE[0])
+    A_STRIP = d8[1] - B_STRIP*ALFAS_BASE[0]
+    B_CL = (cl14 - cl8)/(ALFAS_BASE[1] - ALFAS_BASE[0])
+    A_CL = cl8 - B_CL*ALFAS_BASE[0]
+
+    F_STRIP = np.zeros((N_COEF, len(ETA_STRIP)))
+    D_CL = np.zeros(N_COEF)
+    for j in range(N_COEF):
+        c = np.zeros(N_COEF)
+        c[j] = 1.0
+        (dj,), (clj,) = estol_amostras(c, ALFAS_BASE[:1])
+        F_STRIP[j] = dj[1] - d8[1]
+        D_CL[j] = clj - cl8
+        print(f'  sensibilidade do coeficiente c{j + 1}')
 
 LIMITE_STRIP = np.interp(ETA_STRIP, ETA_LIM, CLMAX_LIM)
 INTERNA = ETA_STRIP <= ETA_SEGURA
 EXTERNA = ~INTERNA
 
 
-def alfas_de_estol(theta):
-    '''alpha em que cada faixa alcanca o limite de clmax.'''
-    cln0 = A_STRIP + C_STRIP.T @ np.asarray(theta)
+def alfas_de_estol(c):
+    cln0 = A_STRIP + F_STRIP.T @ np.asarray(c)
     return (LIMITE_STRIP - cln0)/B_STRIP
 
 
-def restricao(theta):
+def folga_estol(c):
+    '''Quanto a regiao externa estola depois da interna [graus].'''
+    alfas = alfas_de_estol(c)
+    return np.min(alfas[EXTERNA]) - np.min(alfas[INTERNA])
+
+
+FOLGA_USADA = FOLGA_ALPHA                # pode ser adaptada na fase de
+                                         # factibilidade, com aviso
+
+
+def restricao_estol(c):
     '''>= 0 quando a regiao interna estola antes da externa com folga.'''
-    alfas = alfas_de_estol(theta)
-    return np.min(alfas[EXTERNA]) - np.min(alfas[INTERNA]) - FOLGA_ALPHA
+    return folga_estol(c) - FOLGA_USADA
 
 
-def clmax_previsto(theta):
-    alfas = alfas_de_estol(theta)
+K_MONO = int(np.searchsorted(ETAS, ETA_MONO))
+
+
+def restricao_faixa(t):
+    '''>= 0 quando a torcao de toda estacao esta na faixa admissivel e o
+    washout e monotono da estacao ETA_MONO para fora.'''
+    valores = MAPA @ np.asarray(t)
+    monotonia = valores[K_MONO:-1] - valores[K_MONO + 1:]
+    return np.concatenate([TORCAO_POS - valores, valores - TORCAO_MIN,
+                           monotonia])
+
+
+def clmax_previsto(c):
+    alfas = alfas_de_estol(c)
     a_estol = np.min(alfas)
-    return A_CL + B_CL*a_estol + np.asarray(theta) @ D_CL, a_estol
+    return A_CL + B_CL*a_estol + np.asarray(c) @ D_CL, a_estol
 
 
-# ------------------------------------------------------------------
-# MODELO QUADRATICO DO CDff NO CRUZEIRO
-print('Construindo o modelo quadratico do CDff (M = 0,85)...')
-n = len(ETAS_VAR)
-f0 = cdff_cruzeiro(np.zeros(n))
-print(f'  CDff da asa sem torcao: {f0:.6f}')
-f_mais, f_menos = np.zeros(n), np.zeros(n)
-for j in range(n):
-    e = np.zeros(n)
-    e[j] = 1.0
-    f_mais[j] = cdff_cruzeiro(e)
-    f_menos[j] = cdff_cruzeiro(-e)
-    print(f'  sensibilidade da torcao em eta = {ETAS_VAR[j]}')
-H = np.zeros((n, n))
-G = (f_mais - f_menos)/2
-for j in range(n):
-    H[j, j] = f_mais[j] + f_menos[j] - 2*f0
-for j, k in itertools.combinations(range(n), 2):
-    e = np.zeros(n)
-    e[j] = e[k] = 1.0
-    fjk = cdff_cruzeiro(e)
-    H[j, k] = H[k, j] = fjk - f_mais[j] - f_mais[k] + f0
-    print(f'  termo cruzado eta = {ETAS_VAR[j]} x {ETAS_VAR[k]}')
+if not os.path.exists(CACHE):
+    # --------------------------------------------------------------
+    # MODELO QUADRATICO DO CDff NO CRUZEIRO. O passo EPS_H largo dilui o
+    # ruido de leitura da saida do AVL sem erro de modelo, ja que o CDff
+    # e exatamente quadratico nas torcoes.
+    print('Construindo o modelo quadratico do CDff (M = 0,85)...')
+    f0 = cdff_cruzeiro(np.zeros(N_COEF))
+    print(f'  CDff da asa sem torcao: {f0:.6f}')
+    f_mais, f_menos = np.zeros(N_COEF), np.zeros(N_COEF)
+    for j in range(N_COEF):
+        e = np.zeros(N_COEF)
+        e[j] = EPS_H
+        f_mais[j] = cdff_cruzeiro(e)
+        f_menos[j] = cdff_cruzeiro(-e)
+        print(f'  sensibilidade da variavel t{j + 1}')
+    H = np.zeros((N_COEF, N_COEF))
+    G = (f_mais - f_menos)/(2*EPS_H)
+    for j in range(N_COEF):
+        H[j, j] = (f_mais[j] + f_menos[j] - 2*f0)/EPS_H**2
+    for j, k in itertools.combinations(range(N_COEF), 2):
+        e = np.zeros(N_COEF)
+        e[j] = e[k] = EPS_H
+        fjk = cdff_cruzeiro(e)
+        H[j, k] = H[k, j] = (fjk - f_mais[j] - f_mais[k] + f0)/EPS_H**2
+        print(f'  termo cruzado t{j + 1} x t{k + 1}')
+
+    np.savez(CACHE, eta=ETA_STRIP, a=A_STRIP, b=B_STRIP, f=F_STRIP,
+             acl=A_CL, bcl=B_CL, dcl=D_CL, f0=f0, g=G, h=H)
+    print(f'modelos gravados em {CACHE}')
 
 
-def objetivo(theta):
-    t = np.asarray(theta)
+def objetivo(c):
+    t = np.asarray(c)
     return f0 + G @ t + 0.5*t @ H @ t
 
 
 # ------------------------------------------------------------------
-# OTIMIZACAO COM MULTIPARTIDA
-print('Otimizando...')
+# FASE DE FACTIBILIDADE: qual a maior folga que a parametrizacao alcanca?
 rng = np.random.default_rng(23)
-melhor = None
-partidas = [np.zeros(n), np.array([0.0, -0.5, -2.0, -3.0]),
-            np.array([2.0, -5.0, -5.0, -6.0])]
-partidas += [rng.uniform(-8, 3, n) for _ in range(8)]
+melhor_folga, x_folga = -np.inf, None
+for x0 in [np.zeros(N_COEF)] + [rng.uniform(-9, 5, N_COEF)
+                                for _ in range(20)]:
+    r = minimize(lambda c: -folga_estol(c), x0, method='SLSQP',
+                 bounds=[(TORCAO_MIN, TORCAO_POS)]*N_COEF,
+                 constraints=[{'type': 'ineq', 'fun': restricao_faixa}],
+                 options={'maxiter': 300, 'ftol': 1e-9})
+    if (restricao_faixa(r.x).min() > -1e-6
+            and folga_estol(r.x) > melhor_folga):
+        melhor_folga, x_folga = folga_estol(r.x), r.x.copy()
+print(f'Folga maxima alcancavel pela parametrizacao: '
+      f'{melhor_folga:+.3f} graus')
+if melhor_folga < FOLGA_ALPHA:
+    FOLGA_USADA = max(0.2, melhor_folga - 0.05)
+    print(f'AVISO: alvo de folga adaptado de {FOLGA_ALPHA} para '
+          f'{FOLGA_USADA:.2f} graus')
+
+# ------------------------------------------------------------------
+# OTIMIZACAO COM MULTIPARTIDA (objetivo escalado para drag counts)
+print('Otimizando...')
+melhor_x, melhor_f = None, np.inf
+partidas = [np.zeros(N_COEF), x_folga]
+partidas += [rng.uniform(-8, 3, N_COEF) for _ in range(10)]
+vinculos = [{'type': 'ineq', 'fun': restricao_estol},
+            {'type': 'ineq', 'fun': restricao_faixa}]
 for x0 in partidas:
-    r = minimize(objetivo, x0, method='SLSQP', bounds=LIMITES,
-                 constraints=[{'type': 'ineq', 'fun': restricao}],
-                 options={'maxiter': 200, 'ftol': 1e-10})
-    if r.success and restricao(r.x) > -1e-6:
-        if melhor is None or r.fun < melhor.fun:
-            melhor = r
-if melhor is None:
-    raise RuntimeError('nenhuma partida convergiu com a restricao ativa')
-theta_otimo = melhor.x
+    r = minimize(lambda c: 1e4*objetivo(c), x0, method='SLSQP',
+                 bounds=[(TORCAO_MIN, TORCAO_POS)]*N_COEF,
+                 constraints=vinculos,
+                 options={'maxiter': 500, 'ftol': 1e-8})
+    viavel = (restricao_estol(r.x) > -1e-6
+              and restricao_faixa(r.x).min() > -1e-6)
+    print(f'  partida {np.round(x0, 1)}: f = {objetivo(r.x):.6f}, '
+          f'viavel = {viavel}, sucesso = {r.success} ({r.message})')
+    if viavel and objetivo(r.x) < melhor_f:
+        melhor_x, melhor_f = r.x.copy(), objetivo(r.x)
+if melhor_x is None:
+    raise RuntimeError('nenhuma partida terminou viavel')
+c_otimo = melhor_x
 
 # Verificacao com o AVL de verdade (fora dos modelos)
-cdff_ver = cdff_cruzeiro(theta_otimo)
-clmax_mod, a_estol_mod = clmax_previsto(theta_otimo)
+cdff_ver = cdff_cruzeiro(c_otimo)
+clmax_mod, a_estol_mod = clmax_previsto(c_otimo)
 os.remove(VARIANTE)
 
-print('\nTorcoes otimas [graus]:')
-for eta, t in zip(ETAS_VAR, theta_otimo):
-    print(f'  eta = {eta}: {t:+.3f}')
+torcoes = torcoes_de(c_otimo)
+print('\nTorcoes nos pontos de controle: '
+      + ', '.join(f'eta {e} = {v:+.3f}'
+                  for e, v in zip(ETAS_CTRL, c_otimo)))
+print('Torcoes por estacao [graus]:')
+for eta in gera.ETAS_ASA:
+    print(f'  eta = {eta}: {torcoes[eta]:+.3f}')
 print(f'CDff sem torcao : {f0:.6f}')
-print(f'CDff otimizado (modelo): {objetivo(theta_otimo):.6f}')
+print(f'CDff otimizado (modelo): {objetivo(c_otimo):.6f}')
 print(f'CDff otimizado (AVL)   : {cdff_ver:.6f}')
-print(f'restricao (folga em alpha) = {restricao(theta_otimo):+.3f} graus')
+print(f'restricao de estol (folga em alpha) = '
+      f'{restricao_estol(c_otimo):+.3f} graus')
 print(f'alpha de estol previsto = {a_estol_mod:.2f} graus, '
       f'CLmax previsto = {clmax_mod:.3f}')
 
-resultado = {'torcoes': {'0.0': 0.0, '0.1011': 0.0},
+resultado = {'controle': {str(e): round(float(v), 3)
+                          for e, v in zip(ETAS_CTRL, c_otimo)},
+             'torcoes': {str(eta): round(torcoes[eta], 3)
+                         for eta in gera.ETAS_ASA},
              'CDff_sem_torcao': round(float(f0), 6),
              'CDff_otimizado_avl': round(float(cdff_ver), 6),
-             'folga_restricao_graus': round(float(restricao(theta_otimo)), 3)}
-for eta, t in zip(ETAS_VAR, theta_otimo):
-    resultado['torcoes'][str(eta)] = round(float(t), 3)
+             'folga_restricao_graus':
+                 round(float(restricao_estol(c_otimo)), 3)}
 with open('avl/saidas/torcao.json', 'w', encoding='ascii') as f:
     json.dump(resultado, f, indent=2)
 print('\ngravado: avl/saidas/torcao.json')

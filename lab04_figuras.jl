@@ -83,20 +83,29 @@ println("figura: clxy_estol.png")
 # ---------------- otimizacao de torcao: antes e depois ----------------
 mkpath("$os_dir/06_torcao")
 torcao = JSON.parsefile("avl/saidas/torcao.json")
-etas_t = [0.0, 0.1011, 0.398, 0.56, 0.90, 1.0]
+etas_t = sort(parse.(Float64, collect(keys(torcao["torcoes"]))))
 tors = [torcao["torcoes"][string(e)] for e in etas_t]
+etas_c = sort(parse.(Float64, collect(keys(torcao["controle"]))))
+tors_c = [torcao["controle"][string(e)] for e in etas_c]
 
 pt1 = plot(; xlabel = "η = 2y/b", ylabel = "torção  [graus]",
-           title = "distribuição de torção otimizada",
+           title = "distribuição de torção otimizada (spline pelos nós)",
            titlefontsize = 11, titlelocation = :left,
            legend = false, xlims = (0, 1), estilo...)
 hline!(pt1, [0.0]; color = "#c3c2b7", linewidth = 0.8)
-plot!(pt1, etas_t, tors; color = PAL[1], linewidth = 2.4,
-      marker = :circle, markersize = 6)
+plot!(pt1, etas_t, tors; color = PAL[1], linewidth = 2.4)
+scatter!(pt1, etas_c, tors_c; color = PAL[1], markersize = 7,
+         markerstrokecolor = INK)
+scatter!(pt1, [0.0], [0.0]; color = "white", markersize = 7,
+         markerstrokecolor = INK)
 
 antes = CSV.read("relatorio_lab04/tables/clxy_fwd_livre_semtorcao.csv",
                  DataFrame)
 depois = CSV.read("relatorio_lab04/tables/clxy_fwd_livre.csv", DataFrame)
+crit = JSON.parsefile("avl/saidas/secao_critica.json")
+eta_antes = 0.865
+eta_depois = crit["fwd_livre"]["eta_critica"]
+rot(e) = replace(string(round(e, digits = 2)), "." => ",")
 pt2 = plot(; xlabel = "η = 2y/b", ylabel = "cl local (plano normal)",
            title = "distribuição no estol, antes e depois",
            titlefontsize = 11, titlelocation = :left,
@@ -105,13 +114,14 @@ pt2 = plot(; xlabel = "η = 2y/b", ylabel = "cl local (plano normal)",
 plot!(pt2, depois.eta, depois.clmax_lim; color = INK, linewidth = 2.0,
       linestyle = :dot, label = "limite clmax (Lab 03)")
 plot!(pt2, antes.eta, antes.cl_norm; color = "#9a99944f",
-      linewidth = 2.4, label = "sem torção (estol em η = 0,89)")
+      linewidth = 2.4, label = "sem torção (estol em η = $(rot(eta_antes)))")
 plot!(pt2, depois.eta, depois.cl_norm; color = PAL[1], linewidth = 2.4,
-      label = "com torção (estol em η = 0,45)")
-scatter!(pt2, [0.888], [interpola(antes.eta, antes.clmax_lim, 0.888)];
+      label = "com torção (estol em η = $(rot(eta_depois)))")
+scatter!(pt2, [eta_antes], [interpola(antes.eta, antes.clmax_lim, eta_antes)];
          color = "#52514e", markersize = 7, marker = :star5,
          label = false)
-scatter!(pt2, [0.446], [interpola(depois.eta, depois.clmax_lim, 0.446)];
+scatter!(pt2, [eta_depois],
+         [interpola(depois.eta, depois.clmax_lim, eta_depois)];
          color = PAL[1], markersize = 8, marker = :star5,
          markerstrokecolor = INK, label = false)
 savefig(plot(pt1, pt2; layout = (1, 2), size = (1300, 480), dpi = 200,

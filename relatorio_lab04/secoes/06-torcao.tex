@@ -3,8 +3,8 @@
 
 O diagnóstico da Seção~\ref{sec:secao_critica} para a asa sem torção, com
 estol começando na ponta sobre o aileron, motivou uma realimentação de
-projeto no espírito do Lab 03: escolher a torção geométrica das estações
-da asa por otimização com restrição. O problema formulado foi
+projeto no espírito do Lab 03: escolher a torção geométrica ao longo da
+envergadura por otimização com restrição. O problema formulado foi
 
 \begin{equation*}
     \min_{\theta}\; C_{D,\mathrm{ff}}(\theta)
@@ -12,65 +12,74 @@ da asa por otimização com restrição. O problema formulado foi
     \eta_{\mathrm{crit}}(\theta) \leq 0{,}50,
 \end{equation*}
 
-em que $\theta$ reúne as torções das estações $\eta = 0{,}398$, 0,56, 0,90
-e 1,0, com a raiz fixa em zero como referência e limites folgados de
-$\pm 10^\circ$. A função objetivo é o arrasto induzido no plano de Trefftz da
+em que a função objetivo é o arrasto induzido no plano de Trefftz da
 aeronave trimada no ponto de projeto ($M = 0{,}85$, $C_L = 0{,}5053$,
-arfagem compensada pelo profundor). A restrição exige que a seção crítica
+arfagem compensada pelo profundor) e a restrição exige que a seção crítica
 do estol em $M = 0{,}2$ fique na metade interna da asa, antes do aileron,
 com folga de $0{,}5^\circ$ de ângulo de ataque sobre a região externa.
+
+Em vez de uma torção livre por estação, que produz distribuições
+irregulares e difíceis de fabricar, a torção foi parametrizada de forma
+suave. Ela é definida pelos valores em quatro pontos de controle
+($\eta = 0{,}3$, 0,56, 0,8 e 1,0), interpolados por uma spline cúbica
+natural que passa pela raiz com torção nula. Restrições de forma completam
+a parametrização: incidência positiva (wash-in) limitada a $+2{,}5^\circ$,
+torção negativa (washout) até $-10^\circ$ e monotonia do washout da
+estação $\eta = 0{,}398$ para a ponta. As variáveis de projeto são, então,
+apenas as quatro torções de controle.
 
 A estrutura do método de malha de vórtices foi explorada para resolver o
 problema sem otimização cara. A distribuição de sustentação é linear nas
 torções e no ângulo de ataque, de modo que o modelo do estol sai de duas
 rodadas de base e uma por variável. O arrasto induzido é quadrático nas
-torções, e o modelo exato da função objetivo sai de quinze rodadas no
-ponto de projeto. Sobre esses modelos o problema foi resolvido por
-programação sequencial quadrática com multipartida, e o ótimo foi
-verificado com rodadas adicionais do AVL fora dos modelos.
+torções, e o modelo exato da função objetivo sai de dez rodadas no ponto
+de projeto. Sobre esses modelos o problema foi resolvido por programação
+sequencial quadrática com multipartida, e o ótimo foi verificado com
+rodadas do AVL fora dos modelos, com concordância melhor que meio ponto de
+arrasto.
 
 \begin{table}[H]
 \centering
-\caption{Torção otimizada por estação e comparação antes e depois.}\label{tab:torcao}
+\caption{Torção otimizada e comparação antes e depois.}\label{tab:torcao}
 \renewcommand{\arraystretch}{1.25}
 \begin{tabular}{lc@{\hspace{2.5em}}lcc}
 \toprule
 Estação $\eta$ & Torção [graus] & Grandeza & Sem torção & Com torção \\
 \midrule
-0,000 & 0,00 & $C_{D,\mathrm{ff}}$ em cruzeiro & 0,01027 & 0,00955 \\
-0,101 & 0,00 & $C_D$ no ponto de projeto (CG diant.) & 0,02829 & 0,02652 \\
-0,398 & $+1{,}94$ & $C_{L\mathrm{max}}$ (CG diant.\ trimado) & 0,829 & 1,036 \\
-0,560 & $-4{,}87$ & Estação crítica do estol $\eta$ & 0,89 & 0,45 \\
-0,900 & $-5{,}18$ & $i_t$ de cruzeiro (CG diant.) [graus] & $-8{,}40$ & $-6{,}05$ \\
-1,000 & $-7{,}48$ & $\alpha$ de estol [graus] & 11,0 & 14,8 \\
+0,00 & 0,00 & $C_{D,\mathrm{ff}}$ em cruzeiro & 0,01049 & 0,01008 \\
+0,20 & $+2{,}50$ & $C_D$ no ponto de projeto (CG diant.) & 0,02861 & 0,02678 \\
+0,398 & $-0{,}42$ & $C_{L\mathrm{max}}$ (CG diant.\ trimado) & 0,825 & 1,081 \\
+0,56 & $-4{,}79$ & Estação crítica do estol $\eta$ & 0,87 & 0,42 \\
+0,80 & $-5{,}69$ & $i_t$ de cruzeiro (CG diant.) [graus] & $-8{,}49$ & $-4{,}48$ \\
+1,00 & $-6{,}74$ & $\alpha$ de estol [graus] & 10,8 & 15,1 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{figure}[H]
 \centering
-\caption{Distribuição de torção otimizada e o efeito sobre o estol: a
-seção crítica migra da ponta ($\eta = 0{,}89$) para a metade interna da
-asa ($\eta = 0{,}45$).}\label{fig:torcao}
+\caption{Distribuição de torção otimizada, com os nós da spline marcados, e
+o efeito sobre o estol: a seção crítica migra da ponta ($\eta = 0{,}87$)
+para a metade interna da asa ($\eta = 0{,}42$).}\label{fig:torcao}
 \includegraphics[width=\linewidth]{images/06_torcao/torcao_antes_depois.png}
 \end{figure}
 
-O resultado mais importante é que a torção não custou arrasto: o washout
-reduziu o arrasto induzido de cruzeiro em 7,0\%. A asa sem torção operava
-com a ponta sobrecarregada em relação à distribuição elíptica, de modo que
-descarregar a ponta atende ao mesmo tempo o estol e o arrasto. O leve
-acréscimo de incidência na estação de $\eta = 0{,}398$ recompõe a
-sustentação no meio da asa e aproxima o carregamento da forma elíptica. Em
-cadeia, o $C_D$ do ponto de projeto caiu 6,3\% no CG dianteiro e a
-incidência de trimagem aliviou $2{,}4^\circ$.
+A distribuição resultante combina um leve wash-in de $+2{,}5^\circ$ na
+região interna, que recompõe a sustentação no meio da asa e aproxima o
+carregamento da forma elíptica, com um washout que cresce suavemente até
+$-6{,}7^\circ$ na ponta. O resultado mais importante é que a torção não
+custou arrasto: o washout reduziu o arrasto induzido de cruzeiro em 3,9\%,
+porque a asa sem torção operava com a ponta sobrecarregada em relação à
+distribuição elíptica, e descarregar a ponta atende ao mesmo tempo o
+estol e o arrasto. Em cadeia, o $C_D$ do ponto de projeto caiu 6,4\% no
+CG dianteiro, a incidência de trimagem aliviou $4{,}0^\circ$ e o
+$C_{L\mathrm{max}}$ subiu de 0,83 para 1,08 no caso mais restritivo.
 
-Três pontos merecem registro. O ótimo é interior aos limites de
-$\pm 10^\circ$, com apenas a restrição de estol ativa: um estudo com
-batente mais apertado, de $-6^\circ$ na ponta, entregou resultado quase
-igual ($C_{D,\mathrm{ff}} = 0{,}00957$), então a solução é pouco sensível
-a esse limite. O total de washout entre a raiz e a ponta, de
-$7{,}5^\circ$, fica na faixa praticada por transportes a jato. E o
-gradiente de torção entre $\eta = 0{,}398$ e $\eta = 0{,}56$ é forte,
-cerca de $7^\circ$ num sexto da semi-envergadura, o que sugere refinar a
-parametrização com mais estações num próximo ciclo, quando a fabricação
-da asa for detalhada.
+Dois pontos merecem registro. Nenhuma estação encostou no limite de
+washout de $-10^\circ$, de modo que o ótimo é definido pela troca entre
+arrasto e estol, e não por um batente arbitrário. E a suavidade imposta
+pela spline tem custo: uma torção livre por estação alcançaria arrasto
+ligeiramente menor, mas com uma distribuição serrilhada sem sentido
+construtivo. A parametrização adotada privilegia uma asa fabricável, com
+washout total de $6{,}7^\circ$ entre a raiz e a ponta, dentro da faixa
+praticada por transportes a jato.

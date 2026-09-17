@@ -1,18 +1,18 @@
 {
   "fwd": {
-    "it_deg": -6.0475,
-    "delta_e_residual_deg": -0.00345,
-    "alpha_deg": 5.7374,
+    "it_deg": -4.4817,
+    "delta_e_residual_deg": -0.00123,
+    "alpha_deg": 5.3774,
     "CL": 0.5053,
-    "CD": 0.02652,
+    "CD": 0.02678,
     "Cm": 0.0
   },
   "aft": {
-    "it_deg": -3.5449,
-    "delta_e_residual_deg": -0.00034,
-    "alpha_deg": 5.4315,
+    "it_deg": -1.9832,
+    "delta_e_residual_deg": 0.00036,
+    "alpha_deg": 5.0717,
     "CL": 0.5053,
-    "CD": 0.02593,
-    "Cm": -0.0
+    "CD": 0.02676,
+    "Cm": 0.0
   }
 }

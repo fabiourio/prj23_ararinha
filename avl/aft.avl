@@ -23,31 +23,55 @@ SECTION
 #Xle      Yle      Zle      Chord    Ainc
 15.9966  0.0000  -1.3000  9.8898  0.0000
 AFILE
-aerofolios/raiz.dat
+aerofolios/sec_0000.dat
 CLAF
 1.0000
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-18.2882  3.0407  -0.9804  9.1299  0.0000
+18.2882  3.0407  -0.9804  9.1299  1.6320
 AFILE
-aerofolios/raiz.dat
+aerofolios/sec_0101.dat
 CLAF
 1.0000
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-25.0180  11.9702  -0.0419  6.8984  1.9410
+20.5300  6.0152  -0.6678  8.3866  2.5000
 AFILE
-aerofolios/meio.dat
+aerofolios/sec_0200.dat
 CLAF
 1.0000
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-28.6900  16.8425  0.4702  5.6807  -4.8720
+22.7967  9.0228  -0.3517  7.6350  1.9150
 AFILE
-aerofolios/meio.dat
+aerofolios/sec_0300.dat
+CLAF
+1.0000
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+25.0180  11.9702  -0.0419  6.8984  -0.4160
+AFILE
+aerofolios/sec_0398.dat
+CLAF
+1.0000
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+26.7634  14.2861  0.2015  6.3196  -2.7260
+AFILE
+aerofolios/sec_0475.dat
+CLAF
+1.0000
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+28.6900  16.8425  0.4702  5.6807  -4.7860
+AFILE
+aerofolios/sec_0560.dat
 CLAF
 1.0000
 CONTROL
@@ -56,9 +80,9 @@ aileron  1.0   0.73    0. 0. 0.    -1.0
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-36.3968  27.0683  1.5450  3.1252  -5.1780
+30.7301  19.5493  0.7547  5.0043  -5.6610
 AFILE
-aerofolios/ponta.dat
+aerofolios/sec_0650.dat
 CLAF
 1.0000
 CONTROL
@@ -67,9 +91,50 @@ aileron  1.0   0.73    0. 0. 0.    -1.0
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-38.6635  30.0759  1.8611  2.3736  -7.4750
+32.9967  22.5569  1.0708  4.2526  -5.6860
 AFILE
-aerofolios/ponta.dat
+aerofolios/sec_0750.dat
+CLAF
+1.0000
+CONTROL
+#name    gain  Xhinge  XYZhvec      SgnDup
+aileron  1.0   0.73    0. 0. 0.    -1.0
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+34.6968  24.8126  1.3079  3.6889  -5.7090
+AFILE
+aerofolios/sec_0825.dat
+CLAF
+1.0000
+CONTROL
+#name    gain  Xhinge  XYZhvec      SgnDup
+aileron  1.0   0.73    0. 0. 0.    -1.0
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+36.3968  27.0683  1.5450  3.1252  -6.0360
+AFILE
+aerofolios/sec_0900.dat
+CLAF
+1.0000
+CONTROL
+#name    gain  Xhinge  XYZhvec      SgnDup
+aileron  1.0   0.73    0. 0. 0.    -1.0
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+37.5301  28.5721  1.7031  2.7494  -6.3680
+AFILE
+aerofolios/sec_0950.dat
+CLAF
+1.0000
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+38.6635  30.0759  1.8611  2.3736  -6.7430
+AFILE
+aerofolios/sec_1000.dat
 CLAF
 1.0000
 

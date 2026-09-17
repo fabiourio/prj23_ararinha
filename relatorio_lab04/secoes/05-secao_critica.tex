@@ -13,8 +13,8 @@ ponta, interpolado linearmente entre as estações. Como o método é linear, o
 cruzamento foi resolvido por interpolação na varredura de $\alpha$.
 
 Uma primeira aplicação do método na asa sem torção revelou estol começando
-na ponta, em $\eta = 0{,}89$, sobre a região do aileron, com
-$C_{L\mathrm{max}}$ entre 0,83 e 0,92. Esse diagnóstico motivou a
+na ponta, em $\eta = 0{,}87$, sobre a região do aileron, com
+$C_{L\mathrm{max}}$ entre 0,82 e 0,91. Esse diagnóstico motivou a
 otimização de torção apresentada na Seção 6, e os resultados a seguir
 referem-se à asa final, já com a torção aplicada.
 
@@ -26,10 +26,10 @@ referem-se à asa final, já com a torção aplicada.
 \toprule
 Caso & $\alpha_{\mathrm{max}}$ [graus] & $C_{L\mathrm{max}}$ & $\delta_e$ [graus] \\
 \midrule
-CG dianteiro sem trimagem & 14,76 & 1,131 & 0,0 \\
-CG dianteiro com trimagem & 14,82 & 1,036 & $-17{,}10$ \\
-CG traseiro sem trimagem & 14,75 & 1,156 & 0,0 \\
-CG traseiro com trimagem & 14,78 & 1,097 & $-10{,}71$ \\
+CG dianteiro sem trimagem & 15,05 & 1,183 & 0,0 \\
+CG dianteiro com trimagem & 15,11 & 1,081 & $-18{,}55$ \\
+CG traseiro sem trimagem & 15,03 & 1,208 & 0,0 \\
+CG traseiro com trimagem & 15,07 & 1,144 & $-11{,}68$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -43,27 +43,27 @@ marca a seção crítica.}\label{fig:clxy}
 \end{figure}
 
 O ângulo de estol é praticamente o mesmo nos quatro casos, em torno de
-$14{,}8^\circ$, porque a distribuição de sustentação da asa quase não muda
+$15^\circ$, porque a distribuição de sustentação da asa quase não muda
 com o CG ou com a trimagem. O que muda é o $C_{L\mathrm{max}}$ da
 aeronave: a compensação exige força para baixo na empenagem, que subtrai
 sustentação total, e o efeito é maior no CG dianteiro, onde o braço de
 compensação é maior. O caso mais restritivo é o CG dianteiro com trimagem,
-com $C_{L\mathrm{max}} = 1{,}036$.
+com $C_{L\mathrm{max}} = 1{,}081$.
 
 \subsection*{Características de estol}
 
-Com a torção otimizada, a seção crítica fica em $\eta = 0{,}45$ em todos
+Com a torção otimizada, a seção crítica fica em $\eta = 0{,}42$ em todos
 os casos: o estol começa na metade interna da asa, antes do aileron, que
 ocupa de $\eta = 0{,}56$ a $\eta = 0{,}90$. A característica é adequada: a
 separação inicial ocorre longe das superfícies de comando lateral e a
 região da ponta mantém folga de sustentação, preservando o controle de
 rolamento no início do estol.
 
-Os valores de $C_{L\mathrm{max}}$, entre 1,04 e 1,16, ficam abaixo da
+Os valores de $C_{L\mathrm{max}}$, entre 1,08 e 1,21, ficam abaixo da
 estimativa de asa limpa do \texttt{designTool}, de 1,33. Contribuem para a
 diferença o limite de $c_{\ell\mathrm{max}}$ ser aplicado no plano normal,
 o que equivale a um limite na direção da corrente cerca de 28\% menor, e o
 desconto da força de compensação da empenagem, efeitos que a correlação
 histórica do \texttt{designTool} não captura. A deflexão de profundor no
-estol trimado do CG dianteiro, de $-17{,}1^\circ$, é alta mas permanece
+estol trimado do CG dianteiro, de $-18{,}5^\circ$, é alta mas permanece
 dentro de batentes típicos de $\pm 25^\circ$.
