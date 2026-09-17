@@ -64,7 +64,11 @@ def roda_nivel(i, nivel, base):
         m = re.findall(padrao, saida)
         return float(m[-1]) if m else np.nan
 
-    os.remove(f'avl/saidas/conv_{i}.avl')
+    # missing_ok: nao falha se o temporario ja tiver sido removido por fora
+    try:
+        os.remove(f'avl/saidas/conv_{i}.avl')
+    except FileNotFoundError:
+        pass
     return {'vortices': pega(r'(\d+)\s+Vortices'),
             'alpha': pega(r'Alpha =\s+([-\d.]+)'),
             'CLtot': pega(r'CLtot =\s+([-\d.]+)'),
