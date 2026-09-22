@@ -788,7 +788,7 @@ open(joinpath(SAIDA, "torcao_recomendada.txt"), "w") do io
     @printf(io, "Oswald %.4f\n", d["oswald"])
     @printf(io, "estol começa em η = %.3f (aileron de %.2f a 0.90)\n",
             d["estol_eta"], ETA_AILERON)
-    @printf(io, "profundor de trimagem %.2f graus\n", d["profundor"])
+    @printf(io, "profundor de compensação %.2f graus\n", d["profundor"])
     @printf(io, "salto máximo %.1f graus, faixa total %.1f graus\n",
             d["salto"], d["faixa"])
     println(io)

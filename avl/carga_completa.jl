@@ -3,16 +3,16 @@
 #
 # Rodar de dentro da pasta avl/:   julia carga_completa.jl
 #
-# A etapa 2 minimiza o arrasto induzido da aeronave completa e trimada e
+# A etapa 2 minimiza o arrasto induzido da aeronave completa e compensada e
 # ainda assim devolve Oswald 0,86, bem abaixo do 1,00 da asa isolada. A
 # pergunta é se isso é esperado.
 #
-# A explicação de manual seria arrasto de trimagem: a empenagem carrega
+# A explicação de manual seria arrasto de compensação: a empenagem carrega
 # para baixo, a asa precisa carregar mais que o peso e o induzido vai com
 # o quadrado, de modo que o e cai mesmo com carga elíptica. ESSA
 # EXPLICAÇÃO NÃO SE APLICA AQUI, e os números deste script mostram por
 # quê: no ótimo da etapa 2 a empenagem está praticamente descarregada e a
-# asa carrega MENOS que o CLff, de modo que o fator de trimagem
+# asa carrega MENOS que o CLff, de modo que o fator de compensação
 # empurraria o e para CIMA de 1.
 #
 # A causa real é outra, e aparece na decomposição por peça: as naceles.
@@ -233,7 +233,7 @@ r2 = res["etapa 2, irrestrito"].CDff
         OT["etapa_1_asa_isolada"]["e"])
 @printf("  aeronave completa      CDff %.6f   (e = %.4f)\n", r2,
         res["etapa 2, irrestrito"].e)
-@printf("  preço de ter empenagem, nacele e trimar: %+.2f counts, %.1f%% a mais\n",
+@printf("  preço de ter empenagem, nacele e compensar: %+.2f counts, %.1f%% a mais\n",
         1e4*(r2 - r1), 100*(r2/r1 - 1))
 let r = res["etapa 2, irrestrito"]
     cdi_nao_asa = sum(v.CDi for (k, v) in r.sup if !occursin("Wing", k))
@@ -245,7 +245,7 @@ end
 println("\n", "="^78)
 println("DECOMPOSIÇÃO: QUEM COME OS 14 COUNTS")
 println("="^78)
-# A conta acima mostra que NÃO é arrasto de trimagem: na etapa 2 a
+# A conta acima mostra que NÃO é arrasto de compensação: na etapa 2 a
 # empenagem está praticamente descarregada e a asa carrega menos que o
 # CLff, de modo que o fator 1/k² empurraria o e para cima de 1. Para
 # achar a causa, o jeito direto é montar a aeronave por partes e medir o
@@ -299,7 +299,7 @@ const VARIANTES = [
     ("asa + fuselagem + naceles",      ["Wing", "Fuselage", "Nacelle"], false),
     ("tudo, profundor em zero",        ["Wing", "Fuselage", "Nacelle",
                                         "Horizontal tail", "Vertical tail"], false),
-    ("tudo, trimado (caso de projeto)", ["Wing", "Fuselage", "Nacelle",
+    ("tudo, compensado (caso de projeto)", ["Wing", "Fuselage", "Nacelle",
                                          "Horizontal tail", "Vertical tail"], true)]
 
 @printf("\n  torção da etapa 2, CL fixo em %.4f\n\n", CL_PROJ)

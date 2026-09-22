@@ -13,7 +13,7 @@
 #            Oswald igual a 1 e arrasto igual a CL²/(π AR). Se a otimização
 #            chega lá, o problema está bem posto. É um teste, não projeto.
 #
-#   ETAPA 2  Aeronave completa e trimada, ainda sem restrição. Entram o
+#   ETAPA 2  Aeronave completa e compensada, ainda sem restrição. Entram o
 #            downwash da asa sobre a empenagem e a carga de compensação, e
 #            o ótimo deixa de ser a asa elíptica: o mínimo é do CONJUNTO.
 #
@@ -635,7 +635,7 @@ base_full = avalia(torcoes(zeros(NV)); trim = true, faixas = true)
 piso = CL_PROJ^2/(pi*AR)
 @printf("  asa isolada          CDff %.6f   Oswald %.4f\n",
         base_asa.CDff, base_asa.e)
-@printf("  aeronave trimada     CDff %.6f   Oswald %.4f   profundor %.2f°\n",
+@printf("  aeronave compensada     CDff %.6f   Oswald %.4f   profundor %.2f°\n",
         base_full.CDff, base_full.e, base_full.de)
 @printf("  CDvis (parasita, constante sob torção) %.6f\n", base_full.CDvis)
 @printf("  piso analítico CL²/(π AR) = %.6f  (carga elíptica)\n", piso)
@@ -705,7 +705,7 @@ anima(cam1, NOS_PROJ, "evolucao_1_asa_isolada.gif"; so_asa = true, trim = false,
 # ETAPA 2 -- AERONAVE COMPLETA, IRRESTRITO
 # ====================================================================
 println("\n", "="^78)
-println("ETAPA 2 -- AERONAVE COMPLETA, trimada, sem restrição")
+println("ETAPA 2 -- AERONAVE COMPLETA, compensada, sem restrição")
 println("="^78)
 
 s2, cam2 = otimiza(m2, NOS_PROJ)
@@ -722,7 +722,7 @@ ot2 = avalia(tw2; trim = true, faixas = true)
         cdtot_ff(base_full), cdtot_ff(ot2),
         1e4*(cdtot_ff(ot2) - cdtot_ff(base_full)))
 @printf("  Oswald %.4f   -> %.4f\n", base_full.e, ot2.e)
-@printf("  profundor de trimagem: %.2f -> %.2f graus\n", base_full.de, ot2.de)
+@printf("  profundor de compensação: %.2f -> %.2f graus\n", base_full.de, ot2.de)
 
 fx1, fx2 = faixas_asa(ot1.saida), faixas_asa(ot2.saida)
 dv1 = maximum(abs.(carga_norm(fx1, ot1.CL) .- eliptica(fx1.eta)))

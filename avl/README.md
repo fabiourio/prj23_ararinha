@@ -51,7 +51,7 @@ roteiro do professor (que usa o `b737mod.avl`):
 
 | roteiro | aqui | o que é |
 |---|---|---|
-| `d4 pm 0.0` | `d2 pm 0.0` | trimagem pelo profundor |
+| `d4 pm 0.0` | `d2 pm 0.0` | compensação pelo profundor |
 | menu `de`: `2 <valor>` | menu `de`: `1 <valor>` | incidência da empenagem |
 
 Controles: `d1` aileron, `d2` profundor, `d3` leme. Variável de projeto:
@@ -139,7 +139,7 @@ precisa ser feito com as restrições ativas.
 |---|---|---|---|---|
 | sem torção | 0,010982 | - | 0,7377 | 0,842 |
 | 1: asa isolada, irrestrito | 0,008251 | -12,00 | 1,0035 | - |
-| 2: completa trimada, irrestrito | 0,009411 | -15,71 | 0,8614 | 0,842 |
+| 2: completa compensada, irrestrito | 0,009411 | -15,71 | 0,8614 | 0,842 |
 | 3: projeto, margem 0,5° | 0,011160 | +1,78 | 0,7279 | 0,520 |
 
 A etapa 1 valida o método: a spline monotônica chega à carga elíptica, com
@@ -223,11 +223,11 @@ A asa isolada da etapa 1 chega a e = 1,0035, mas a aeronave completa da etapa
 2 fica em 0,8614 mesmo no ótimo. O `carga_completa.jl` separa a carga por
 superfície e monta a aeronave peça por peça para achar a causa.
 
-A explicação de manual seria arrasto de trimagem, com a empenagem carregando
+A explicação de manual seria arrasto de compensação, com a empenagem carregando
 para baixo e a asa tendo de carregar mais que o peso. **Não é o caso aqui.** No
 ótimo da etapa 2 a empenagem carrega CL de -0,0020, praticamente nada, e a asa
 carrega 0,4792 contra um CLff de 0,4998, ou seja MENOS que o total. Pelo fator
-de trimagem o e subiria acima de 1.
+de compensação o e subiria acima de 1.
 
 A decomposição, com a torção congelada na da etapa 2 e o CL fixo:
 
@@ -237,7 +237,7 @@ A decomposição, com a torção congelada na da etapa 2 e o CL fixo:
 | asa + fuselagem | 0,008330 | 0,9713 | -0,48 |
 | asa + fuselagem + naceles | 0,009293 | 0,8725 | **+9,63** |
 | tudo, profundor em zero | 0,009299 | 0,8708 | +0,06 |
-| tudo, trimado | 0,009411 | 0,8614 | +1,11 |
+| tudo, compensado | 0,009411 | 0,8614 | +1,11 |
 
 As naceles respondem por 9,63 dos 11,6 counts. A empenagem custa 1,17 no total
 e a fuselagem chega a melhorar um pouco.
