@@ -14,9 +14,10 @@ julia  verifica_torcao.jl       # verificação independente do resultado acima
 julia  carga_completa.jl       # carga por superfície e de onde vem o Oswald
 ```
 
-O `torcao_monotonica.jl` guarda o modelo em `resultados/modelo_torcao.json` e
-só o reconstrói se o `aft.avl` for mais novo que o cache. Construir o modelo
-custa cerca de 80 rodadas do AVL, rodar os casos em cima dele custa segundos.
+O `otimizacao_torcao.jl` guarda os modelos de arrasto em
+`resultados/modelo_arrasto_cache.json` e só os reconstrói se o `aft.avl` for
+mais novo que o cache. Construí-los custa cerca de 130 rodadas do AVL; rodar
+os casos em cima deles custa segundos.
 
 O `dados_designtool.py` precisa ser rodado primeiro: ele gera o
 `dados_designtool.json`, de onde os scripts Julia leem o ponto de projeto e
