@@ -10,8 +10,7 @@ julia  convergencia_malha.jl    # define e justifica a malha
 julia  lab04.jl                 # análises do roteiro
 julia  refina_asa.py            # refina a asa para 11 seções (só se mudar a geometria)
 julia  otimizacao_torcao.jl     # otimização de torção (estudo próprio)
-julia  suficiencia_nos.jl       # quantos nós de torção são necessários
-julia  torcao_monotonica.jl     # que vínculo a torção precisa obedecer
+julia  verifica_torcao.jl       # verificação independente do resultado acima
 ```
 
 O `torcao_monotonica.jl` guarda o modelo em `resultados/modelo_torcao.json` e
@@ -75,9 +74,7 @@ Tudo que os scripts geram vai para `resultados/`:
 | `ponto_projeto_carga.png`, `ponto_de_projeto.txt` | ponto de projeto |
 | `otimizacao_torcao.png`, `torcao_otimizada.json` | otimização de torção |
 | `evolucao_1_asa_isolada.gif`, `evolucao_3_com_estol.gif` | caminho da otimização |
-| `torcao_decisao.png`, `torcao_recomendada.txt` | escolha do vínculo da torção |
-| `custo_conformidade.png`, `custo_conformidade.txt` | preço da margem de estol |
-| `torcao_monotonica.png`, `candidatos_torcao.json` | comparação das parametrizações |
+| `modelo_arrasto_cache.json` | cache dos modelos de arrasto, refeito se o `aft.avl` mudar |
 
 ## Torção da asa
 
@@ -184,3 +181,36 @@ aileron, que é onde a restrição age.
 Esta solução coincide com a obtida antes por um caminho independente, um QP
 convexo sobre as torções de estação com restrição de monotonicidade, o que dá
 confiança de que é o ótimo global e não um mínimo local.
+
+### Verificação
+
+O `verifica_torcao.jl` confere o resultado por fora dos modelos que o
+produziram. A parte de física checa monotonicidade e tamanho da torção, o erro
+do modelo de arrasto em pontos que não o construíram, a coerência entre CDff,
+CL e Oswald, e refaz a posição do estol por varredura direta de ângulo de
+ataque no AVL em vez de extrapolar dos dois ângulos do modelo afim. A parte de
+otimização testa as condições de KKT no espaço dos decrementos.
+
+O teste de KKT é necessário por um motivo específico. A otimização roda numa
+reparametrização logística, e ali ds/du tende a zero junto ao batente, de modo
+que a estacionariedade em u não distingue um mínimo legítimo de uma parada
+prematura: só o sinal de df/ds no espaço original separa os dois casos. Nas
+três etapas os multiplicadores dos batentes ativos saem positivos, o que
+confirma que apertar mais aqueles decrementos pioraria o arrasto.
+
+Dois pontos que o teste revelou e que valem registro:
+
+A restrição de estol escrita como margem do aileron é um mínimo de mínimos,
+portanto não diferenciável. No ótimo da etapa 3 há duas faixas do aileron
+empatadas, em η = 0,596 e η = 0,842, e por isso o gradiente por diferenças
+finitas da margem é arbitrário. Com a restrição desagregada por faixa, que é a
+forma correta, o resíduo de estacionariedade cai de 1,67 para zero e os dois
+multiplicadores saem positivos, somando 36,5 counts por grau. Esse valor fica
+entre as secantes da tabela de margens, 22,3 counts por grau entre 0 e 0,5 e
+60,2 entre 0,5 e 1,0, como se espera da derivada de uma função convexa
+crescente.
+
+Nenhuma etapa encostou no batente superior de 6 graus por intervalo, e a
+torção total ficou entre 6,5 e 8,8 graus contra um limite de 12. Ou seja,
+nenhum resultado está sendo determinado por um limite arbitrário: os únicos
+batentes ativos são os de monotonicidade.
