@@ -86,41 +86,101 @@ logo ela não atende a FAR 25.203 e alguma torção é obrigatória. A pergunta 
 projeto não é quanto a torção ganha em arrasto, é qual o menor preço da
 conformidade.
 
-A CL fixo a distribuição de sustentação é afim na torção, de modo que o
-arrasto induzido é exatamente quadrático e o cl de cada faixa exatamente afim.
-Cada caso é portanto um QP de restrições lineares, resolvido por pontos
-interiores. A Hessiana é definida positiva (autovalores de 1,12e-4 a 1,89e-6,
-razão 59), então o problema é convexo e o ótimo é único: não há ambiguidade de
-mínimo local.
+A CL fixo a distribuição de sustentação é afim nas torções de estação e o
+arrasto induzido é exatamente quadrático nelas, de modo que o modelo usado na
+otimização é exato e construído com rodadas do AVL. Todo ótimo é conferido
+fora do modelo.
 
-Com as torções livres o ótimo é serrilhado e salta 9,5 graus entre estações
-vizinhas. Isso não é ruído do otimizador, é o ótimo verdadeiro do modelo: ele
-usa um pico local de incidência como tira de estol, o que o VLM aceita e a asa
-real não. O vínculo que falta não é monotonicidade e sim limite de salto.
+### Por que a torção não é livre por estação
 
-Preço da conformidade, em counts de CDff sobre a asa sem torção:
+Com uma torção livre por estação o ótimo do modelo é serrilhado e salta 9,5
+graus entre estações vizinhas. Isso não é ruído do otimizador: resolvendo o
+mesmo problema como QP convexo por pontos interiores sai exatamente a mesma
+solução, e a Hessiana é definida positiva com razão de condição 59. É o ótimo
+verdadeiro do modelo, que usa um pico local de incidência como tira de estol.
+O VLM aceita isso; a asa real não.
 
-| margem | livre | suave 3°/est | monotônica | cúbica monótona |
+A torção é portanto uma **spline PCHIP monotônica**: Hermite cúbica por partes
+com as inclinações de Fritsch-Carlson, que preserva monotonicidade e não
+ultrapassa os valores de controle. Uma cúbica natural pelos mesmos pontos
+chega a subir, ou seja faria a barriga que se quer evitar.
+
+A monotonicidade não é imposta por restrição e sim pela variável de projeto:
+otimizam-se os decrementos entre nós, com a raiz em zero por gauge,
+
+    t_1 = 0,   t_k = -(s_1 + ... + s_{k-1}),   s_k >= 0
+
+que é não crescente para qualquer s no octante positivo. A raiz fica sendo a
+estação de maior incidência, que é o washout clássico. Para evitar a fronteira
+da caixa, onde o Fminbox diverge, usa-se s = DEC_MAX/(1+exp(-u)) e o problema
+vira irrestrito em u.
+
+### Onde pôr os nós
+
+Este é o parâmetro que mais importa, e só aparece com a restrição ativa. Para
+arrasto puro as nove configurações testadas ficam dentro de 1 count umas das
+outras; com a exigência de estol o espalhamento é de 79 counts.
+
+| nós | sem restrição | com estol 0,5° |
+|---|---|---|
+| 0,00 0,25 0,50 0,75 1,00 | -15,63 | +81,53 |
+| 0,00 0,22 0,40 0,56 0,75 1,00 | -15,70 | +23,65 |
+| 0,00 0,48 0,56 0,75 1,00 | -15,36 | +2,60 |
+| **0,00 0,30 0,48 0,56 0,70 0,85 1,00** | **-15,50** | **+2,59** |
+
+O que decide é ter um nó em 0,48, logo antes da raiz do aileron em 0,56. Com
+ele a curva fica plana até 0,48 e vira depressa depois, sem vazar washout para
+a região que precisa estolar primeiro. Sem ele a mesma exigência custa vinte
+counts a mais. A lição vale para além deste caso: estudo de discretização
+precisa ser feito com as restrições ativas.
+
+### Resultado
+
+| etapa | CDff | counts | Oswald | estol η |
 |---|---|---|---|---|
-| 0,0° | -18,8 | -16,2 | -10,7 | +3,5 |
-| 0,5° | -16,0 | -1,4 | +1,8 | inviável |
-| 1,0° | -8,4 | +12,0 | +17,7 | inviável |
-| 1,5° | -3,3 | +22,3 | +34,4 | inviável |
-| 2,0° | +3,9 | +38,3 | +56,6 | inviável |
+| sem torção | 0,010982 | - | 0,7377 | 0,842 |
+| 1: asa isolada, irrestrito | 0,008251 | -12,00 | 1,0035 | - |
+| 2: completa trimada, irrestrito | 0,009411 | -15,71 | 0,8614 | 0,842 |
+| 3: projeto, margem 0,5° | 0,011160 | +1,78 | 0,7279 | 0,520 |
 
-A margem de estol é a variável cara, não a forma da torção. Isso vem da nossa
-distribuição de clmax ser quase uniforme ao longo da envergadura (1,774 na
+A etapa 1 valida o método: a spline monotônica chega à carga elíptica, com
+Oswald 1,0035 e arrasto 0,33 count abaixo do piso plano CL²/(π AR), o que é
+esperado porque a asa tem 6 graus de diedro e o mínimo de Munk de asa não
+plana fica abaixo do elíptico plano. Contra a torção livre por estação a
+spline custa apenas 0,97 count, de modo que a liberdade serrilhada valia menos
+de um count.
+
+Preço da conformidade, com a parametrização adotada:
+
+| margem | counts | estol η | torção total | maior salto | taxa |
+|---|---|---|---|---|---|
+| 0,0° | -9,35 | 0,520 | 6,5° | 2,4° | 1,01 °/m |
+| 0,5° | +1,78 | 0,520 | 6,6° | 5,1° | 2,13 °/m |
+| 1,0° | +31,89 | 0,439 | 8,7° | 6,0° | 2,49 °/m |
+| 1,5° | +61,44 | 0,243 | 10,1° | 5,5° | 2,30 °/m |
+| 2,0° | +80,05 | 0,243 | 10,8° | 4,8° | 2,01 °/m |
+| 3,0° | inviável | | | | |
+
+A margem de estol é a variável cara, a cerca de 45 counts por grau. Isso vem
+da distribuição de clmax ser quase uniforme ao longo da envergadura (1,774 na
 raiz, 1,7985 no meio, 1,7338 na ponta), o que deixa a asa sem preferência
 natural por onde estolar. Washout linear e torção quadrática são inviáveis em
 qualquer margem.
 
-Configuração recomendada, monotônica com salto máximo de 2 graus por estação e
-margem nula, em `resultados/torcao_recomendada.txt`:
+A margem nula é melhor nos dois critérios ao mesmo tempo, arrasto e taxa de
+torção, de modo que a margem de 0,5 grau compra apenas robustez do critério de
+estol, que é linearizado e apoiado num AVL invíscido comparado a clmax de
+XFoil. Torção adotada na etapa 3:
 
 | η | 0,000 | 0,101 | 0,220 | 0,320 | 0,398 | 0,480 | 0,560 | 0,700 | 0,820 | 0,900 | 1,000 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| torção [°] | 0,00 | 0,00 | 0,00 | 0,00 | 0,00 | -0,98 | -2,98 | -4,98 | -5,53 | -5,82 | -5,82 |
+| torção [°] | 0,00 | 0,00 | 0,00 | 0,00 | 0,00 | 0,00 | -5,13 | -6,55 | -6,55 | -6,55 | -6,55 |
 
-CDff 0,010126 (-8,56 counts), Oswald 0,8014, estol em η = 0,520, faixa total de
-torção 5,8 graus. A alternativa com meio grau de margem de estol custa +1,78
-counts, ou seja arrasto neutro.
+Ressalva: a mudança de 5,13 graus entre as estações 0,48 e 0,56 dá 2,13 °/m,
+bem acima dos cerca de 0,3 °/m de um transporte. A solução é monotônica e
+lisa, mas concentra a variação de incidência num trecho curto junto à raiz do
+aileron, que é onde a restrição age.
+
+Esta solução coincide com a obtida antes por um caminho independente, um QP
+convexo sobre as torções de estação com restrição de monotonicidade, o que dá
+confiança de que é o ótimo global e não um mínimo local.

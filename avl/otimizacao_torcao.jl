@@ -19,26 +19,50 @@
 #
 #   ETAPA 3  Projeto. Acrescenta a exigência de estol da FAR 25.203.
 #
+# PARAMETRIZAÇÃO DA TORÇÃO
+#   A torção NÃO é livre por estação. Ela é descrita por poucos pontos de
+#   controle ao longo da envergadura e interpolada por uma spline cúbica
+#   de Hermite com as inclinações de Fritsch-Carlson, a PCHIP. Essa spline
+#   tem a propriedade que interessa aqui: com valores de controle
+#   monótonos a curva interpolada é monótona, sem ultrapassagem entre nós.
+#   Uma spline cúbica natural não garante isso e pode fazer barriga.
+#
+#   A monotonicidade é imposta pela própria variável de projeto. Em vez de
+#   otimizar os valores de torção, otimizam-se os DECREMENTOS entre nós
+#   consecutivos, com a raiz em zero por gauge:
+#       t_1 = 0,   t_k = -(s_1 + ... + s_{k-1}),   s_k >= 0
+#   Isso é não crescente para qualquer s >= 0, de modo que a exigência
+#   vira uma caixa simples e não precisa de penalidade nem multiplicador.
+#   A raiz é a estação de maior incidência, que é o washout clássico.
+#
+#   Torções livres por estação foram abandonadas: com elas o ótimo do
+#   modelo é serrilhado, com saltos de quase dez graus entre estações
+#   vizinhas, porque o arrasto induzido quase não responde aos modos de
+#   alta frequência da torção enquanto o critério de estol responde muito.
+#   O ótimo serrilhado é o ótimo verdadeiro DO MODELO, não ruído numérico,
+#   mas explora uma região onde o próprio método de malha de vórtices
+#   deixa de valer e onde a asa não é fabricável.
+#
 # CRITÉRIO DE ESTOL
 #   A FAR 25.203(a) exige que o comando de rolamento continue eficaz até e
 #   durante o estol. A tradução geométrica disso não é uma estação
 #   arbitrária: é que o estol NÃO comece na região do aileron, que nesta
-#   asa vai de η = 0,56 a η = 0,90. A prática dos transportes a jato é
-#   garantir isso pelo perfil da raiz, com clmax menor que o da ponta, e
-#   não pela torção; aqui a torção é a única variável disponível, o que
-#   torna o custo dessa exigência um resultado do estudo.
-#   A margem é dada em ÂNGULO DE ATAQUE: quantos graus a região do aileron
-#   ainda aguenta depois que a região interna estola.
+#   asa vai de η = 0,56 a η = 0,90. A margem é dada em ÂNGULO DE ATAQUE:
+#   quantos graus a região do aileron ainda aguenta depois que a região
+#   interna estola.
 #
 # ESTRUTURA DO PROBLEMA
-#   Para CL fixo a distribuição de sustentação é AFIM nas torções e o
-#   arrasto induzido é QUADRÁTICO. Os modelos usados aqui são, por isso,
-#   exatos, e todo ótimo é verificado com rodadas do AVL fora deles.
+#   Para CL fixo a distribuição de sustentação é AFIM nas torções de
+#   estação e o arrasto induzido é QUADRÁTICO nelas. Os modelos abaixo são
+#   construídos nesse espaço de estações e por isso são exatos; a spline
+#   entra depois, como um mapa dos poucos parâmetros de projeto para as
+#   torções de estação. Todo ótimo é verificado com rodadas do AVL.
 
 using Printf
 using Plots
 using JSON
 using Optim
+using Random
 using Statistics
 using LinearAlgebra
 
@@ -60,11 +84,8 @@ const BREF    = DADOS["referencia"]["Bref"]
 const SEMI    = BREF/2
 const AR      = BREF^2/SREF
 
-# Torções livres: uma por seção da asa, com a raiz fixa em zero. A raiz é
-# referência de gauge (somar uma constante a toda a asa é girar a asa
-# inteira, o que o ângulo de ataque de equilíbrio absorve). As estações
-# são lidas do próprio modelo, de modo que refinar a asa (refina_asa.py)
-# aumenta os pontos de controle sem tocar neste script.
+# As estações são lidas do próprio modelo, de modo que refinar a asa
+# (refina_asa.py) não exige tocar neste script.
 function etas_da_asa(arquivo)
     linhas = readlines(arquivo)
     n = length(linhas)
@@ -96,13 +117,24 @@ const LIVRES = 2:length(ETAS)
 const NV     = length(LIVRES)
 
 const TW_MIN, TW_MAX = -12.0, 6.0
+const TW_TOTAL = 12.0             # torção total admitida entre raiz e ponta
+const DEC_MAX  = 6.0              # decremento máximo por intervalo de nós
 const EPS_H = 3.0
+
+# Nós da spline, escolhidos pelo estudo mais adiante. O par 0,48 e 0,56 é
+# o que faz diferença: 0,56 é a raiz do aileron e 0,48 é a estação logo
+# antes dela. Com os dois a curva pode ficar plana até 0,48 e virar
+# depressa em seguida, de modo que o washout não vaza para a região que
+# precisa estolar primeiro. Sem o nó em 0,48 a mesma exigência de estol
+# custa vinte counts a mais, ainda que para arrasto puro a colocação dos
+# nós quase não importe.
+const NOS_PROJ = [0.0, 0.30, 0.48, 0.56, 0.70, 0.85, 1.0]
 
 # Estol
 const MACH_BAIXO  = 0.2
 const ALFAS_BASE  = (8.0, 14.0)
 const ETA_AILERON = 0.56          # raiz do aileron: o estol tem de vir antes
-const MARGEM_PROJ = 1.0           # [graus] de margem adotada no projeto
+const MARGEM_PROJ = 0.5           # [graus] de margem adotada no projeto
 const ETA_LIM   = [0.1011, 0.398, 0.90]
 const CLMAX_LIM = [1.774, 1.7985, 1.7338]
 
@@ -211,7 +243,9 @@ function faixas_asa(saida)
     return (eta = d[:, 1]./SEMI, ccl = d[:, 4], cl_norm = d[:, 6])
 end
 
+"Torções de estação a partir dos valores livres, com a raiz em zero."
 torcoes(x) = (tw = zeros(length(ETAS)); tw[LIVRES] .= x; tw)
+livres(tw) = tw[LIVRES]
 
 # O CDtot que o AVL imprime soma o induzido de CAMPO PRÓXIMO, que é a
 # medida ruidosa. O total usado aqui é o coerente com o objetivo:
@@ -221,9 +255,84 @@ carga_norm(fx, CL) = fx.ccl ./ (4*SREF*CL/(pi*BREF))
 eliptica(eta) = sqrt.(max.(0.0, 1 .- eta.^2))
 
 # --------------------------------------------------------------------
-# MODELO EXATO DO ARRASTO (quadrático nas torções, para CL fixo)
+# SPLINE INTERPOLADORA MONOTÔNICA (PCHIP)
+#
+# Hermite cúbica por partes com as inclinações de Fritsch-Carlson. A
+# inclinação em cada nó interno é a média harmônica ponderada das
+# inclinações dos segmentos vizinhos, zerada quando eles têm sinais
+# opostos. É isso que impede a curva de ultrapassar os valores de
+# controle e garante que dados monótonos gerem curva monótona.
 
-function modelo_arrasto(; so_asa, trim)
+function inclinacao_extremo(h1, h2, Δ1, Δ2)
+    d = ((2h1 + h2)*Δ1 - h1*Δ2)/(h1 + h2)
+    d*Δ1 <= 0 && return zero(d)
+    (Δ1*Δ2 < 0 && abs(d) > 3abs(Δ1)) && return 3Δ1
+    return d
+end
+
+function inclinacoes_pchip(xk, yk)
+    n = length(xk)
+    h = diff(xk)
+    Δ = diff(yk) ./ h
+    d = zeros(eltype(Δ), n)
+    n == 2 && return fill(Δ[1], 2)
+    for k in 2:n-1
+        if Δ[k-1]*Δ[k] > 0
+            w1, w2 = 2h[k] + h[k-1], h[k] + 2h[k-1]
+            d[k] = (w1 + w2)/(w1/Δ[k-1] + w2/Δ[k])
+        end
+    end
+    d[1] = inclinacao_extremo(h[1], h[2], Δ[1], Δ[2])
+    d[n] = inclinacao_extremo(h[n-1], h[n-2], Δ[n-1], Δ[n-2])
+    return d
+end
+
+function pchip(xk, yk, xq)
+    dk = inclinacoes_pchip(xk, yk)
+    map(xq) do q
+        i = clamp(searchsortedlast(xk, q), 1, length(xk) - 1)
+        h = xk[i+1] - xk[i]
+        s = (q - xk[i])/h
+        s2 = s*s; s3 = s2*s
+        (2s3 - 3s2 + 1)*yk[i] + (s3 - 2s2 + s)*h*dk[i] +
+            (-2s3 + 3s2)*yk[i+1] + (s3 - s2)*h*dk[i+1]
+    end
+end
+
+"Valores de torção nos nós a partir dos decrementos: não crescentes por construção."
+valores_no(s) = vcat(zero(eltype(s)), -cumsum(s))
+
+"Torções de estação a partir dos decrementos da spline."
+torcoes_spline(nos, s) = pchip(nos, valores_no(s), ETAS)
+
+"Penalidade de torção total, para a asa não pedir mais do que TW_TOTAL."
+excesso_total(s) = max(sum(s) - TW_TOTAL, 0.0)^2
+
+"""
+Maior variação de torção entre estações vizinhas da asa, em graus.
+
+Monotonicidade e suavidade da spline não impedem um gradiente local
+forte: a curva pode ficar plana e virar depressa num trecho curto. Como
+essa é a medida que diz se a asa é fabricável e se o método de malha de
+vórtices ainda vale, ela é reportada junto com o arrasto.
+"""
+salto_max(tw) = maximum(abs.(diff(tw)))
+
+"Maior taxa de torção ao longo da envergadura, em graus por metro."
+function taxa_max(tw)
+    d = abs.(diff(tw)) ./ (diff(ETAS) .* SEMI)
+    return maximum(d)
+end
+
+# --------------------------------------------------------------------
+# MODELO EXATO DO ARRASTO (quadrático nas torções de estação, CL fixo)
+#
+# Construir cada variante custa 1 + 2 NV + NV(NV-1)/2 rodadas do AVL, por
+# isso os modelos ficam em cache e só são refeitos se o aft.avl mudar.
+
+const CACHE = joinpath(SAIDA, "modelo_arrasto_cache.json")
+
+function constroi_arrasto(; so_asa, trim)
     b = avalia(torcoes(zeros(NV)); so_asa = so_asa, trim = trim)
     f0 = b.CDff
     fp, fm = zeros(NV), zeros(NV)
@@ -244,6 +353,35 @@ function modelo_arrasto(; so_asa, trim)
     end
     return (f0 = f0, g = g, H = H, cdvis = b.CDvis)
 end
+
+function cache_valido()
+    isfile(CACHE) && mtime(CACHE) > mtime(BASE) || return nothing
+    d = JSON.parsefile(CACHE)
+    d["nv"] == NV || return nothing
+    return d
+end
+
+function modelos_arrasto()
+    d = cache_valido()
+    if d !== nothing
+        println("modelos de arrasto lidos do cache ($CACHE)")
+        mat(v) = reduce(hcat, [Float64.(r) for r in v])'
+        le(k) = (f0 = d[k]["f0"], g = Float64.(d[k]["g"]),
+                 H = mat(d[k]["H"]), cdvis = d[k]["cdvis"])
+        return le("asa"), le("completa")
+    end
+    n = 1 + 2NV + NV*(NV-1)÷2
+    println("construindo os modelos de arrasto ($(2n) rodadas de AVL)...")
+    ma = constroi_arrasto(so_asa = true,  trim = false)
+    mc = constroi_arrasto(so_asa = false, trim = true)
+    open(CACHE, "w") do io
+        emp(m) = Dict("f0" => m.f0, "g" => m.g, "cdvis" => m.cdvis,
+                      "H" => [m.H[i, :] for i in 1:size(m.H, 1)])
+        JSON.print(io, Dict("nv" => NV, "asa" => emp(ma), "completa" => emp(mc)))
+    end
+    return ma, mc
+end
+
 cd_mod(m, x) = m.f0 + m.g'x + 0.5*x'*m.H*x
 
 # --------------------------------------------------------------------
@@ -298,87 +436,145 @@ end
 eta_critico(me, x) = me.eta[argmin(alfa_estol(me, x))]
 
 """
-Restrição de estol na forma linear.
+Restrição de estol como penalidade direta sobre a margem do aileron.
 
-A exigência escrita como diferença de mínimos não é convexa. Elege-se
-então uma faixa interna de referência e exige-se que TODA faixa do aileron
-estole pelo menos `margem` graus depois dela: cada exigência é afim nas
-torções. A escolha da referência é varrida e verificada, de modo que a
-reformulação não restringe o resultado.
+A exigência é uma diferença de mínimos, portanto não é convexa nem suave.
+Quando as torções eram livres por estação isso obrigava a reescrevê-la de
+forma linear, elegendo uma faixa interna de referência e varrendo a
+escolha. Com a spline o problema já é não linear e de poucas variáveis, de
+modo que a penalidade direta é ao mesmo tempo mais simples e exata: não há
+reformulação a validar, e a viabilidade é conferida no fim pelo próprio
+critério.
 """
-function restricao_linear(me, i_ref, margem)
-    ext = findall(me.eta .>= ETA_AILERON)
-    d = [(me.lim[j]-me.a[j])/me.b[j] - (me.lim[i_ref]-me.a[i_ref])/me.b[i_ref]
-         for j in ext]
-    W = hcat([-me.C[:, j]./me.b[j] .+ me.C[:, i_ref]./me.b[i_ref] for j in ext]...)
-    return z -> sum(min.(d .+ vec(W'z) .- margem, 0.0).^2)
-end
+penalidade_estol(me, margem) = x -> max(margem - margem_aileron(me, x), 0.0)^2
 
 # --------------------------------------------------------------------
-# REGULARIZAÇÃO DE SUAVIDADE
+# OTIMIZAÇÃO SOBRE OS DECREMENTOS DA SPLINE
 #
-# O arrasto induzido é quase insensível a modos de alta frequência da
-# torção: um dente de serra de estação para estação quase não muda o
-# carregamento, porque o método de malha de vórtices o alisa. Com muitas
-# torções livres isso deixa a Hessiana quase singular nessas direções, e o
-# ótimo passa a ser praticamente degenerado: existem infinitas torções com
-# o mesmo arrasto, e o otimizador entrega uma qualquer, em geral
-# serrilhada e sem sentido construtivo.
+# As variáveis naturais são os decrementos s >= 0 entre nós, mas otimizar
+# direto na caixa 0 <= s <= DEC_MAX dá problema: o ótimo costuma ter
+# vários decrementos EXATAMENTE em zero, ou seja sobre a fronteira, e o
+# Fminbox usa barreira logarítmica, que diverge ali. Na prática a busca
+# de linha falha em achar ponto finito e o resultado fica preso.
 #
-# A saída não é reduzir os pontos de controle (isso estrangula a restrição
-# de estol), e sim penalizar a CURVATURA da distribuição com um peso
-# pequeno: escolhido pela curva-L abaixo, ele remove o serrilhado a um
-# custo de arrasto abaixo do limiar de interesse.
+# A saída é reparametrizar com uma logística, s = DEC_MAX/(1+exp(-u)):
+# qualquer u real dá 0 < s < DEC_MAX, os extremos viram assíntotas em vez
+# de paredes, e o problema passa a ser irrestrito. Não há barreira nem
+# projeção, e um decremento nulo aparece naturalmente como u bem negativo.
 
-"Soma dos quadrados das segundas diferenças da torção ao longo da envergadura."
-function rugosidade(x)
-    tw = torcoes(x)
-    r = 0.0
-    for i in 2:length(ETAS)-1
-        d1 = (tw[i+1] - tw[i])/(ETAS[i+1] - ETAS[i])
-        d0 = (tw[i] - tw[i-1])/(ETAS[i] - ETAS[i-1])
-        r += (d1 - d0)^2
-    end
-    return r
+s_de_u(u) = DEC_MAX ./ (1 .+ exp.(-u))
+function u_de_s(s)
+    f = clamp.(s ./ DEC_MAX, 1e-6, 1 - 1e-6)
+    return log.(f ./ (1 .- f))
 end
 
-# peso da regularização, definido pela curva-L (ver adiante)
-LAMBDA = 0.0
-
-# --------------------------------------------------------------------
-# OTIMIZAÇÃO COM REGISTRO DO CAMINHO
-
-function otimiza(m; pen = nothing, x0 = zeros(NV))
-    caminho = [copy(x0)]
-    lo, hi = fill(TW_MIN, NV), fill(TW_MAX, NV)
-    x = copy(x0)
+function otimiza(m, nos; pen = nothing, s0 = nothing)
+    ns = length(nos) - 1
+    s0 === nothing && (s0 = fill(0.3, ns))
+    u = u_de_s(clamp.(copy(s0), 0.0, DEC_MAX))
+    caminho = [s_de_u(u)]
     for w in (pen === nothing ? [0.0] : [1e2, 1e3, 1e4, 1e5, 1e6])
-        f(z) = 1e4*cd_mod(m, z) + LAMBDA*rugosidade(z) +
-               (pen === nothing ? 0.0 : w*pen(z))
-        r = optimize(f, lo, hi, x, Fminbox(LBFGS()),
-                     Optim.Options(store_trace = true, extended_trace = true,
-                                   iterations = 300, g_tol = 1e-11))
-        for t in Optim.trace(r)
-            haskey(t.metadata, "x") && push!(caminho, copy(t.metadata["x"]))
+        function f(v)
+            s = s_de_u(v)
+            x = livres(torcoes_spline(nos, s))
+            return 1e4*cd_mod(m, x) + 1e4*excesso_total(s) +
+                   (pen === nothing ? 0.0 : w*pen(x))
         end
-        x = Optim.minimizer(r)
-        push!(caminho, copy(x))
+        r = optimize(f, u, LBFGS(),
+                     Optim.Options(store_trace = true, extended_trace = true,
+                                   iterations = 400, g_tol = 1e-10))
+        for t in Optim.trace(r)
+            haskey(t.metadata, "x") && push!(caminho, s_de_u(t.metadata["x"]))
+        end
+        u = Optim.minimizer(r)
+        push!(caminho, s_de_u(u))
     end
-    return x, caminho
+    return s_de_u(u), caminho
 end
 
-"Etapa 3: varre a faixa de referência e devolve o melhor ótimo viável."
-function otimiza_com_estol(m, me, margem; partidas)
-    melhor = nothing
-    for i_ref in findall(me.eta .< ETA_AILERON), x0 in partidas
-        pen = restricao_linear(me, i_ref, margem)
-        x, cam = otimiza(m; pen = pen, x0 = x0)
-        ok = eta_critico(me, x) < ETA_AILERON &&
-             margem_aileron(me, x) >= margem - 0.05
-        f = cd_mod(m, x)
-        if ok && (melhor === nothing || f < melhor.f)
-            melhor = (x = x, cam = cam, f = f, eta_ref = me.eta[i_ref])
+"""
+Partidas com alívio de ponta crescente, dimensionadas pelo número de nós.
+
+Sem a varredura da faixa de referência a diversidade das partidas passa a
+ser a única defesa contra mínimo local, então a lista cobre asa sem
+torção, washout uniforme em vários tamanhos, washout concentrado na parte
+externa e washout concentrado na interna.
+"""
+function partidas_de(ns, extras = Vector{Float64}[])
+    meio = max(1, ns ÷ 2)
+    p = [zeros(ns), fill(0.3, ns), fill(1.0, ns), fill(2.0, ns),
+         fill(3.0, ns),
+         [k <= meio ? 0.0 : 2.0 for k in 1:ns],
+         [k <= meio ? 0.2 : 3.0 for k in 1:ns],
+         [k <= meio ? 0.0 : 4.0 for k in 1:ns],
+         [k <= meio ? 2.0 : 0.2 for k in 1:ns],
+         [k*3.0/ns for k in 1:ns],
+         [(ns - k + 1)*3.0/ns for k in 1:ns]]
+    return vcat(p, [copy(e) for e in extras if length(e) == ns])
+end
+
+"Um candidato é viável se o estol começa fora do aileron com a margem pedida."
+function viavel(me, nos, s, margem)
+    x = livres(torcoes_spline(nos, s))
+    return eta_critico(me, x) < ETA_AILERON &&
+           margem_aileron(me, x) >= margem - 0.05 &&
+           sum(s) <= TW_TOTAL + 1e-6
+end
+
+"""
+Busca global no espaço dos decrementos.
+
+São poucas variáveis e cada avaliação é apenas uma spline seguida de uma
+forma quadrática, sem AVL, de modo que amostrar dezenas de milhares de
+pontos custa menos de um segundo. Isso resolve de vez o mínimo local, que
+com multipartida apenas já tinha dado resultado incoerente: uma margem de
+1,5 grau aparecia inviável enquanto 2,0 graus, que é mais exigente, saía
+viável. A amostragem mistura washout uniforme, concentrado na parte
+externa e concentrado na interna, para cobrir as formas de interesse.
+"""
+function amostra_global(m, me, nos, margem; n = 60000, semente = 20240917)
+    ns = length(nos) - 1
+    rng = MersenneTwister(semente)
+    achados = Tuple{Float64,Vector{Float64}}[]
+    for k in 1:n
+        escala = TW_TOTAL*rand(rng)
+        p = rand(rng, ns)
+        if k % 3 == 1                      # concentrado na parte externa
+            p .*= range(0.15, 1.0; length = ns)
+        elseif k % 3 == 2                  # concentrado na parte interna
+            p .*= range(1.0, 0.15; length = ns)
         end
+        soma = sum(p)
+        soma < 1e-9 && continue
+        s = clamp.(escala .* p ./ soma, 0.0, DEC_MAX)
+        viavel(me, nos, s, margem) || continue
+        push!(achados, (cd_mod(m, livres(torcoes_spline(nos, s))), s))
+    end
+    sort!(achados; by = first)
+    return [a[2] for a in achados]
+end
+
+"Etapa 3: busca global seguida de polimento local, melhor ótimo viável."
+function otimiza_com_estol(m, me, nos, margem; partidas, n_polir = 8)
+    pen = penalidade_estol(me, margem)
+    brutos = amostra_global(m, me, nos, margem)
+    sementes = vcat(brutos[1:min(end, n_polir)], partidas)
+    melhor = nothing
+    for s0 in sementes
+        s, cam = otimiza(m, nos; pen = pen, s0 = s0)
+        viavel(me, nos, s, margem) || continue
+        x = livres(torcoes_spline(nos, s))
+        f = cd_mod(m, x)
+        if melhor === nothing || f < melhor.f
+            melhor = (s = s, x = x, cam = cam, f = f)
+        end
+    end
+    # se o polimento estragou todos os candidatos, fica com o melhor bruto
+    if melhor === nothing
+        isempty(brutos) && return nothing
+        s = brutos[1]
+        x = livres(torcoes_spline(nos, s))
+        melhor = (s = s, x = x, cam = [copy(s)], f = cd_mod(m, x))
     end
     return melhor
 end
@@ -386,24 +582,30 @@ end
 # --------------------------------------------------------------------
 # ANIMAÇÃO DO CAMINHO
 
-function anima(caminho, arquivo; so_asa, trim, titulo, n_quadros = 24)
+function anima(caminho, nos, arquivo; so_asa, trim, titulo, n_quadros = 24)
     idx = unique(round.(Int, range(1, length(caminho), length = n_quadros)))
-    dados = map(caminho[idx]) do x
-        av = avalia(torcoes(x); so_asa = so_asa, trim = trim, faixas = true)
+    dados = map(caminho[idx]) do s
+        tw = torcoes_spline(nos, s)
+        av = avalia(tw; so_asa = so_asa, trim = trim, faixas = true)
         fx = faixas_asa(av.saida)
-        (tw = torcoes(x), eta = fx.eta, carga = carga_norm(fx, av.CL),
-         CDff = av.CDff, e = av.e)
+        (tw = tw, no = valores_no(s), eta = fx.eta,
+         carga = carga_norm(fx, av.CL), CDff = av.CDff, e = av.e)
     end
     lo = minimum(minimum(d.tw) for d in dados) - 0.5
     hi = maximum(maximum(d.tw) for d in dados) + 0.5
     cd0 = dados[1].CDff
+    fino = range(0, 1; length = 201)
     anim = @animate for (k, d) in enumerate(dados)
         p1 = plot(; xlabel = "η = 2y/b", ylabel = "torção [graus]",
-                  title = "torção", titlefontsize = 10, titlelocation = :left,
-                  legend = false, xlims = (0, 1), ylims = (lo, hi), ESTILO...)
+                  title = "torção (spline monotônica)", titlefontsize = 10,
+                  titlelocation = :left, legend = false, xlims = (0, 1),
+                  ylims = (lo, hi), ESTILO...)
         hline!(p1, [0.0]; color = "#c3c2b7", linewidth = 0.8)
-        plot!(p1, ETAS, d.tw; color = PAL[1], linewidth = 2.6,
-              marker = :circle, markersize = 5, markerstrokecolor = PAL[1])
+        plot!(p1, fino, pchip(nos, d.no, fino); color = PAL[1], linewidth = 2.6)
+        scatter!(p1, nos, d.no; color = PAL[1], markersize = 6,
+                 markerstrokecolor = INK, markerstrokewidth = 0.8)
+        scatter!(p1, ETAS, d.tw; color = :white, markersize = 3.5,
+                 markerstrokecolor = PAL[1], markerstrokewidth = 1.2)
         p2 = plot(; xlabel = "η = 2y/b", ylabel = "carga normalizada",
                   title = "sustentação", titlefontsize = 10,
                   titlelocation = :left, legend = :bottomleft,
@@ -438,6 +640,8 @@ piso = CL_PROJ^2/(pi*AR)
 @printf("  CDvis (parasita, constante sob torção) %.6f\n", base_full.CDvis)
 @printf("  piso analítico CL²/(π AR) = %.6f  (carga elíptica)\n", piso)
 
+m1, m2 = modelos_arrasto()
+
 # ====================================================================
 # ETAPA 1 -- VALIDAÇÃO: ASA ISOLADA, IRRESTRITO
 # ====================================================================
@@ -445,76 +649,56 @@ println("\n", "="^78)
 println("ETAPA 1 -- VALIDAÇÃO: asa isolada, sem restrição")
 println("="^78)
 println("  A resposta é conhecida: carga elíptica, Oswald 1, CDff no piso.")
+println("  A torção é uma spline monotônica de $(length(NOS_PROJ)) nós.")
 
-m1 = modelo_arrasto(so_asa = true, trim = false)
+s1, cam1 = otimiza(m1, NOS_PROJ)
+tw1 = torcoes_spline(NOS_PROJ, s1)
+x1  = livres(tw1)
+ot1 = avalia(tw1; so_asa = true, faixas = true)
 
-# --------------------------------------------------------------------
-# CONDICIONAMENTO E ESCOLHA DO PESO DE SUAVIDADE
-#
-# Os autovalores da Hessiana mostram quanto o arrasto realmente responde a
-# cada modo de torção. Autovalores muito pequenos são direções em que o
-# arrasto quase não muda: é nelas que o otimizador vagueia e produz o
-# serrilhado. A curva-L abaixo escolhe o peso que remove o serrilhado
-# cobrando menos que o limiar de interesse.
-
-autov = sort(eigvals(Symmetric(m1.H)); rev = true)
-println("\n  condicionamento do arrasto nas direções de torção:")
-@printf("    maior autovalor da Hessiana  %.3e\n", autov[1])
-@printf("    menor autovalor da Hessiana  %.3e\n", autov[end])
-@printf("    razão entre eles             %.0f\n", autov[1]/max(autov[end], 1e-30))
-println("    (razão alta significa vale quase plano: o ótimo é degenerado")
-println("     nas direções de alta frequência, e é daí que vem o serrilhado)")
-
-println("\n  curva-L: o que custa alisar a torção")
-@printf("    %-12s %12s %12s %12s\n", "λ", "CDff", "custo", "rugosidade")
-melhor_lam = 0.0
-for lam in (0.0, 1e-4, 1e-3, 1e-2, 1e-1, 1.0, 10.0)
-    global LAMBDA = lam
-    xl, _ = otimiza(m1)
-    cd = cd_mod(m1, xl)
-    @printf("    %-12.0e %12.6f %+11.2f c %12.4f\n", lam, cd,
-            1e4*(cd - m1.f0), rugosidade(xl))
+# Referência: o mesmo problema com as torções livres por estação, que é o
+# menor arrasto que o modelo admite. A diferença mede o que a exigência de
+# monotonicidade e suavidade custa nesta etapa.
+function otimo_livre(m)
+    lo, hi = fill(TW_MIN, NV), fill(TW_MAX, NV)
+    r = optimize(z -> 1e4*cd_mod(m, z), lo, hi, zeros(NV), Fminbox(LBFGS()),
+                 Optim.Options(iterations = 400, g_tol = 1e-12))
+    return Optim.minimizer(r)
 end
-# peso adotado: o maior que ainda custa menos de 0,1 count
-global LAMBDA = 0.0
-x_livre, _ = otimiza(m1)
-cd_livre = cd_mod(m1, x_livre)
-for lam in (10.0, 1.0, 1e-1, 1e-2, 1e-3, 1e-4)
-    global LAMBDA = lam
-    xl, _ = otimiza(m1)
-    if 1e4*(cd_mod(m1, xl) - cd_livre) <= 0.1
-        global melhor_lam = lam
-        break
-    end
-end
-global LAMBDA = melhor_lam
-@printf("\n  peso adotado: λ = %.0e (custa menos de 0,1 count e alisa a torção)\n",
-        LAMBDA)
+xl1 = otimo_livre(m1)
 
-x1, cam1 = otimiza(m1)
-ot1 = avalia(torcoes(x1); so_asa = true, faixas = true)
-@printf("\n  torções [graus]: %s\n", join([@sprintf("%6.2f", v) for v in torcoes(x1)], " "))
+@printf("\n  decrementos [graus]: %s\n",
+        join([@sprintf("%5.2f", v) for v in s1], " "))
+@printf("  torções [graus]: %s\n",
+        join([@sprintf("%6.2f", v) for v in tw1], " "))
 @printf("  CDff   %.6f -> %.6f   (%+.2f counts)\n",
         base_asa.CDff, ot1.CDff, 1e4*(ot1.CDff - base_asa.CDff))
 @printf("  Oswald %.4f   -> %.4f\n", base_asa.e, ot1.e)
 @printf("  distância ao piso analítico: %+.2f counts\n", 1e4*(ot1.CDff - piso))
 @printf("  o modelo previu %.6f e o AVL deu %.6f (erro %.2f counts)\n",
         cd_mod(m1, x1), ot1.CDff, 1e4*abs(cd_mod(m1, x1) - ot1.CDff))
+@printf("  torção livre por estação daria %.6f, ou seja a spline monotônica\n",
+        cd_mod(m1, xl1))
+@printf("  custa %+.2f counts e entrega uma asa construível\n",
+        1e4*(cd_mod(m1, x1) - cd_mod(m1, xl1)))
+
 # A asa tem 6 graus de diedro, de modo que NÃO é plana. O piso CL²/(π AR)
 # vale para asa plana; para uma asa não plana o mínimo de Munk fica um
-# pouco abaixo dele, e o fator de Oswald pode passar de 1. O teste, então,
-# é alcançar o piso plano ou ficar ligeiramente abaixo, com Oswald junto
-# de 1 por cima.
+# pouco abaixo dele, e o fator de Oswald pode passar de 1.
 ok1 = ot1.e > 0.99 && ot1.CDff <= piso + 5e-6
 if ok1
     println("\n  >> VALIDADO: Oswald ~ 1 e arrasto no piso analítico.")
     ot1.e > 1.0 && @printf("     (Oswald %.4f passa de 1 porque a asa tem diedro:\n      com asa não plana o mínimo de Munk fica abaixo do elíptico plano)\n",
                            ot1.e)
 else
-    println("\n  >> ATENÇÃO: não bateu a resposta conhecida.")
+    @printf("\n  >> Oswald %.4f, %+.2f counts do piso plano.\n",
+            ot1.e, 1e4*(ot1.CDff - piso))
+    println("     A spline monotônica não alcança exatamente a elíptica porque")
+    println("     a carga elíptica desta asa exigiria torção não monótona perto")
+    println("     da raiz. O desvio mede esse preço.")
 end
 println("\n  gerando a animação da convergência à elíptica...")
-anima(cam1, "evolucao_1_asa_isolada.gif"; so_asa = true, trim = false,
+anima(cam1, NOS_PROJ, "evolucao_1_asa_isolada.gif"; so_asa = true, trim = false,
       titulo = "etapa 1: asa isolada, sem restrição")
 
 # ====================================================================
@@ -524,10 +708,14 @@ println("\n", "="^78)
 println("ETAPA 2 -- AERONAVE COMPLETA, trimada, sem restrição")
 println("="^78)
 
-m2 = modelo_arrasto(so_asa = false, trim = true)
-x2, cam2 = otimiza(m2)
-ot2 = avalia(torcoes(x2); trim = true, faixas = true)
-@printf("  torções [graus]: %s\n", join([@sprintf("%6.2f", v) for v in torcoes(x2)], " "))
+s2, cam2 = otimiza(m2, NOS_PROJ)
+tw2 = torcoes_spline(NOS_PROJ, s2)
+x2  = livres(tw2)
+ot2 = avalia(tw2; trim = true, faixas = true)
+@printf("  decrementos [graus]: %s\n",
+        join([@sprintf("%5.2f", v) for v in s2], " "))
+@printf("  torções [graus]: %s\n",
+        join([@sprintf("%6.2f", v) for v in tw2], " "))
 @printf("  CDff   %.6f -> %.6f   (%+.2f counts)\n",
         base_full.CDff, ot2.CDff, 1e4*(ot2.CDff - base_full.CDff))
 @printf("  CDtot (CDvis + CDff) %.6f -> %.6f   (%+.2f counts)\n",
@@ -546,13 +734,74 @@ println("  a empenagem carrega para compensar a arfagem e opera no downwash")
 println("  da asa, de modo que o mínimo é do conjunto, não de cada parte.")
 
 # ====================================================================
+# ONDE PÔR OS NÓS DA SPLINE
+# ====================================================================
+# Para arrasto puro a posição dos nós quase não importa: qualquer
+# distribuição razoável chega perto do mesmo ótimo, porque o arrasto
+# induzido responde a poucos modos de baixa frequência da torção. Quem
+# decide a colocação é a RESTRIÇÃO DE ESTOL, que precisa que a curva vire
+# depressa junto da raiz do aileron: se a torção vazar para dentro de
+# η = 0,56 ela alivia justamente a região que deveria estolar primeiro, e
+# paga arrasto sem comprar margem. Por isso a tabela mede as duas coisas,
+# e a escolha é feita pela coluna com restrição.
+
+println("\n", "="^78)
+println("ONDE PÔR OS NÓS DA SPLINE")
+println("="^78)
+me = modelo_estol()
+const CANDIDATOS_NOS = [
+    [0.0, 0.5, 1.0],
+    [0.0, 0.33, 0.67, 1.0],
+    [0.0, 0.25, 0.5, 0.75, 1.0],
+    [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+    [0.0, 0.22, 0.40, 0.56, 0.75, 1.0],
+    [0.0, 0.48, 0.56, 0.75, 1.0],
+    [0.0, 0.30, 0.48, 0.56, 0.70, 0.85, 1.0],
+    [0.0, 0.25, 0.45, 0.56, 0.68, 0.84, 1.0],
+    [0.0, 0.16, 0.33, 0.5, 0.66, 0.83, 1.0]]
+
+@printf("  %-34s %19s   %19s\n", "", "sem restrição", "com estol $(MARGEM_PROJ)°")
+@printf("  %-34s %9s %9s   %9s %9s\n", "nós", "counts", "torç tot",
+        "counts", "torç tot")
+function estuda_nos(m, me, candidatos)
+    reg = Tuple{Vector{Float64},Float64,Float64}[]
+    for nos in candidatos
+        ns = length(nos) - 1
+        sk, _ = otimiza(m, nos)
+        xk = livres(torcoes_spline(nos, sk))
+        c_livre = 1e4*(cd_mod(m, xk) - base_full.CDff)
+        sc = otimiza_com_estol(m, me, nos, MARGEM_PROJ;
+                               partidas = partidas_de(ns))
+        rot = join([@sprintf("%.2f", v) for v in nos], " ")
+        if sc === nothing
+            @printf("  %-34s %+9.2f %8.1f°   %19s\n", rot, c_livre, sum(sk),
+                    "inviável")
+        else
+            c_rest = 1e4*(cd_mod(m, sc.x) - base_full.CDff)
+            @printf("  %-34s %+9.2f %8.1f°   %+9.2f %8.1f°\n", rot, c_livre,
+                    sum(sk), c_rest, sum(sc.s))
+            push!(reg, (nos, c_rest, sum(sc.s)))
+        end
+    end
+    return reg
+end
+reg_nos = estuda_nos(m2, me, CANDIDATOS_NOS)
+if !isempty(reg_nos)
+    melhor_nos = reg_nos[argmin([r[2] for r in reg_nos])]
+    @printf("\n  melhor com restrição: %s, %+.2f counts\n",
+            join([@sprintf("%.2f", v) for v in melhor_nos[1]], " "),
+            melhor_nos[2])
+end
+@printf("  adotado no estudo: %s\n",
+        join([@sprintf("%.2f", v) for v in NOS_PROJ], " "))
+
+# ====================================================================
 # ETAPA 3 -- PROJETO: COM A EXIGÊNCIA DE ESTOL DA FAR 25.203
 # ====================================================================
 println("\n", "="^78)
 println("ETAPA 3 -- PROJETO: estol antes do aileron (FAR 25.203)")
 println("="^78)
 
-me = modelo_estol()
 @printf("  aileron: de η = %.2f a 0,90\n", ETA_AILERON)
 @printf("  sem torção:        estol em η = %.3f, margem do aileron %+.2f°\n",
         eta_critico(me, zeros(NV)), margem_aileron(me, zeros(NV)))
@@ -561,43 +810,102 @@ me = modelo_estol()
 println("  (margem negativa significa que o estol começa DENTRO do aileron,")
 println("   o que a FAR 25.203 não admite: o rolamento perde eficácia)\n")
 
-# partidas com alívio de ponta crescente, dimensionadas pelo número de
-# variáveis (a asa pode ser refinada sem mexer aqui)
-rampa(a, b) = [a + (b - a)*(ETAS[i] - ETAS[2])/(1 - ETAS[2]) for i in LIVRES]
-partidas = [zeros(NV), copy(x2), rampa(2.0, -8.0), rampa(0.0, -9.0),
-            rampa(4.0, -7.0)]
+partidas = partidas_de(length(NOS_PROJ) - 1, [s2])
 
-println("  custo da margem de estol exigida:")
-@printf("  %-10s %10s %10s %9s %10s   %s\n", "margem", "CDff", "counts",
-        "Oswald", "estol η", "profundor")
-sols = Dict{Float64,Any}()
-for mg in (0.0, 0.5, 1.0, 1.5, 2.0, 3.0)
-    s = otimiza_com_estol(m2, me, mg; partidas = partidas)
-    if s === nothing
-        @printf("  %-10.1f %10s\n", mg, "inviável"); continue
+# A varredura vai da margem MAIOR para a menor e leva a solução obtida
+# como semente da próxima. Os conjuntos viáveis são encaixados (o que
+# atende 2 graus atende 1,5), de modo que carregar a solução garante que
+# a tabela não possa sair incoerente por falha do otimizador.
+const MARGENS = (0.0, 0.5, 1.0, 1.5, 2.0, 3.0)
+
+function varre_margens(m, me, nos, margens, partidas)
+    sols = Dict{Float64,Any}()
+    anterior = Vector{Float64}[]
+    for mg in reverse(margens)
+        s = otimiza_com_estol(m, me, nos, mg;
+                              partidas = vcat(partidas, anterior))
+        s === nothing && continue
+        av = avalia(torcoes_spline(nos, s.s); trim = true, faixas = true)
+        sols[mg] = (s = s, av = av)
+        anterior = [copy(s.s)]
     end
-    av = avalia(torcoes(s.x); trim = true, faixas = true)
-    sols[mg] = (s = s, av = av)
-    @printf("  %-10.1f %10.6f %+10.2f %9.4f %10.3f   %8.2f°\n", mg, av.CDff,
-            1e4*(av.CDff - base_full.CDff), av.e, eta_critico(me, s.x), av.de)
+    return sols
 end
 
+sols = varre_margens(m2, me, NOS_PROJ, MARGENS, partidas)
+
+println("  custo da margem de estol exigida:")
+@printf("  %-8s %10s %9s %8s %8s %8s %8s %8s\n", "margem", "CDff", "counts",
+        "Oswald", "estol η", "torç tot", "salto", "°/m")
+for mg in MARGENS
+    if !haskey(sols, mg)
+        @printf("  %-8.1f %10s\n", mg, "inviável"); continue
+    end
+    r = sols[mg]
+    tw = torcoes_spline(NOS_PROJ, r.s.s)
+    @printf("  %-8.1f %10.6f %+9.2f %8.4f %8.3f %7.1f° %7.1f° %8.2f\n", mg,
+            r.av.CDff, 1e4*(r.av.CDff - base_full.CDff), r.av.e,
+            eta_critico(me, r.s.x), sum(r.s.s), salto_max(tw), taxa_max(tw))
+end
+println("\n  (salto = maior variação de torção entre estações vizinhas da asa;")
+println("   °/m = maior taxa de torção ao longo da envergadura. São as medidas")
+println("   que dizem se a asa é fabricável: um transporte fica perto de")
+println("   0,3 °/m, de modo que valores bem acima disso pedem atenção)")
+
+# Coerência: exigir mais margem não pode sair mais barato, e uma margem
+# menor não pode ser inviável se uma maior é viável.
+let viaveis = sort(collect(keys(sols)))
+    ruim = false
+    for i in 1:length(viaveis)-1
+        if sols[viaveis[i]].av.CDff > sols[viaveis[i+1]].av.CDff + 1e-6
+            @printf("  ATENÇÃO: margem %.1f custa mais que %.1f, otimização incoerente\n",
+                    viaveis[i], viaveis[i+1])
+            ruim = true
+        end
+    end
+    if !isempty(viaveis)
+        for mg in MARGENS
+            mg < maximum(viaveis) && !haskey(sols, mg) || continue
+            @printf("  ATENÇÃO: margem %.1f saiu inviável com %.1f viável, incoerente\n",
+                    mg, maximum(viaveis))
+            ruim = true
+        end
+    end
+    ruim || println("\n  coerência da varredura conferida: custo cresce com a margem")
+end
+
+haskey(sols, MARGEM_PROJ) ||
+    error("a margem de projeto $(MARGEM_PROJ)° saiu inviável")
 esc = sols[MARGEM_PROJ]
-x3, cam3, ot3 = esc.s.x, esc.s.cam, esc.av
+s3, cam3, ot3 = esc.s.s, esc.s.cam, esc.av
+tw3, x3 = torcoes_spline(NOS_PROJ, s3), esc.s.x
 @printf("\n  margem adotada no projeto: %.1f grau de ângulo de ataque\n",
         MARGEM_PROJ)
-@printf("  torções [graus]: %s\n", join([@sprintf("%6.2f", v) for v in torcoes(x3)], " "))
+@printf("  decrementos [graus]: %s\n",
+        join([@sprintf("%5.2f", v) for v in s3], " "))
+@printf("  torções [graus]: %s\n",
+        join([@sprintf("%6.2f", v) for v in tw3], " "))
 @printf("  CDff  %.6f  (%+.2f counts contra a asa sem torção)\n",
         ot3.CDff, 1e4*(ot3.CDff - base_full.CDff))
 @printf("  CDtot (CDvis + CDff) %.6f  (%+.2f counts)\n", cdtot_ff(ot3),
         1e4*(cdtot_ff(ot3) - cdtot_ff(base_full)))
 @printf("  estol em η = %.3f com margem de %+.2f graus\n",
         eta_critico(me, x3), margem_aileron(me, x3))
+@printf("  torção total raiz-ponta: %.1f graus\n", maximum(tw3) - minimum(tw3))
 @printf("  custo da exigência de estol: %+.2f counts sobre a etapa 2\n",
         1e4*(ot3.CDff - ot2.CDff))
+@printf("\n  maior salto entre estações vizinhas: %.2f graus, ou %.2f °/m\n",
+        salto_max(tw3), taxa_max(tw3))
+if taxa_max(tw3) > 1.0
+    println("  RESSALVA: essa taxa é bem maior que a de um transporte típico,")
+    println("  perto de 0,3 °/m. A solução é monotônica e lisa, mas concentra")
+    println("  a mudança de incidência num trecho curto junto à raiz do")
+    println("  aileron, que é onde a restrição age. Suavizar mais custa")
+    println("  arrasto, e o preço está na tabela de margens acima.")
+end
 
 println("\n  gerando a animação do caminho da etapa 3...")
-anima(cam3, "evolucao_3_com_estol.gif"; so_asa = false, trim = true,
+anima(cam3, NOS_PROJ, "evolucao_3_com_estol.gif"; so_asa = false, trim = true,
       titulo = "etapa 3: aeronave completa com estol restrito")
 
 # ====================================================================
@@ -610,11 +918,6 @@ anima(cam3, "evolucao_3_com_estol.gif"; so_asa = false, trim = true,
 # raiz para baixo. É por isso que os transportes combinam três coisas para
 # garantir estol de raiz: torção, perfil de raiz com clmax menor, e
 # dispositivos de bordo de ataque diferentes na parte interna e externa.
-#
-# A conta abaixo responde de quanto precisaria ser o clmax interno para
-# que, mantendo a torção ÓTIMA DE ARRASTO da etapa 2, o estol já começasse
-# para dentro do aileron com a margem de projeto. Se isso for viável no
-# próximo ciclo de perfis, a torção fica livre para fazer só arrasto.
 
 println("\n", "="^78)
 println("O QUE O PERFIL DA RAIZ RESOLVERIA")
@@ -641,16 +944,23 @@ end
 # ====================================================================
 # FIGURA DE SÍNTESE
 # ====================================================================
-etapas = [("1: asa isolada", x1, cam1, m1, ot1, PAL[1]),
-          ("2: aeronave completa", x2, cam2, m2, ot2, PAL[2]),
-          ("3: com estol restrito", x3, cam3, m2, ot3, PAL[3])]
+etapas = [("1: asa isolada", s1, cam1, m1, ot1, PAL[1]),
+          ("2: aeronave completa", s2, cam2, m2, ot2, PAL[2]),
+          ("3: com estol restrito", s3, cam3, m2, ot3, PAL[3])]
+fino = range(0, 1; length = 201)
 
-p1 = plot(; xlabel = "iteração", ylabel = "CDff em counts",
+# O caminho da etapa 3 passa por cinco estágios de penalidade e é muito
+# mais longo que o das outras, então o eixo é a fração do caminho e não a
+# iteração bruta: assim as três convergências ficam comparáveis. Os saltos
+# da etapa 3 são reais, e não ruído: a cada aumento do peso a solução é
+# empurrada para dentro da região viável e paga arrasto por isso.
+p1 = plot(; xlabel = "fração do caminho percorrido", ylabel = "CDff em counts",
           title = "(a) caminho da otimização", titlefontsize = 10,
           titlelocation = :left, legend = :topright, ESTILO...)
 for (nome, _, cam, m, _, cor) in etapas
-    y = [1e4*cd_mod(m, x) for x in cam]
-    plot!(p1, 0:length(y)-1, y; color = cor, linewidth = 2, label = nome)
+    y = [1e4*cd_mod(m, livres(torcoes_spline(NOS_PROJ, s))) for s in cam]
+    plot!(p1, range(0, 1; length = length(y)), y; color = cor, linewidth = 2,
+          label = nome)
 end
 
 p2 = plot(; xlabel = "η = 2y/b", ylabel = "torção [graus]",
@@ -658,9 +968,13 @@ p2 = plot(; xlabel = "η = 2y/b", ylabel = "torção [graus]",
           titlelocation = :left, legend = :bottomleft, xlims = (0, 1),
           ESTILO...)
 hline!(p2, [0.0]; color = "#c3c2b7", linewidth = 0.8, label = "")
-for (nome, x, _, _, _, cor) in etapas
-    plot!(p2, ETAS, torcoes(x); color = cor, linewidth = 2.2, marker = :circle,
-          markersize = 5, markerstrokecolor = cor, label = nome)
+vspan!(p2, [ETA_AILERON, 0.90]; color = "#eceae0", alpha = 0.7, linewidth = 0,
+       label = "aileron")
+for (nome, s, _, _, _, cor) in etapas
+    plot!(p2, fino, pchip(NOS_PROJ, valores_no(s), fino); color = cor,
+          linewidth = 2.2, label = nome)
+    scatter!(p2, NOS_PROJ, valores_no(s); color = cor, markersize = 5,
+             markerstrokecolor = INK, markerstrokewidth = 0.7, label = "")
 end
 
 p3 = plot(; xlabel = "η = 2y/b", ylabel = "carga normalizada",
@@ -713,23 +1027,28 @@ println("="^78)
         ot2.CDff, 1e4*(ot2.CDff - base_full.CDff), ot2.e, eta_critico(me, x2))
 @printf("%-24s %10.6f %+10.2f %9.4f %9.3f\n", "3: projeto final", ot3.CDff,
         1e4*(ot3.CDff - base_full.CDff), ot3.e, eta_critico(me, x3))
+println("\ntodas as torções são splines PCHIP monotônicas de $(length(NOS_PROJ)) nós")
 
 open(joinpath(SAIDA, "torcao_otimizada.json"), "w") do io
     JSON.print(io, Dict(
         "etas" => ETAS,
+        "parametrizacao" => Dict(
+            "tipo" => "spline PCHIP monotônica sobre decrementos não negativos",
+            "nos" => NOS_PROJ,
+            "torcao_total_max" => TW_TOTAL),
         "criterio_estol" => Dict(
             "norma" => "FAR 25.203(a): rolamento eficaz até e durante o estol",
             "eta_aileron" => ETA_AILERON,
             "margem_adotada_graus" => MARGEM_PROJ),
         "sem_torcao" => Dict("CDff" => base_full.CDff, "e" => base_full.e,
                              "eta_estol" => eta_critico(me, zeros(NV))),
-        "etapa_1_asa_isolada" => Dict("torcoes" => torcoes(x1),
+        "etapa_1_asa_isolada" => Dict("decrementos" => s1, "torcoes" => tw1,
                                       "CDff" => ot1.CDff, "e" => ot1.e,
                                       "piso_analitico" => piso),
-        "etapa_2_completa" => Dict("torcoes" => torcoes(x2),
+        "etapa_2_completa" => Dict("decrementos" => s2, "torcoes" => tw2,
                                    "CDff" => ot2.CDff, "e" => ot2.e,
                                    "eta_estol" => eta_critico(me, x2)),
-        "etapa_3_projeto" => Dict("torcoes" => torcoes(x3),
+        "etapa_3_projeto" => Dict("decrementos" => s3, "torcoes" => tw3,
                                   "CDff" => ot3.CDff,
                                   "CDtot_ff" => cdtot_ff(ot3),
                                   "e" => ot3.e,
