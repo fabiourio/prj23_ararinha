@@ -11,6 +11,7 @@ julia  lab04.jl                 # análises do roteiro
 julia  refina_asa.py            # refina a asa para 11 seções (só se mudar a geometria)
 julia  otimizacao_torcao.jl     # otimização de torção (estudo próprio)
 julia  verifica_torcao.jl       # verificação independente do resultado acima
+julia  carga_completa.jl       # carga por superfície e de onde vem o Oswald
 ```
 
 O `torcao_monotonica.jl` guarda o modelo em `resultados/modelo_torcao.json` e
@@ -214,3 +215,43 @@ Nenhuma etapa encostou no batente superior de 6 graus por intervalo, e a
 torção total ficou entre 6,5 e 8,8 graus contra um limite de 12. Ou seja,
 nenhum resultado está sendo determinado por um limite arbitrário: os únicos
 batentes ativos são os de monotonicidade.
+
+### De onde vem o Oswald abaixo de 1 (e um alerta sobre as naceles)
+
+A asa isolada da etapa 1 chega a e = 1,0035, mas a aeronave completa da etapa
+2 fica em 0,8614 mesmo no ótimo. O `carga_completa.jl` separa a carga por
+superfície e monta a aeronave peça por peça para achar a causa.
+
+A explicação de manual seria arrasto de trimagem, com a empenagem carregando
+para baixo e a asa tendo de carregar mais que o peso. **Não é o caso aqui.** No
+ótimo da etapa 2 a empenagem carrega CL de -0,0020, praticamente nada, e a asa
+carrega 0,4792 contra um CLff de 0,4998, ou seja MENOS que o total. Pelo fator
+de trimagem o e subiria acima de 1.
+
+A decomposição, com a torção congelada na da etapa 2 e o CL fixo:
+
+| configuração | CDff | e | Δ counts |
+|---|---|---|---|
+| só a asa | 0,008379 | 0,9877 | - |
+| asa + fuselagem | 0,008330 | 0,9713 | -0,48 |
+| asa + fuselagem + naceles | 0,009293 | 0,8725 | **+9,63** |
+| tudo, profundor em zero | 0,009299 | 0,8708 | +0,06 |
+| tudo, trimado | 0,009411 | 0,8614 | +1,11 |
+
+As naceles respondem por 9,63 dos 11,6 counts. A empenagem custa 1,17 no total
+e a fuselagem chega a melhorar um pouco.
+
+Isso pede atenção. A nacele está modelada como SUPERFÍCIE sustentadora em
+forma de anel, com cerca de 91 m² de malha cada, quase metade da área da asa,
+e carrega 4,8% da sustentação da aeronave. No método de malha de vórtices um
+anel em ângulo de ataque gera circulação, esteira e portanto arrasto induzido;
+uma nacele real tem escoamento passante e não se comporta assim. A
+representação usual no AVL para nacele é BODY, que desloca o escoamento sem
+sustentar, como já é feito com a fuselagem.
+
+O efeito não fica só no valor absoluto: com a mesma torção e o mesmo CL, tirar
+as naceles muda a carga local da asa em até 11% na estação onde elas ficam,
+η = 0,36. Ou seja, elas influenciam a torção ótima e não apenas o arrasto
+total. Conclusões comparativas entre etapas continuam válidas, porque as
+naceles são as mesmas em todos os casos, mas o valor absoluto do arrasto
+induzido e a forma fina da torção dependem dessa escolha de modelagem.
