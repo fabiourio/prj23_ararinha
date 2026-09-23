@@ -1,0 +1,10 @@
+{
+  "asa_nc": 8,
+  "asa_ns": 60,
+  "winglet_ns": 4,
+  "eh_nc": 8,
+  "eh_ns": 15,
+  "ev_nc": 8,
+  "ev_ns": 6,
+  "nbody": 100
+}
