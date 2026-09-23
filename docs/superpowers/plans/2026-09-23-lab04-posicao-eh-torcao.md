@@ -1500,7 +1500,8 @@ def ponto(lc):
     r['ok_sombra'] = r['folga_sombra'] >= FOLGA_SOMBRA
     r['ok_profundor'] = abs(r['de_estol_fwd']) <= DE_MAX
     r['ok_ms'] = r['MS_aft'] >= MS_MIN
-    r['viavel'] = r['ok_fus'] and r['ok_sombra'] and r['ok_profundor'] and r['ok_ms']
+    # a sombra so e exigida depois da torcao (etapa 2): aqui e informativa
+    r['viavel'] = r['ok_fus'] and r['ok_profundor'] and r['ok_ms']
     return r
 
 
@@ -1651,6 +1652,15 @@ def main():
     e = estol('aft.avl', it=it, trim=True, semi=av['asa']['yt'])
     print(f'  estol conferido direto: comeca em eta = {e["eta_crit"]:.3f} '
           f'(exigido <= {ETA_ESTOL}), alfa = {e["alfa"]:.2f}, CLmax = {e["CL"]:.3f}')
+    # sombreamento com o alfa de estol da asa torcida (menor entre os CGs)
+    from sombra import alfa_saida
+    it_f, _ = it_para_de_zero('fwd.avl', av['M'], av['CL'])
+    e_f = estol('fwd.avl', it=it_f, trim=True, semi=av['asa']['yt'])
+    a_estol = min(e['alfa'], e_f['alfa'])
+    folga_sombra = a_estol - alfa_saida(av)
+    print(f'  sombra: alfa_estol {a_estol:.2f} - alfa_saida {alfa_saida(av):.2f} '
+          f'= {folga_sombra:.2f} graus (exigido >= 2) -> '
+          f'{"ok" if folga_sombra >= 2.0 else "FALHOU: levar a equipe"}')
 
     dif = {l: float(np.max(np.abs(c[2].torcao(c[3].x) - tw))) for l, c in casos.items()}
     print('  maior diferenca de torcao contra a posicao escolhida:',

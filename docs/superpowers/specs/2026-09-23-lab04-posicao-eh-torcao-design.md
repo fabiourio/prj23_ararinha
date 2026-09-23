@@ -109,7 +109,17 @@ Saídas: α_saída, o α a partir do qual toda a EH fica fora da sombra, e a fol
 | Margem estática | MS ≥ 5% com o CG traseiro (ponto neutro do AVL) |
 | Leme | fração do leme encoberta pelas linhas de 60°/30° do `plots.py`, só informada |
 
-Escolha: o **maior `Lc_h` viável**. W0 e CD devem cair de forma monótona com o
+**Sombreamento é checado depois da torção.** Com a asa sem torção, o estol
+começa na ponta (η ≈ 0,92) já em α ≈ 10°, e a torção existe justamente para
+subir esse α. Se o critério fosse aplicado na varredura, com a asa sem torção,
+ele reprovaria posições por causa de um defeito que a etapa 2 corrige. Na
+varredura, então, α_saída é só calculado e informado. Como α_saída cai de forma
+monótona com o recuo (12,0° em 4,0 e 9,3° em 4,8), o sombreamento favorece o
+`Lc_h` mais recuado. A folga α_estol − α_saída ≥ 2° é exigida na etapa 2, com
+o α_estol da asa já com a torção ótima. Se ela falhar mesmo no `Lc_h` máximo,
+a decisão volta para a equipe.
+
+Escolha: o **maior `Lc_h` viável** (fuselagem, profundor e margem estática). W0 e CD devem cair de forma monótona com o
 braço; se não caírem, a escolha passa a ser o mínimo de CD entre os pontos
 viáveis. O resultado é um gráfico de W0, CD compensado, δe, MS e folga de
 sombreamento × `Lc_h`, com a região viável marcada.
