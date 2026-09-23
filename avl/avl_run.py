@@ -56,16 +56,29 @@ def le_resultados(s):
 
 def le_faixas(s, superficie=1):
     '''Faixas de uma superficie (bloco fs). superficie=1 e a asa direita.'''
-    inicios = [m.end() for m in re.finditer(rf'Surface #\s+{superficie}\s', s)]
+    inicios = [m.end() for m in re.finditer(rf'Surface #\s*{superficie}\s', s)]
     if not inicios:
         raise RuntimeError(f'superficie {superficie} nao encontrada na saida do AVL')
     trecho = s[inicios[-1]:]
-    fim = re.search(r'Surface #\s+\d+', trecho)
+    fim = re.search(r'Surface #\s*\d+', trecho)
     bloco = trecho[:fim.start()] if fim else trecho
-    linhas = re.findall(r'^\s*\d+((?:\s+[-\d.Ee+]+){12})\s*$', bloco, flags=re.M)
-    if not linhas:
+    n_esperado = _num(bloco, r'#\s*Spanwise\s*=\s*(\d+)')
+    linhas = re.findall(
+        r'^\s*\d+((?:\s+[-\d.Ee+]+){11}(?:\s+[-\d.Ee+]+)?)\s*$', bloco, flags=re.M)
+    dados = []
+    for ln in linhas:
+        vals = ln.split()
+        if len(vals) == 11:
+            vals = vals + [float('nan')]
+        dados.append([float(v) for v in vals])
+    if not dados:
         raise RuntimeError('faixas nao encontradas na saida do AVL')
-    d = np.array([[float(v) for v in ln.split()] for ln in linhas])
+    d = np.array(dados)
+    if np.isfinite(n_esperado) and len(d) != int(n_esperado):
+        raise RuntimeError(
+            f'numero de faixas lidas ({len(d)}) difere do # Spanwise '
+            f'({int(n_esperado)}) da superficie {superficie}; '
+            'possivel overflow (******) ou linha nao reconhecida na saida do AVL')
     return {c: d[:, i] for i, c in enumerate(COLUNAS_FS)}
 
 
@@ -89,8 +102,19 @@ def caso(arquivo, mach, alfa=None, cl=None, it=0.0, trim=False, de=0.0,
     cmds += ['', 'quit']
     s = roda(cmds)
     r = le_resultados(s)
+    if 'Cannot trim' in s:
+        raise RuntimeError(
+            'AVL nao convergiu a compensacao (Cannot trim):\n' + s[-2000:])
     if not np.isfinite(r['alfa']) or not np.isfinite(r['CL']):
         raise RuntimeError('AVL nao convergiu:\n' + s[-2000:])
+    if cl is not None and abs(r['CL'] - cl) > 1e-4:
+        raise RuntimeError(
+            f'AVL nao convergiu a compensacao: CL obtido = {r["CL"]!r}, '
+            f'CL alvo = {cl!r}\n' + s[-2000:])
+    if trim and empenagem and abs(r['Cm']) > 1e-4:
+        raise RuntimeError(
+            f'AVL nao convergiu a compensacao: Cm = {r["Cm"]!r} (esperado ~0)\n'
+            + s[-2000:])
     if faixas:
         r['faixas'] = le_faixas(s, superficie=1)
     r['saida'] = s

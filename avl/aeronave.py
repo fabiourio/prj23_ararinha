@@ -13,6 +13,7 @@ fracao de combustivel, com 100% de carga paga, e o peso e recalculado com o
 W_empty e o W_fuel do designTool.
 '''
 
+import copy
 import functools
 import os
 import sys
@@ -50,8 +51,8 @@ def fracao_combustivel():
 
 
 @functools.lru_cache(maxsize=None)
-def aeronave(Lc_h=LC_H_BASE):
-    '''Dicionario da aeronave para um Lc_h. Nao modifique o retorno (cache).'''
+def _aeronave_cache(Lc_h):
+    '''Dicionario da aeronave para um Lc_h (cru, compartilhado pelo cache).'''
     ap = _analisa(Lc_h)
     inp, geo = ap['inputs'], ap['geometry']
     tm, bal = ap['thrust_matching'], ap['balance']
@@ -89,6 +90,12 @@ def aeronave(Lc_h=LC_H_BASE):
                    'L': inp['L_n'], 'D': inp['D_n']},
         'fuselagem': {'L': inp['L_f'], 'D': inp['D_f']},
     }
+
+
+def aeronave(Lc_h=LC_H_BASE):
+    '''Dicionario da aeronave para um Lc_h. Copia independente do cache: pode
+    ser modificado livremente sem afetar chamadas futuras.'''
+    return copy.deepcopy(_aeronave_cache(float(Lc_h)))
 
 
 def _fim_eh(Lc_h):

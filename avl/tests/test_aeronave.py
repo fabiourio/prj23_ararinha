@@ -30,3 +30,11 @@ def test_limite_da_fuselagem():
     av = aeronave(lc)
     fim_eh = av['EH']['xr'] + av['EH']['cr']
     assert fim_eh == pytest.approx(av['fuselagem']['L'] - FOLGA_FUSELAGEM, abs=1e-3)
+
+
+def test_retorno_nao_tem_aliasing_com_o_cache():
+    av1 = aeronave(4.6)
+    original = av1['EH']['xr']
+    av1['EH']['xr'] = -999.0
+    av2 = aeronave(4.6)
+    assert av2['EH']['xr'] == pytest.approx(original)
