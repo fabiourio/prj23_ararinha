@@ -163,17 +163,17 @@ def standard_airplane(name='fokker100'):
                   'sweep_w' : 0.60478, # Wing sweep [rad] (v1: 0.58)
                   'dihedral_w' : 6*np.pi/180, # Wing dihedral [rad]
                   'xr_w' : 15.9966, # Longitudinal position of the wing (with respect to the fuselage nose) [m] (v1: 17)
-                  'zr_w' : -1.3, # Vertical position of the wing (with respect to the fuselage nose) [m]
+                  'zr_w' : -2.5, # Vertical position of the wing (with respect to the fuselage nose) [m] (v2: -1.3; desce 1,20 m para passar abaixo da fuselagem)
                   'tcr_w' : 0.196226, # t/c of the root section of the wing (v1: 0.18)
                   'tct_w' : 0.08, # t/c of the tip section of the wing
 
                   'Cht' : 0.7, # Horizontal tail volume coefficient
-                  'Lc_h' : 4.0, # Non-dimensional lever of the horizontal tail (lever/wing_mac)
+                  'Lc_h' : 4.6, # Non-dimensional lever of the horizontal tail (lever/wing_mac) (v2: 4.0; recuada ate 2 m do fim da fuselagem)
                   'AR_h' : 4.6, # HT aspect ratio
                   'taper_h' : 0.45, # HT taper ratio
                   'sweep_h' : 0.66, # HT sweep [rad]
                   'dihedral_h' : 0.03490658503988659, # HT dihedral [rad]
-                  'zr_h' : 2, # Vertical position of the HT [m]
+                  'zr_h' : 3.85, # Vertical position of the HT [m] (v2: 2; sobe 1,85 m para sair de dentro da fuselagem)
                   'tcr_h' : 0.1, # t/c of the root section of the HT
                   'tct_h' : 0.1, # t/c of the tip section of the HT
                   'eta_h' : 0.9, # Dynamic pressure factor of the HT (0.9 for conventional tail or 1.0 for T-tail)
@@ -183,7 +183,7 @@ def standard_airplane(name='fokker100'):
                   'AR_v' : 1.5, # VT aspect ratio
                   'taper_v' : 0.4, # VT taper ratio
                   'sweep_v' : 0.66, # VT sweep [rad]
-                  'zr_v' : 3.0, # Vertical position of the VT [m]
+                  'zr_v' : 3.85, # Vertical position of the VT [m] (v2: 3.0; sobe 0,85 m junto com a EH)
                   'tcr_v' : 0.1, # t/c of the root section of the VT
                   'tct_v' : 0.1, # t/c of the tip section of the VT
 
@@ -192,7 +192,7 @@ def standard_airplane(name='fokker100'):
 
                   'x_n' : 18, # Longitudinal position of the nacelle frontal face [m]
                   'y_n' : 11, # Lateral position of the nacelle centerline [m]
-                  'z_n' : -3, # Vertical position of the nacelle centerline [m]
+                  'z_n' : -4.2, # Vertical position of the nacelle centerline [m] (v2: -3; acompanha a asa, desce 1,20 m)
                   'L_n' : 7.3, # Nacelle length [m]
                   'D_n' : 4, # Nacelle diameter [m]
 
