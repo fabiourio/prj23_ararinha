@@ -37,8 +37,8 @@ de projeto compensado (M = 0,85, CL de projeto, Cm = 0 pelo `it`).
   (`Nbody`) entra só se as superfícies já tiverem convergido.
 - Monitora CDff (em counts), CL, Cm, o `it` de compensação e o cl da faixa
   mais crítica no estol (M = 0,2).
-- Critério de platô: a malha adotada é a menor em que dobrar o número de
-  painéis muda o CDff menos de 0,1 count e o `it` menos de 0,02°.
+- Critério de platô: a malha adotada é a menor cuja diferença para a mais
+  fina da sequência fica abaixo de 0,1 count no CDff e de 0,02° no `it`.
 - Saída: gráficos de convergência e a tabela da malha adotada. O
   `gera_avl.py` passa a usar essa malha.
 - A malha é conferida de novo no `Lc_h` escolhido, com um único refinamento.
