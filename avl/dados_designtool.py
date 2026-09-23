@@ -38,11 +38,12 @@ from designTool.constants import gravity
 # CL de projeto da aeronave coincide com o CL de projeto das secoes.
 W_DESIGN_KGF = 229669.3
 
-# Deslocamentos em Z do AVL em relacao ao designTool. Ate a v2 o AVL
-# deslocava as superficies para tira-las de dentro da fuselagem (asa -1,20,
-# EH +1,85, EV +0,85). A v3 do designTool ja incorpora essas cotas, de modo
-# que os dois modelos descrevem a mesma aeronave e o deslocamento e nulo.
-DZ = {'asa': 0.0, 'EH': 0.0, 'EV': 0.0}
+# Deslocamentos em Z aplicados SO no modelo do AVL, para tirar as
+# superficies de dentro da fuselagem e o VLM nao gerar paineis cruzando o
+# corpo. Nao sao alteracao de projeto: a aeronave do designTool fica com as
+# alturas originais, e aqui se confere que o AVL difere dela exatamente
+# por esses valores.
+DZ = {'asa': -1.20, 'EH': +1.85, 'EV': +0.85}
 
 # Winglet do designTool (Raymer, Fig. 7.34, ver aerodynamics.py): vertical,
 # altura e corda de raiz iguais a corda da ponta, afilamento 0,21 e bordo de

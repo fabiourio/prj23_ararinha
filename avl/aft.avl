@@ -4,11 +4,12 @@ Ararinha
 # Lab 03 (familia roteiro): raiz.dat, centro.dat, ponta.dat.
 #
 # Asa sem torcao (linha de base; a torcao entra na etapa de otimizacao).
-# Geometria da v3 do designTool: asa em z = -2,50 (passa abaixo da base da
-# fuselagem, que ocupa z de -2,348 a +3,732), EH e EV com raiz em z = +3,85
-# (acima do topo), nacele acompanhando a asa, EH recuada para Lc_h = 4,6 e
-# winglet na ponta da asa. As alturas eram um deslocamento so do AVL ate a
-# v2; agora fazem parte da propria aeronave.
+# Geometria da v3 do designTool (EH recuada para Lc_h = 4,6, winglet).
+# Alturas em Z deslocadas SO neste modelo, para tirar as superficies de
+# dentro da fuselagem (z de -2,348 a +3,732) e o VLM nao gerar paineis
+# cruzando o corpo: asa -1,20 m (raiz em z = -2,50), EH +1,85 m e EV
+# +0,85 m (raizes em z = +3,85), nacele acompanhando a asa. Nao e
+# alteracao de projeto; o dados_designtool.py confere os deslocamentos.
 #
 # Controles: d1 = aileron, d2 = elevator, d3 = rudder. Design: 1 = it.
 #
