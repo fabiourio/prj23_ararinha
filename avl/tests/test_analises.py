@@ -29,6 +29,20 @@ def test_estol_modelo_linear_bate_com_a_conferencia_direta():
     # do estudo de convergencia_malha.py.
     av = aeronave(4.6)
     arq = escreve_avl(av, 'resultados/_tmp/teste_an.avl', cg='fwd', malha=MALHA_PADRAO)
-    e = estol(arq, it=0.0, trim=True, semi=av['asa']['yt'])
+    e = estol(arq, it=0.0, trim=True, av=av)
     assert abs(e['excesso_max']) < 0.02     # a faixa critica chega ao clmax
     assert 5.0 < e['alfa'] < 25.0
+
+
+def test_estol_ignora_a_faixa_da_juncao_com_o_winglet():
+    # Sem a exclusao da(s) faixa(s) de canto, o alfa de estol cai de ~10 para
+    # ~5 graus so por refinar a malha da envergadura (singularidade de
+    # vórtice de canto na ultima faixa, ver docstring de estol.py).
+    av = aeronave(4.6)
+    arq20 = escreve_avl(av, 'resultados/_tmp/teste_estol_ns20.avl', cg='fwd',
+                        malha=dict(MALHA_PADRAO, asa_ns=20))
+    arq60 = escreve_avl(av, 'resultados/_tmp/teste_estol_ns60.avl', cg='fwd',
+                        malha=dict(MALHA_PADRAO, asa_ns=60))
+    e20 = estol(arq20, it=0.0, trim=True, av=av)
+    e60 = estol(arq60, it=0.0, trim=True, av=av)
+    assert abs(e60['alfa'] - e20['alfa']) < 0.3

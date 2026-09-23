@@ -1,9 +1,12 @@
+import os
+
 import numpy as np
 import pytest
 
 from aeronave import aeronave
 from avl_run import caso
-from gera_avl import escreve_avl, secoes_asa, DZ, MALHA_PADRAO
+from gera_avl import (escreve_avl, secoes_asa, reamostra_fuselagem, AQUI, DZ,
+                      MALHA_PADRAO)
 
 REF = 'tests/dados/fwd_referencia_11c6802.avl'
 
@@ -19,8 +22,10 @@ def test_secoes_batem_com_o_arquivo_de_referencia():
 
 
 def test_regenera_o_modelo_de_referencia():
+    # Modelo congelado (commit 11c6802): nacele no mesmo COMPONENT da asa e
+    # fuselagem original (sem a reamostragem), como era escrito na epoca.
     escreve_avl(aeronave(4.6), 'resultados/_tmp/teste_fwd.avl', cg='fwd',
-                malha=MALHA_PADRAO)
+                malha=MALHA_PADRAO, nacele_componente=1, fuselagem='original')
     for a in (0.0, 4.0):
         novo = caso('resultados/_tmp/teste_fwd.avl', 0.85, alfa=a)
         ref = caso(REF, 0.85, alfa=a)
@@ -45,9 +50,45 @@ def test_modelo_so_asa_roda():
 
 
 def test_torcao_entra_no_ainc():
-    import os
-    from gera_avl import AQUI
     tw = np.linspace(0, -4, 11)
     escreve_avl(aeronave(4.6), 'resultados/_tmp/teste_tw.avl', torcao=tw)
     with open(os.path.join(AQUI, 'resultados', '_tmp', 'teste_tw.avl')) as f:
         assert '-4.0000' in f.read()
+
+
+def test_fuselagem_reamostrada_e_fechada_e_fiel_a_original():
+    destino = reamostra_fuselagem(destino='resultados/_tmp/teste_fus_reamostrada.dat')
+    caminho = os.path.join(AQUI, destino)
+    with open(caminho) as f:
+        linhas = f.readlines()
+    pts = np.array([[float(v) for v in l.split()] for l in linhas[1:]])
+
+    n = 81
+    assert len(pts) == 2*n - 1                       # fecha TE->cima->LE->baixo->TE
+    assert pts[0, 0] == pytest.approx(1.0)            # TE
+    assert pts[n - 1, 0] == pytest.approx(0.0)        # LE
+    assert pts[-1, 0] == pytest.approx(1.0)           # TE de novo (fechado)
+
+    cima = pts[:n]
+    baixo = pts[n - 1:]
+    assert np.all(np.diff(cima[:, 0]) < 0)            # x decresce TE->LE
+    assert np.all(np.diff(baixo[:, 0]) > 0)            # x cresce LE->TE
+
+    orig = np.loadtxt(os.path.join(AQUI, 'fuselage_nondim.dat'), skiprows=1)
+    i0 = int(np.argmin(orig[:, 0]))
+    orig_cima = orig[:i0 + 1][::-1]
+    orig_baixo = orig[i0:]
+    z_cima_lin = np.interp(cima[:, 0], orig_cima[:, 0], orig_cima[:, 1])
+    z_baixo_lin = np.interp(baixo[:, 0], orig_baixo[:, 0], orig_baixo[:, 1])
+    # Tolerancia = arredondamento do formato texto (%.6f) propagado pela
+    # interpolacao linear, nao erro de metodo.
+    assert np.max(np.abs(cima[:, 1] - z_cima_lin)) == pytest.approx(0.0, abs=1e-4)
+    assert np.max(np.abs(baixo[:, 1] - z_baixo_lin)) == pytest.approx(0.0, abs=1e-4)
+
+
+def test_modelo_padrao_usa_nacele_em_componente_2_e_fuselagem_reamostrada():
+    escreve_avl(aeronave(4.6), 'resultados/_tmp/teste_padrao.avl', malha=MALHA_PADRAO)
+    with open(os.path.join(AQUI, 'resultados', '_tmp', 'teste_padrao.avl')) as f:
+        txt = f.read()
+    assert 'COMPONENT\n2' in txt
+    assert 'fuselage_reamostrada.dat' in txt

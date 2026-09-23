@@ -9,7 +9,22 @@ Winglet: superficie propria no COMPONENT 1 (mesmo componente da asa), com
 toe zero; geometria do designTool (Raymer, Fig. 7.34): vertical, altura e
 corda de raiz iguais a corda da ponta, afilamento 0,21, bordo de fuga reto.
 
-Nacele: anel sustentador no COMPONENT 1, como no 737.avl da disciplina.
+Nacele: anel sustentador em COMPONENT proprio (default 2), separado da asa.
+Na mesma COMPONENT que a asa (como no 737.avl da disciplina) o anel faz
+CDff oscilar +-0,2 count com a malha da envergadura da asa (paineis da asa
+e do anel compartilhando o mesmo componente de sustentacao no AVL); em
+componente proprio essa oscilacao some.
+
+Fuselagem: BFILE reamostrado (fuselage_reamostrada.dat, gerado por
+reamostra_fuselagem) em vez do fuselage_nondim.dat original. O arquivo
+original tem so 41 pontos e fecha o bordo de fuga de forma abrupta (a
+superficie inferior avanca ~0,5 m em x nos ultimos 0,5% do comprimento e
+"anda para tras"); isso faz a spline de comprimento de arco do AVL dar um
+laco perto da cauda, e CDff/it variam com Nbody em vez de convergir. O
+reamostrado interpola linearmente cada lado (superior/inferior, separados
+no x minimo) em ~81 pontos com espacamento cosseno em x, preservando
+x em [0, 1] e os pontos extremos; com ele CDff/it convergem a partir de
+nbody ~= 80.
 '''
 
 import json
@@ -37,6 +52,45 @@ ARQ_MALHA = os.path.join(AQUI, 'resultados', 'malha_adotada.json')
 _ANEL = [(0.0, 1.0), (0.5, 0.866), (0.866, 0.5), (1.0, 0.0), (0.866, -0.5),
          (0.5, -0.866), (0.0, -1.0), (-0.5, -0.866), (-0.866, -0.5),
          (-1.0, 0.0), (-0.866, 0.5), (-0.5, 0.866), (0.0, 1.0)]
+
+
+def reamostra_fuselagem(origem='fuselage_nondim.dat', destino='fuselage_reamostrada.dat',
+                        n=81):
+    '''
+    Reamostra o contorno da fuselagem (origem, formato BFILE do AVL: linha
+    de cabecalho + pontos x,z fechando TE -> superficie de cima -> LE ->
+    superficie de baixo -> TE) em `n` pontos por lado, com espacamento
+    cosseno em x e interpolacao linear de cada lado sobre o contorno
+    original. Evita a spline de comprimento de arco do AVL "laçar" perto
+    da cauda quando o arquivo original fecha o bordo de fuga com poucos
+    pontos (ver docstring do modulo). Preserva x em [0, 1] e os pontos
+    extremos (TE em x=1). Devolve `destino` (caminho relativo a avl/).
+    '''
+    origem_abs = os.path.join(AQUI, origem)
+    destino_abs = os.path.join(AQUI, destino)
+    if (os.path.exists(destino_abs)
+            and os.path.getmtime(destino_abs) >= os.path.getmtime(origem_abs)):
+        return destino
+
+    with open(origem_abs) as f:
+        cabecalho = f.readline().strip()
+    d = np.loadtxt(origem_abs, skiprows=1)
+    i0 = int(np.argmin(d[:, 0]))
+    cima = d[:i0 + 1][::-1]      # LE -> TE, superficie de cima
+    baixo = d[i0:]               # LE -> TE, superficie de baixo
+
+    xs = 0.5*(1 - np.cos(np.linspace(0.0, np.pi, n)))
+    xs[0], xs[-1] = 0.0, 1.0
+    z_cima = np.interp(xs, cima[:, 0], cima[:, 1])
+    z_baixo = np.interp(xs, baixo[:, 0], baixo[:, 1])
+
+    with open(destino_abs, 'w', encoding='utf-8') as f:
+        f.write(cabecalho + '\n')
+        for x, z in zip(xs[::-1], z_cima[::-1]):
+            f.write(f'{x:.6f} {z:.6f}\n')
+        for x, z in zip(xs[1:], z_baixo[1:]):
+            f.write(f'{x:.6f} {z:.6f}\n')
+    return destino
 
 
 def malha_adotada():
@@ -125,17 +179,23 @@ def _ev(av, malha):
     return txt
 
 
-def _corpo(av, malha):
+def _corpo(av, malha, fuselagem='reamostrada'):
     f = av['fuselagem']
+    if fuselagem == 'reamostrada':
+        bfile = reamostra_fuselagem()
+    elif fuselagem == 'original':
+        bfile = 'fuselage_nondim.dat'
+    else:
+        raise ValueError("fuselagem precisa ser 'reamostrada' ou 'original'")
     return ('#' + '-'*64 + f'\nBODY\nFuselage\n# Nbody Bspace\n{malha["nbody"]} 1.0\n'
             f'SCALE\n{f["L"]:.4f} {f["D"]:.4f} {f["D"]:.4f}\n'
-            'BFILE\nfuselage_nondim.dat\n')
+            f'BFILE\n{bfile}\n')
 
 
-def _nacele(av):
+def _nacele(av, componente=2):
     n = av['nacele']
     txt = ('#' + '-'*64 + '\nSURFACE\nNacelle\n#Nchordwise  Cspace   Nspanwise  Sspace\n'
-           '6            1.0      12          0.0\nCOMPONENT\n1\nYDUPLICATE\n0.0\n'
+           f'6            1.0      12          0.0\nCOMPONENT\n{componente}\nYDUPLICATE\n0.0\n'
            f'SCALE\n{n["L"]:.4f}  {n["D"]/2:.4f}  {n["D"]/2:.4f}\n'
            f'TRANSLATE\n{n["x"]:.4f}  {n["y"]:.4f}  {n["z"] + DZ["asa"]:.4f}\n')
     for y, z in _ANEL:
@@ -145,11 +205,16 @@ def _nacele(av):
 
 
 def escreve_avl(av, caminho, cg='aft', torcao=None, malha=None, etas=ETAS,
-                so_asa=False, diedro=True, cdp=None):
+                so_asa=False, diedro=True, cdp=None, nacele_componente=2,
+                fuselagem='reamostrada'):
     '''
     Escreve o .avl em avl/<caminho> e devolve `caminho` (relativo a avl/).
     so_asa=True: so a asa, sem winglet, controles, corpos ou CDp
     (verificacao eliptica).
+    nacele_componente: COMPONENT do anel da nacele (default 2, separado da
+    asa; ver docstring do modulo). fuselagem: 'reamostrada' (default) ou
+    'original' (fuselage_nondim.dat, so para reproduzir o modelo congelado
+    de referencia).
     '''
     malha = malha_adotada() if malha is None else malha
     secoes = secoes_asa(av, torcao, etas, diedro)
@@ -163,7 +228,7 @@ def escreve_avl(av, caminho, cg='aft', torcao=None, malha=None, etas=ETAS,
     txt += _asa(secoes, malha, controles=not so_asa)
     if not so_asa:
         txt += _winglet(secoes, malha) + _eh(av, malha) + _ev(av, malha)
-        txt += _corpo(av, malha) + _nacele(av)
+        txt += _corpo(av, malha, fuselagem) + _nacele(av, nacele_componente)
 
     destino = os.path.join(AQUI, caminho)
     os.makedirs(os.path.dirname(destino), exist_ok=True)
