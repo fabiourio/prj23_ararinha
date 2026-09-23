@@ -42,3 +42,6 @@ historico.pickle
 
 # Subprodutos do designTool (analyze com plot=True)
 3dview.png
+
+# Arquivos temporarios do AVL gerados pelos scripts do Lab 04
+avl/resultados/_tmp/

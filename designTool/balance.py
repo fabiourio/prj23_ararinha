@@ -192,6 +192,7 @@ def balance(airplane):
     airplane['balance']['W_maxfuel'] = W_maxfuel
     airplane['balance']['xcg_fuel'] = xcg_fuel
     airplane['balance']['CLv'] = CLv
+    airplane['balance']['deda'] = deda
 
     airplane['balance']['CG_hist'] = {'xcg_e':xcg_e,
                                       'W_e':W_e,
