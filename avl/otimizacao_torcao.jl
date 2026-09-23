@@ -8,10 +8,9 @@
 #
 #   ETAPA 0  linha de base: a asa sem torção, como está no modelo.
 #
-#   ETAPA 1  VALIDAÇÃO. Asa isolada, sem restrição, minimizando o arrasto.
-#            Existe resposta conhecida: a carga elíptica, com fator de
-#            Oswald igual a 1 e arrasto igual a CL²/(π AR). Se a otimização
-#            chega lá, o problema está bem posto. É um teste, não projeto.
+#   ETAPA 1  VALIDAÇÃO com a asa isolada, já feita e registrada no README:
+#            a spline monotônica chegou à carga elíptica, Oswald 1,0035.
+#            Não é repetida aqui.
 #
 #   ETAPA 2  Aeronave completa e compensada, ainda sem restrição. Entram o
 #            downwash da asa sobre a empenagem e a carga de compensação, e
@@ -106,7 +105,10 @@ function etas_da_asa(arquivo)
         if strip(linhas[i]) == "SECTION"
             espera = true
         elseif espera && !isempty(t)
-            push!(ys, parse(Float64, split(t)[2])); espera = false
+            y = parse(Float64, split(t)[2]); espera = false
+            # a seção do winglet repete o y da ponta e só sobe em z: ela não
+            # é estação de torção, acompanha a incidência da ponta
+            (isempty(ys) || y > ys[end] + 1e-6) && push!(ys, y)
         end
     end
     return ys ./ ys[end]
@@ -202,14 +204,14 @@ function escreve(destino, tw; so_asa = false)
         elseif dentro && espera && !isempty(t) && !startswith(t, "#")
             i_sec += 1
             p = split(t)
-            p[5] = @sprintf("%.4f", tw[i_sec])
+            p[5] = @sprintf("%.4f", tw[min(i_sec, length(tw))])
             push!(saida, join(p, "  "))
             espera = false
             continue
         end
         push!(saida, ln)
     end
-    i_sec == length(tw) || error("apliquei $i_sec torções de $(length(tw))")
+    i_sec >= length(tw) || error("apliquei $i_sec torções de $(length(tw))")
     write(destino, join(saida, "\n") * "\n")
 end
 
@@ -240,6 +242,7 @@ function faixas_asa(saida)
          for m in eachmatch(r"^\s*\d+(?:\s+[-\dEe.+]+){12}\s*$"m, bl)]
     isempty(L) && error("não achei as faixas da asa")
     d = reduce(hcat, L)'
+    d = d[d[:, 1] .< SEMI - 1e-3, :]   # sem as faixas do winglet, todas em y = b/2
     return (eta = d[:, 1]./SEMI, ccl = d[:, 4], cl_norm = d[:, 6])
 end
 
@@ -361,25 +364,27 @@ function cache_valido()
     return d
 end
 
-function modelos_arrasto()
+# Só a aeronave completa e compensada. O modelo da asa isolada servia à
+# etapa de validação, que já foi feita e está registrada no README: a
+# spline monotônica chegou à carga elíptica, com Oswald 1,0035.
+function modelo_arrasto()
     d = cache_valido()
-    if d !== nothing
-        println("modelos de arrasto lidos do cache ($CACHE)")
+    if d !== nothing && haskey(d, "completa")
+        println("modelo de arrasto lido do cache ($CACHE)")
         mat(v) = reduce(hcat, [Float64.(r) for r in v])'
-        le(k) = (f0 = d[k]["f0"], g = Float64.(d[k]["g"]),
-                 H = mat(d[k]["H"]), cdvis = d[k]["cdvis"])
-        return le("asa"), le("completa")
+        k = d["completa"]
+        return (f0 = k["f0"], g = Float64.(k["g"]), H = mat(k["H"]),
+                cdvis = k["cdvis"])
     end
     n = 1 + 2NV + NV*(NV-1)÷2
-    println("construindo os modelos de arrasto ($(2n) rodadas de AVL)...")
-    ma = constroi_arrasto(so_asa = true,  trim = false)
+    println("construindo o modelo de arrasto ($n rodadas de AVL)...")
     mc = constroi_arrasto(so_asa = false, trim = true)
     open(CACHE, "w") do io
-        emp(m) = Dict("f0" => m.f0, "g" => m.g, "cdvis" => m.cdvis,
-                      "H" => [m.H[i, :] for i in 1:size(m.H, 1)])
-        JSON.print(io, Dict("nv" => NV, "asa" => emp(ma), "completa" => emp(mc)))
+        JSON.print(io, Dict("nv" => NV, "completa" => Dict(
+            "f0" => mc.f0, "g" => mc.g, "cdvis" => mc.cdvis,
+            "H" => [mc.H[i, :] for i in 1:size(mc.H, 1)])))
     end
-    return ma, mc
+    return mc
 end
 
 cd_mod(m, x) = m.f0 + m.g'x + 0.5*x'*m.H*x
@@ -630,76 +635,16 @@ end
 println("="^78)
 println("ETAPA 0 -- LINHA DE BASE: a asa sem torção")
 println("="^78)
-base_asa  = avalia(torcoes(zeros(NV)); so_asa = true, faixas = true)
 base_full = avalia(torcoes(zeros(NV)); trim = true, faixas = true)
-piso = CL_PROJ^2/(pi*AR)
-@printf("  asa isolada          CDff %.6f   Oswald %.4f\n",
-        base_asa.CDff, base_asa.e)
-@printf("  aeronave compensada     CDff %.6f   Oswald %.4f   profundor %.2f°\n",
+@printf("  aeronave compensada  CDff %.6f   Oswald %.4f   profundor %.2f°\n",
         base_full.CDff, base_full.e, base_full.de)
 @printf("  CDvis (parasita, constante sob torção) %.6f\n", base_full.CDvis)
-@printf("  piso analítico CL²/(π AR) = %.6f  (carga elíptica)\n", piso)
 
-m1, m2 = modelos_arrasto()
+m2 = modelo_arrasto()
 
-# ====================================================================
-# ETAPA 1 -- VALIDAÇÃO: ASA ISOLADA, IRRESTRITO
-# ====================================================================
-println("\n", "="^78)
-println("ETAPA 1 -- VALIDAÇÃO: asa isolada, sem restrição")
-println("="^78)
-println("  A resposta é conhecida: carga elíptica, Oswald 1, CDff no piso.")
-println("  A torção é uma spline monotônica de $(length(NOS_PROJ)) nós.")
-
-s1, cam1 = otimiza(m1, NOS_PROJ)
-tw1 = torcoes_spline(NOS_PROJ, s1)
-x1  = livres(tw1)
-ot1 = avalia(tw1; so_asa = true, faixas = true)
-
-# Referência: o mesmo problema com as torções livres por estação, que é o
-# menor arrasto que o modelo admite. A diferença mede o que a exigência de
-# monotonicidade e suavidade custa nesta etapa.
-function otimo_livre(m)
-    lo, hi = fill(TW_MIN, NV), fill(TW_MAX, NV)
-    r = optimize(z -> 1e4*cd_mod(m, z), lo, hi, zeros(NV), Fminbox(LBFGS()),
-                 Optim.Options(iterations = 400, g_tol = 1e-12))
-    return Optim.minimizer(r)
-end
-xl1 = otimo_livre(m1)
-
-@printf("\n  decrementos [graus]: %s\n",
-        join([@sprintf("%5.2f", v) for v in s1], " "))
-@printf("  torções [graus]: %s\n",
-        join([@sprintf("%6.2f", v) for v in tw1], " "))
-@printf("  CDff   %.6f -> %.6f   (%+.2f counts)\n",
-        base_asa.CDff, ot1.CDff, 1e4*(ot1.CDff - base_asa.CDff))
-@printf("  Oswald %.4f   -> %.4f\n", base_asa.e, ot1.e)
-@printf("  distância ao piso analítico: %+.2f counts\n", 1e4*(ot1.CDff - piso))
-@printf("  o modelo previu %.6f e o AVL deu %.6f (erro %.2f counts)\n",
-        cd_mod(m1, x1), ot1.CDff, 1e4*abs(cd_mod(m1, x1) - ot1.CDff))
-@printf("  torção livre por estação daria %.6f, ou seja a spline monotônica\n",
-        cd_mod(m1, xl1))
-@printf("  custa %+.2f counts e entrega uma asa construível\n",
-        1e4*(cd_mod(m1, x1) - cd_mod(m1, xl1)))
-
-# A asa tem 6 graus de diedro, de modo que NÃO é plana. O piso CL²/(π AR)
-# vale para asa plana; para uma asa não plana o mínimo de Munk fica um
-# pouco abaixo dele, e o fator de Oswald pode passar de 1.
-ok1 = ot1.e > 0.99 && ot1.CDff <= piso + 5e-6
-if ok1
-    println("\n  >> VALIDADO: Oswald ~ 1 e arrasto no piso analítico.")
-    ot1.e > 1.0 && @printf("     (Oswald %.4f passa de 1 porque a asa tem diedro:\n      com asa não plana o mínimo de Munk fica abaixo do elíptico plano)\n",
-                           ot1.e)
-else
-    @printf("\n  >> Oswald %.4f, %+.2f counts do piso plano.\n",
-            ot1.e, 1e4*(ot1.CDff - piso))
-    println("     A spline monotônica não alcança exatamente a elíptica porque")
-    println("     a carga elíptica desta asa exigiria torção não monótona perto")
-    println("     da raiz. O desvio mede esse preço.")
-end
-println("\n  gerando a animação da convergência à elíptica...")
-anima(cam1, NOS_PROJ, "evolucao_1_asa_isolada.gif"; so_asa = true, trim = false,
-      titulo = "etapa 1: asa isolada, sem restrição")
+# A etapa de validação com a asa isolada foi feita e ficou registrada no
+# README: a spline monotônica chegou à carga elíptica com Oswald 1,0035 e
+# arrasto 0,33 count abaixo do piso plano. Ela não é repetida aqui.
 
 # ====================================================================
 # ETAPA 2 -- AERONAVE COMPLETA, IRRESTRITO
@@ -724,11 +669,9 @@ ot2 = avalia(tw2; trim = true, faixas = true)
 @printf("  Oswald %.4f   -> %.4f\n", base_full.e, ot2.e)
 @printf("  profundor de compensação: %.2f -> %.2f graus\n", base_full.de, ot2.de)
 
-fx1, fx2 = faixas_asa(ot1.saida), faixas_asa(ot2.saida)
-dv1 = maximum(abs.(carga_norm(fx1, ot1.CL) .- eliptica(fx1.eta)))
+fx2 = faixas_asa(ot2.saida)
 dv2 = maximum(abs.(carga_norm(fx2, ot2.CL) .- eliptica(fx2.eta)))
-@printf("\n  desvio da elíptica: asa isolada %.3f, aeronave completa %.3f\n",
-        dv1, dv2)
+@printf("\n  desvio da carga da asa em relação à elíptica: %.3f\n", dv2)
 println("  A aeronave completa não vai para a asa elíptica, e não deveria:")
 println("  a empenagem carrega para compensar a arfagem e opera no downwash")
 println("  da asa, de modo que o mínimo é do conjunto, não de cada parte.")
@@ -904,9 +847,60 @@ if taxa_max(tw3) > 1.0
     println("  arrasto, e o preço está na tabela de margens acima.")
 end
 
+# O caminho da solução acima parte de uma semente da busca global, que já
+# cai praticamente em cima do ótimo: animá-lo mostraria só o polimento
+# final, convergindo em duas ou três iterações, e nada da otimização. O
+# caminho que conta a história é o que parte da asa SEM torção, sem
+# semente nenhuma. Ele é refeito aqui e conferido contra o ótimo: tem de
+# chegar ao mesmo ponto, e isso é mais um teste de que o ótimo é global.
+println("\n  refazendo o caminho a partir da asa sem torção, sem semente...")
+s_zero, cam3 = otimiza(m2, NOS_PROJ; pen = penalidade_estol(me, MARGEM_PROJ),
+                       s0 = zeros(length(NOS_PROJ) - 1))
+x_zero = livres(torcoes_spline(NOS_PROJ, s_zero))
+@printf("  %d pontos no caminho; chega a CDff %.6f contra %.6f do ótimo (%+.2f counts)\n",
+        length(cam3), cd_mod(m2, x_zero), cd_mod(m2, x3),
+        1e4*(cd_mod(m2, x_zero) - cd_mod(m2, x3)))
+@printf("  margem no fim do caminho: %+.3f graus\n", margem_aileron(me, x_zero))
+
 println("\n  gerando a animação do caminho da etapa 3...")
 anima(cam3, NOS_PROJ, "evolucao_3_com_estol.gif"; so_asa = false, trim = true,
       titulo = "etapa 3: aeronave completa com estol restrito")
+
+# --------------------------------------------------------------------
+# MAPA DA RESTRIÇÃO NO PLANO DAS VARIÁVEIS LIVRES
+#
+# No ótimo os decrementos s1, s2, s5 e s6 estão no batente zero, de modo
+# que só s3 e s4 ficam livres. Fixando os outros em zero, o problema cabe
+# num plano e dá para ver a geometria dele: curvas de nível do arrasto,
+# região inviável (estol começando dentro do aileron) e o ótimo. Se o
+# ótimo é um vértice definido por duas restrições ativas, isso aparece
+# como um bico na fronteira da região viável.
+println("\n  mapa do problema no plano (s3, s4)...")
+let g3 = range(0, 7; length = 141), g4 = range(0, 5; length = 101)
+    plano(a, b) = livres(torcoes_spline(NOS_PROJ, [0.0, 0.0, a, b, 0.0, 0.0]))
+    Z = [1e4*cd_mod(m2, plano(a, b)) for b in g4, a in g3]
+    Mg = [margem_aileron(me, plano(a, b)) for b in g4, a in g3]
+    q = contour(g3, g4, Z; levels = 25, color = :viridis,
+                colorbar_title = "CDff [counts]",
+                xlabel = "s3: washout entre η 0,48 e 0,56 [graus]",
+                ylabel = "s4: washout entre η 0,56 e 0,70 [graus]",
+                title = "arrasto e restrição de estol (s1 = s2 = s5 = s6 = 0)",
+                titlefontsize = 10, titlelocation = :left, ESTILO...)
+    contourf!(q, g3, g4, Mg .< MARGEM_PROJ; levels = [0.5, 1.5], color = [:gray],
+              alpha = 0.18, colorbar_entry = false)
+    contour!(q, g3, g4, Mg; levels = [MARGEM_PROJ], color = PAL[2], linewidth = 2.6,
+             colorbar_entry = false)
+    plot!(q, [c[3] for c in cam3], [c[4] for c in cam3]; color = INK,
+          linewidth = 1.2, linestyle = :dot,
+          label = "caminho a partir de s = 0 (projeção)")
+    scatter!(q, [s3[3]], [s3[4]]; color = PAL[2], marker = :star5, markersize = 11,
+             markerstrokecolor = INK, label = "ótimo")
+    annotate!(q, 1.2, 4.4, text("região inviável:\nestol começa no aileron", 8,
+                                INK2, :left))
+    savefig(plot(q; size = (900, 650), dpi = 200),
+            joinpath(SAIDA, "mapa_restricao_estol.png"))
+end
+println("  figura: $SAIDA/mapa_restricao_estol.png")
 
 # ====================================================================
 # O QUE O PERFIL DA RAIZ RESOLVERIA
@@ -944,8 +938,7 @@ end
 # ====================================================================
 # FIGURA DE SÍNTESE
 # ====================================================================
-etapas = [("1: asa isolada", s1, cam1, m1, ot1, PAL[1]),
-          ("2: aeronave completa", s2, cam2, m2, ot2, PAL[2]),
+etapas = [("2: aeronave completa", s2, cam2, m2, ot2, PAL[2]),
           ("3: com estol restrito", s3, cam3, m2, ot3, PAL[3])]
 fino = range(0, 1; length = 201)
 
@@ -1021,8 +1014,6 @@ println("="^78)
 @printf("%-24s %10s %10s %9s %9s\n", "caso", "CDff", "counts", "Oswald", "estol η")
 @printf("%-24s %10.6f %10s %9.4f %9.3f\n", "sem torção", base_full.CDff, "-",
         base_full.e, eta_critico(me, zeros(NV)))
-@printf("%-24s %10.6f %+10.2f %9.4f %9s\n", "1: asa isolada", ot1.CDff,
-        1e4*(ot1.CDff - base_asa.CDff), ot1.e, "-")
 @printf("%-24s %10.6f %+10.2f %9.4f %9.3f\n", "2: completa irrestrito",
         ot2.CDff, 1e4*(ot2.CDff - base_full.CDff), ot2.e, eta_critico(me, x2))
 @printf("%-24s %10.6f %+10.2f %9.4f %9.3f\n", "3: projeto final", ot3.CDff,
@@ -1042,9 +1033,9 @@ open(joinpath(SAIDA, "torcao_otimizada.json"), "w") do io
             "margem_adotada_graus" => MARGEM_PROJ),
         "sem_torcao" => Dict("CDff" => base_full.CDff, "e" => base_full.e,
                              "eta_estol" => eta_critico(me, zeros(NV))),
-        "etapa_1_asa_isolada" => Dict("decrementos" => s1, "torcoes" => tw1,
-                                      "CDff" => ot1.CDff, "e" => ot1.e,
-                                      "piso_analitico" => piso),
+        "geometria" => Dict("versao_designTool" => "v3",
+                            "winglet" => true, "Lc_h" => 4.6,
+                            "zr_w" => -2.5, "zr_h" => 3.85, "zr_v" => 3.85),
         "etapa_2_completa" => Dict("decrementos" => s2, "torcoes" => tw2,
                                    "CDff" => ot2.CDff, "e" => ot2.e,
                                    "eta_estol" => eta_critico(me, x2)),

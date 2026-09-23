@@ -4,19 +4,19 @@ Ararinha
 # Lab 03 (familia roteiro): raiz.dat, centro.dat, ponta.dat.
 #
 # Asa sem torcao (linha de base; a torcao entra na etapa de otimizacao).
-# Alturas em Z deslocadas para tirar as superficies de dentro da fuselagem,
-# que ocupa z de -2,348 a +3,732 (eixo em z = 0,692, raio 3,04):
-#   asa    -1,20 m  (raiz passa em z = -2,50, abaixo da base da fuselagem)
-#   EH     +1,85 m  (raiz em z = +3,85, acima do topo da fuselagem)
-#   EV     +0,85 m  (raiz em z = +3,85, acima do topo da fuselagem)
+# Geometria da v3 do designTool: asa em z = -2,50 (passa abaixo da base da
+# fuselagem, que ocupa z de -2,348 a +3,732), EH e EV com raiz em z = +3,85
+# (acima do topo), nacele acompanhando a asa, EH recuada para Lc_h = 4,6 e
+# winglet na ponta da asa. As alturas eram um deslocamento so do AVL ate a
+# v2; agora fazem parte da propria aeronave.
 #
 # Controles: d1 = aileron, d2 = elevator, d3 = rudder. Design: 1 = it.
 #
 0.85          # Mach
 0 0 0.0       # iYsym iZsym Zsym
 368.833 6.8995 60.1518   # Sref Cref Bref
-27.7190 0.0 0.0   # Xref Yref Zref (CG traseiro)
-0.01489       # CDp (CD0 do designTool no ponto de projeto)
+27.7198 0.0 0.0   # Xref Yref Zref (CG traseiro)
+0.01473       # CDp (CD0 do designTool no ponto de projeto)
 #----------------------------------------------------------------
 SURFACE
 Wing
@@ -128,6 +128,50 @@ airfoils/ponta.dat
 CLAF
 1.0000
 
+#----------------------------------------------------------------
+SURFACE
+Winglet
+#Nchordwise Cspace Nspanwise Sspace
+8 1.0 8 1.0
+
+COMPONENT
+1
+
+# Winglet do designTool (Raymer, Fig. 7.34): vertical, com raiz na ponta
+# da asa, altura e corda de raiz iguais a corda da ponta (2,3736 m),
+# afilamento 0,21 e bordo de fuga reto. E uma superficie propria, e nao
+# uma secao a mais da asa, para que o angulo de convergencia (toe) fique
+# fixo em zero: numa superficie continua a secao da ponta seria
+# compartilhada, e o Ainc dela, que e a torcao da asa, viraria toe do
+# winglet. O COMPONENT 1 poe o winglet no mesmo componente da asa, que
+# recebe o indice 1 automaticamente: assim a juncao e tratada como folha
+# de vortices continua. Em componentes separados o AVL usa nucleo finito
+# entre as duas e a quina perde metade do efeito do winglet.
+# Malha propria: 8 faixas, ja no plato (variacao abaixo de 0,03 count).
+
+YDUPLICATE
+0.0
+
+ANGLE
+0.0
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+38.6635  30.0759  0.6611  2.3736  0.0000
+AFILE
+airfoils/ponta.dat
+CLAF
+1.0000
+
+SECTION
+#Xle      Yle      Zle      Chord    Ainc
+40.5386  30.0759  3.0347  0.4984  0.0000
+AFILE
+airfoils/ponta.dat
+CLAF
+1.0000
+
+#----------------------------------------------------------------
 SURFACE
 Horizontal tail
 #Nchordwise Cspace Nspanwise Sspace
@@ -139,7 +183,7 @@ ANGLE
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-50.1252  0.0000  3.8500  5.1667  0.0000
+54.5492  0.0000  3.8500  4.8180  0.0000
 NACA
 0010
 CLAF
@@ -153,7 +197,7 @@ elevator 1.0   0.70    0. 0. 0.     1.0
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-57.5222  8.6155  4.1509  2.3250  0.0000
+61.4469  8.0340  4.1306  2.1681  0.0000
 NACA
 0010
 CLAF

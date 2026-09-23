@@ -65,7 +65,7 @@ function escreve(destino, tw)
         if dentro && t == "SECTION"
             espera = true
         elseif dentro && espera && !isempty(t) && !startswith(t, "#")
-            i_sec += 1; p = split(t); p[5] = @sprintf("%.4f", tw[i_sec])
+            i_sec += 1; p = split(t); p[5] = @sprintf("%.4f", tw[min(i_sec, length(tw))])
             push!(saida, join(p, "  ")); espera = false; continue
         end
         push!(saida, ln)
@@ -79,6 +79,7 @@ function faixas_asa(s)
     L = [[parse(Float64, v) for v in split(strip(m.match))[2:end]]
          for m in eachmatch(r"^\s*\d+(?:\s+[-\dEe.+]+){12}\s*$"m, bl)]
     d = reduce(hcat, L)'
+    d = d[d[:, 1] .< SEMI - 1e-3, :]   # sem as faixas do winglet, todas em y = b/2
     return (eta = d[:, 1]./SEMI, cl_norm = d[:, 6])
 end
 
@@ -178,20 +179,20 @@ e_dt_geom = CL_PROJ^2/(pi*AR*cdind_dt)
 @printf("              CDind = %.6f\n", cdind_dt)
 @printf("              o mesmo CDind referido ao AR geométrico %.3f dá e = %.4f\n",
         AR, e_dt_geom)
-@printf("\n  AVL, asa + fuselagem, sem as naceles: e = 0.9713  (ver carga_completa.jl)\n")
-@printf("  AVL, aeronave completa compensada:    e = %.4f\n",
+@printf("\n  AVL, aeronave completa compensada, etapa 2: e = %.4f\n",
         OT["etapa_2_completa"]["e"])
 println("""
-  O modelo do AVL NÃO tem winglet, e o designTool conta com ele através
-  do AR efetivo. Por isso o CDind do designTool é menor: a comparação
-  honesta é contra a nossa configuração sem winglet.""")
+  Os dois modelos têm o mesmo winglet: o designTool pelo AR efetivo de
+  Raymer (1,2 vezes o geométrico) e o AVL pela geometria de fato. O
+  valor de e sem as naceles, que isola o efeito delas, sai na
+  decomposição do carga_completa.jl.""")
 
 println("\n", "="^78)
 println("3. O GANHO SIGNIFICA ALGUMA COISA NO TOTAL?")
 println("="^78)
 cd0 = POL["CD0"]
 cdwave = POL["CDwave"]
-base_ff = 0.010982
+base_ff = Float64(OT["sem_torcao"]["CDff"])   # asa sem torção, mesma geometria
 for (nome, chave) in (("etapa 2, sem restrição de estol", "etapa_2_completa"),
                       ("etapa 3, projeto", "etapa_3_projeto"))
     cdff = OT[chave]["CDff"]
@@ -212,8 +213,8 @@ println("""
 println("\n", "="^78)
 println("4. A RESTRIÇÃO DE ESTOL ESTÁ PESADA?")
 println("="^78)
-@printf("  sem torção, não conforme:        CDff %.6f  (estol em η 0,842)\n",
-        base_ff)
+@printf("  sem torção, não conforme:        CDff %.6f  (estol em η %.3f)\n",
+        base_ff, OT["sem_torcao"]["eta_estol"])
 @printf("  etapa 2, ignora o estol:         CDff %.6f  (%+.2f counts)\n",
         OT["etapa_2_completa"]["CDff"],
         1e4*(OT["etapa_2_completa"]["CDff"] - base_ff))

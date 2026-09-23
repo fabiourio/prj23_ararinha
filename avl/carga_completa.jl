@@ -90,7 +90,7 @@ function escreve(destino, tw)
         if dentro && t == "SECTION"
             espera = true
         elseif dentro && espera && !isempty(t) && !startswith(t, "#")
-            i_sec += 1; p = split(t); p[5] = @sprintf("%.4f", tw[i_sec])
+            i_sec += 1; p = split(t); p[5] = @sprintf("%.4f", tw[min(i_sec, length(tw))])
             push!(saida, join(p, "  ")); espera = false; continue
         end
         push!(saida, ln)
@@ -118,6 +118,7 @@ function faixas_todas(saida)
              for m in eachmatch(r"^\s*\d+(?:\s+[-\dEe.+]+){12}\s*$"m, String(b))]
         isempty(L) && continue
         d = reduce(hcat, L)'
+        d = d[d[:, 1] .< SEMI - 1e-3, :]   # sem as faixas do winglet, todas em y = b/2
         out[nome] = (y = d[:, 1], corda = d[:, 2], area = d[:, 3],
                      ccl = d[:, 4], cl_norm = d[:, 6], cl = d[:, 7])
     end
@@ -227,14 +228,6 @@ for (nome, _) in casos
             cl_asa, cl_eh, cl_nac, k, 1/k^2, r.e)
 end
 
-r1 = OT["etapa_1_asa_isolada"]["CDff"]
-r2 = res["etapa 2, irrestrito"].CDff
-@printf("\n  asa isolada ótima      CDff %.6f   (e = %.4f)\n", r1,
-        OT["etapa_1_asa_isolada"]["e"])
-@printf("  aeronave completa      CDff %.6f   (e = %.4f)\n", r2,
-        res["etapa 2, irrestrito"].e)
-@printf("  preço de ter empenagem, nacele e compensar: %+.2f counts, %.1f%% a mais\n",
-        1e4*(r2 - r1), 100*(r2/r1 - 1))
 let r = res["etapa 2, irrestrito"]
     cdi_nao_asa = sum(v.CDi for (k, v) in r.sup if !occursin("Wing", k))
     @printf("  induzido de campo próximo que NÃO é da asa: %.6f (%.1f counts)\n",
@@ -272,7 +265,7 @@ function escreve_parcial(destino, tw, manter)
             if e_asa && t == "SECTION"
                 espera = true
             elseif e_asa && espera && !isempty(t) && !startswith(t, "#")
-                i_sec += 1; p = split(t); p[5] = @sprintf("%.4f", tw[i_sec])
+                i_sec += 1; p = split(t); p[5] = @sprintf("%.4f", tw[min(i_sec, length(tw))])
                 push!(saida, join(p, "  ")); espera = false; continue
             end
             push!(saida, ln)
@@ -293,14 +286,29 @@ function roda_parcial(tw, manter; trim = false)
             e = num(s, r"\se =\s+([-\d.]+)"))
 end
 
+# A lista de peças é conferida contra as superfícies do próprio modelo, de
+# modo que uma superfície nova no aft.avl não fica de fora sem aviso.
+const ASA = ["Wing", "Winglet"]
 const VARIANTES = [
-    ("só a asa",                       ["Wing"], false),
-    ("asa + fuselagem",                ["Wing", "Fuselage"], false),
-    ("asa + fuselagem + naceles",      ["Wing", "Fuselage", "Nacelle"], false),
-    ("tudo, profundor em zero",        ["Wing", "Fuselage", "Nacelle",
-                                        "Horizontal tail", "Vertical tail"], false),
-    ("tudo, compensado (caso de projeto)", ["Wing", "Fuselage", "Nacelle",
-                                         "Horizontal tail", "Vertical tail"], true)]
+    ("só a asa, sem winglet",          ["Wing"], false),
+    ("asa com winglet",                ASA, false),
+    ("asa + fuselagem",                [ASA; "Fuselage"], false),
+    ("asa + fuselagem + naceles",      [ASA; "Fuselage"; "Nacelle"], false),
+    ("tudo, profundor em zero",        [ASA; "Fuselage"; "Nacelle";
+                                        "Horizontal tail"; "Vertical tail"], false),
+    ("tudo, compensado (caso de projeto)", [ASA; "Fuselage"; "Nacelle";
+                                         "Horizontal tail"; "Vertical tail"], true)]
+let nomes = String[]
+    L = readlines(BASE)
+    for (i, ln) in enumerate(L)
+        strip(ln) in ("SURFACE", "BODY") || continue
+        j = i + 1
+        while isempty(strip(L[j])) || startswith(strip(L[j]), "#"); j += 1; end
+        push!(nomes, strip(L[j]))
+    end
+    faltam = setdiff(nomes, VARIANTES[end][2])
+    isempty(faltam) || error("a decomposição não inclui: $(join(faltam, ", "))")
+end
 
 @printf("\n  torção da etapa 2, CL fixo em %.4f\n\n", CL_PROJ)
 @printf("  %-34s %10s %9s %9s\n", "configuração", "CDff", "e", "Δ counts")
@@ -338,8 +346,8 @@ function carga_asa(manter)
     k = findfirst(n -> occursin("Wing", n), sort(collect(keys(f))))
     return f[sort(collect(keys(f)))[k]]
 end
-com = carga_asa(["Wing", "Fuselage", "Nacelle"])
-sem = carga_asa(["Wing", "Fuselage"])
+com = carga_asa([ASA; "Fuselage"; "Nacelle"])
+sem = carga_asa([ASA; "Fuselage"])
 if length(com.y) == length(sem.y)
     rel = (com.ccl .- sem.ccl) ./ maximum(sem.ccl)
     j = argmax(abs.(rel))

@@ -38,9 +38,16 @@ from designTool.constants import gravity
 # CL de projeto da aeronave coincide com o CL de projeto das secoes.
 W_DESIGN_KGF = 229669.3
 
-# Deslocamentos em Z aplicados no modelo do AVL para tirar as superficies
-# de dentro da fuselagem (sao intencionais e verificados aqui).
-DZ = {'asa': -1.20, 'EH': +1.85, 'EV': +0.85}
+# Deslocamentos em Z do AVL em relacao ao designTool. Ate a v2 o AVL
+# deslocava as superficies para tira-las de dentro da fuselagem (asa -1,20,
+# EH +1,85, EV +0,85). A v3 do designTool ja incorpora essas cotas, de modo
+# que os dois modelos descrevem a mesma aeronave e o deslocamento e nulo.
+DZ = {'asa': 0.0, 'EH': 0.0, 'EV': 0.0}
+
+# Winglet do designTool (Raymer, Fig. 7.34, ver aerodynamics.py): vertical,
+# altura e corda de raiz iguais a corda da ponta, afilamento 0,21 e bordo de
+# fuga reto, de modo que todo o afilamento fica no bordo de ataque.
+TAPER_WINGLET = 0.21
 
 TOL_AREA = 0.01          # 1% nas areas
 TOL_GEOM = 0.002         # 2 mm nas dimensoes lineares
@@ -225,6 +232,9 @@ tudo_ok &= confere('Xref (CG dianteiro) [m]', xref_fwd, ref['cg']['fwd'],
 
 barra('VERIFICACAO: GEOMETRIA DA ASA')
 sec = avl['secoes']['Wing']
+# O winglet e uma superficie propria (ver aft.avl), de modo que a Wing
+# termina na ponta da asa plana.
+winglet = avl['secoes'].get('Winglet', [])
 raiz, ponta = sec[0], sec[-1]
 print(f'  {"grandeza":34s} {"designTool":>12s} {"AVL":>12s}   desvio')
 tudo_ok &= confere('envergadura (2 x Yle ponta) [m]', 2*ponta[1],
@@ -244,6 +254,28 @@ print(f'  {"area integrada pelo AVL (diedro)":34s} {"":12s} '
 dz_asa = raiz[2] - ref['asa']['zr']
 tudo_ok &= confere('deslocamento em Z (intencional) [m]', dz_asa, DZ['asa'],
                    TOL_GEOM, ' m')
+
+barra('VERIFICACAO: WINGLET')
+print(f'  {"grandeza":34s} {"designTool":>12s} {"AVL":>12s}   desvio')
+if not winglet:
+    print('  ATENCAO: o designTool tem winglet e o AVL nao')
+    tudo_ok = False
+else:
+    base, topo = winglet[0], winglet[-1]
+    ct = ref['asa']['ct']
+    folga_juncao = max(abs(base[k] - ponta[k]) for k in range(4))
+    tudo_ok &= confere('winglet: raiz na ponta da asa [m]', folga_juncao,
+                       0.0, TOL_GEOM, ' m')
+    tudo_ok &= confere('winglet: toe na raiz e no topo [graus]',
+                       max(abs(base[4]), abs(topo[4])), 0.0, 1e-9, ' g')
+    tudo_ok &= confere('winglet: altura [m]', topo[2] - ponta[2], ct,
+                       TOL_GEOM, ' m')
+    tudo_ok &= confere('winglet: corda do topo [m]', topo[3],
+                       TAPER_WINGLET*ct, TOL_GEOM, ' m')
+    tudo_ok &= confere('winglet: bordo de fuga reto [m]', topo[0] + topo[3],
+                       ponta[0] + ponta[3], TOL_GEOM, ' m')
+    tudo_ok &= confere('winglet: vertical (Yle constante) [m]', topo[1],
+                       ponta[1], TOL_GEOM, ' m')
 
 barra('VERIFICACAO: EMPENAGENS')
 print(f'  {"grandeza":34s} {"designTool":>12s} {"AVL":>12s}   desvio')

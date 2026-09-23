@@ -100,6 +100,7 @@ function faixas_asa(saida)
               for m in eachmatch(r"^\s*\d+(?:\s+[-\dEe.+]+){12}\s*$"m, bloco)]
     isempty(linhas) && error("não achei as faixas da asa na saída do AVL")
     d = reduce(hcat, linhas)'
+    d = d[d[:, 1] .< SEMI - 1e-3, :]   # sem as faixas do winglet, todas em y = b/2
     return (eta = d[:, 1]./SEMI, corda = d[:, 2], ccl = d[:, 4], cl = d[:, 7])
 end
 
