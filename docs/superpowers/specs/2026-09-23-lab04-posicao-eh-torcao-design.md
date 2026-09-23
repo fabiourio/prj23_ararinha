@@ -25,6 +25,47 @@ Hoje (`Lc_h` = 4,6) a esteira da raiz da asa cruza a altura da EH por volta de
   conjunta. A torção é otimizada depois, com a EH já fixada.
 - Objetivo da torção: **mínimo CD compensado (Cm = 0) no ponto de projeto**.
 
+## Etapa 0 — verificações antes de usar os resultados
+
+### 0a. Convergência de malha
+
+Roda sobre a geometria de base (`Lc_h` = 4,6, sem torção, `aft.avl`), no ponto
+de projeto compensado (M = 0,85, CL de projeto, Cm = 0 pelo `it`).
+
+- Refina uma direção por vez, mantendo as outras na malha atual: painéis ao
+  longo da envergadura e da corda da asa, do winglet e da EH. O corpo
+  (`Nbody`) entra só se as superfícies já tiverem convergido.
+- Monitora CDff (em counts), CL, Cm, o `it` de compensação e o cl da faixa
+  mais crítica no estol (M = 0,2).
+- Critério de platô: a malha adotada é a menor em que dobrar o número de
+  painéis muda o CDff menos de 0,1 count e o `it` menos de 0,02°.
+- Saída: gráficos de convergência e a tabela da malha adotada. O
+  `gera_avl.py` passa a usar essa malha.
+- A malha é conferida de novo no `Lc_h` escolhido, com um único refinamento.
+
+### 0b. Verificação do otimizador: asa limpa → distribuição elíptica
+
+O otimizador da etapa 2 é aplicado a um caso com resposta conhecida.
+
+- Modelo: só a asa, sem fuselagem, naceles, empenagens ou winglet, com
+  diedro zero (asa plana, para valer a teoria de Prandtl/Munk). A planta, o
+  enflechamento e os perfis são os do projeto.
+- O mesmo código da etapa 2 (mesmas variáveis de torção, limites e SLSQP)
+  minimiza o CDi no CL de projeto, sem restrição de estol e sem compensação.
+- Esperado: carregamento c·cl/c_ref × y elíptico, e fator de Oswald do plano
+  de Trefftz próximo de 1.
+- Critérios de aprovação:
+  - e ≥ 0,98;
+  - desvio RMS do carregamento em relação à elipse de mesma sustentação
+    ≤ 2% do carregamento na raiz;
+  - duas partidas diferentes (sem torção e com washout linear de −4°) chegam
+    ao mesmo CDi, com diferença ≤ 0,1 count.
+- Saída: gráfico do carregamento otimizado contra a elipse, e um e antes e
+  depois da otimização.
+- Se o e ficar abaixo de 0,98, verifica-se primeiro se a culpa é da
+  parametrização (poucas seções de torção). Para isso a mesma otimização roda
+  com o dobro de seções, antes de se concluir que o otimizador falhou.
+
 ## Etapa 1 — varredura da posição da EH
 
 Variável: `Lc_h` de 4,0 até o limite geométrico, com passo de 0,1, mais o
@@ -101,6 +142,8 @@ módulos das etapas 1 e 2. Tem plano próprio.
 | `gera_avl.py` | escreve `fwd.avl`/`aft.avl` a partir desse dicionário e de um vetor de torção, com o deslocamento em Z |
 | `avl_run.py` | roda o `avl.exe` por stdin e lê `ft`, `fs` e `st` |
 | `sombra.py` | critério de sombreamento (geometria pura, testável sem AVL) |
+| `convergencia_malha.py` | etapa 0a |
+| `verifica_eliptica.py` | etapa 0b |
 | `varredura_eh.py` | etapa 1: tabela, gráfico e `Lc_h` escolhido |
 | `otimizacao_torcao.py` | etapa 2 |
 
