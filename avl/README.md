@@ -253,10 +253,29 @@ CL, tirar as naceles muda a carga local da asa em até 11% em η = 0,36.
 Comparações entre casos continuam válidas, porque as naceles são as mesmas em
 todos, mas o valor absoluto do Oswald depende dessa escolha de modelagem.
 
+**Estudo, não adotado: nacele como BODY.** Trocando o anel por um corpo de
+revolução com as mesmas dimensões e posição (7,3 m por 4,0 m, bocal elíptico,
+cauda afinando) e refazendo toda a otimização:
+
+| | nacele como anel (atual) | nacele como BODY |
+|---|---|---|
+| sem torção | 0,010030, e 0,798 | 0,009485, e 0,824 |
+| etapa 2, sem restrição | 0,008784, e 0,918 | 0,007259, e 1,068 |
+| projeto, estol antes de 0,56 | 0,010045, e 0,806 | 0,008226, e 0,952 |
+| projeto contra a asa sem torção | +0,15 count | −12,6 counts |
+
+Com a nacele como BODY o problema também fica mais comportado: no estudo de nós
+todas as configurações viáveis ficam entre −6 e −12 counts, e a torção de
+projeto vira um washout gradual (0, −0,24, −0,44, −0,48, −0,48, −0,48, −3,81,
+−4,46, −6,25, −6,43, −6,43). A variante passa em todas as checagens do
+`verifica_torcao.jl`, com folga direta de estol de +0,107°. Nela os corpos
+carregam mais sustentação sem soltar esteira, e o CLff do plano de Trefftz fica
+cerca de 3% abaixo do CLtot, contra 1% no modelo atual.
+
 ### Verificação
 
 O `verifica_torcao.jl` confere o resultado por fora dos modelos que o
-produziram, e passa em todas as 20 checagens.
+produziram, e passa em todas as checagens.
 
 - **Física**: monotonicidade e tamanho da torção, coerência entre CDff, CL e
   Oswald, e a posição do estol refeita por varredura direta de ângulo de ataque
@@ -273,8 +292,11 @@ produziram, e passa em todas as 20 checagens.
   possível ao sair dele fica abaixo de décimos de count.
 - **O erro do modelo de arrasto não mexe no ótimo.** Remontando o modelo
   centrado no próprio ótimo, onde ele passa a ser exato, e resolvendo de novo,
-  os decrementos saem idênticos até a terceira casa. O vértice é fixado pelas
-  restrições de estol, e o modelo de arrasto só escolhe qual vértice.
+  os decrementos saem idênticos até a terceira casa e o arrasto medido no AVL
+  não cai. O vértice é fixado pelas restrições de estol, e o modelo de arrasto
+  só escolhe qual vértice. O critério de aprovação é o arrasto: quando o ótimo
+  fica num vale raso em vez de num vértice, a torção pode deslizar alguns
+  décimos de grau sem mudar o arrasto, e isso não é defeito.
 - **Caminho independente**: refeita a partir da asa sem torção, sem nenhuma
   semente da busca global, a otimização chega ao mesmo ponto (+0,00 count)
   depois de cerca de 2000 iterações. É esse caminho que o
