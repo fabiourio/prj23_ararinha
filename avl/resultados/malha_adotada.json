@@ -3,8 +3,8 @@
   "asa_ns": 60,
   "winglet_ns": 4,
   "eh_nc": 8,
-  "eh_ns": 15,
+  "eh_ns": 20,
   "ev_nc": 8,
   "ev_ns": 6,
-  "nbody": 100
+  "nbody": 80
 }
