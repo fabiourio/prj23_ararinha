@@ -44,11 +44,21 @@
 #
 # CRITÉRIO DE ESTOL
 #   A FAR 25.203(a) exige que o comando de rolamento continue eficaz até e
-#   durante o estol. A tradução geométrica disso não é uma estação
-#   arbitrária: é que o estol NÃO comece na região do aileron, que nesta
-#   asa vai de η = 0,56 a η = 0,90. A margem é dada em ÂNGULO DE ATAQUE:
-#   quantos graus a região do aileron ainda aguenta depois que a região
-#   interna estola.
+#   durante o estol, o que se traduz em o estol não começar na região do
+#   aileron, que nesta asa vai de η = 0,56 a η = 0,90. A exigência usada é
+#   de POSIÇÃO: a primeira faixa a estolar tem de estar para dentro de uma
+#   estação η_lim. O projeto usa η_lim = 0,56, a raiz do aileron, que é o
+#   que a FAR pede; a varredura mostra o custo de exigir posições mais
+#   para dentro.
+#
+#   DESEMPATE. Sem nenhuma folga, o ótimo sempre cai num empate: a faixa
+#   interna e uma faixa do aileron estolam no mesmo ângulo, e a exigência
+#   vale só no papel. Medido direto no AVL, um projeto assim estolou
+#   primeiro em η = 0,842, dentro do aileron, porque o modelo afim de estol
+#   é um pouco otimista perto do estol (entre 0,11 e 0,19 grau nos casos
+#   medidos). A folga de 0,2 grau exigida aqui não é margem de projeto: é
+#   o erro medido do modelo, para que a posição do estol valha também na
+#   medição direta, que o verifica_torcao.jl confere.
 #
 # ESTRUTURA DO PROBLEMA
 #   Para CL fixo a distribuição de sustentação é AFIM nas torções de
@@ -135,8 +145,9 @@ const NOS_PROJ = [0.0, 0.30, 0.48, 0.56, 0.70, 0.85, 1.0]
 # Estol
 const MACH_BAIXO  = 0.2
 const ALFAS_BASE  = (8.0, 14.0)
-const ETA_AILERON = 0.56          # raiz do aileron: o estol tem de vir antes
-const MARGEM_PROJ = 0.5           # [graus] de margem adotada no projeto
+const ETA_AILERON = 0.56          # raiz do aileron, só para as figuras
+const ETA_ESTOL_PROJ = 0.56       # o estol tem de começar para dentro daqui
+const DESEMPATE = 0.2             # [graus] erro medido do modelo de estol
 const ETA_LIM   = [0.1011, 0.398, 0.90]
 const CLMAX_LIM = [1.774, 1.7985, 1.7338]
 
@@ -426,14 +437,15 @@ end
 alfa_estol(me, x) = (me.lim .- me.a .- me.C'x)./me.b
 
 """
-Margem de estol do aileron: quantos graus de ângulo de ataque a região do
-aileron ainda aguenta depois que a região interna estola. Positiva
-significa que o estol começa para dentro do aileron, que é o que a
-FAR 25.203 exige para preservar o comando de rolamento.
+Folga de estol em relação à estação `eta_lim`: o menor ângulo de estol das
+faixas externas a eta_lim menos o das internas. Positiva ou nula significa
+que o estol começa para dentro de eta_lim, que é toda a exigência. Ela é
+dada em graus só porque é uma diferença de ângulos; não há margem angular
+imposta, o limite é zero.
 """
-function margem_aileron(me, x)
+function folga_estol(me, x, eta_lim)
     al = alfa_estol(me, x)
-    dentro = me.eta .< ETA_AILERON
+    dentro = me.eta .< eta_lim
     return minimum(al[.!dentro]) - minimum(al[dentro])
 end
 
@@ -441,7 +453,7 @@ end
 eta_critico(me, x) = me.eta[argmin(alfa_estol(me, x))]
 
 """
-Restrição de estol como penalidade direta sobre a margem do aileron.
+Restrição de estol como penalidade direta sobre a folga de estol.
 
 A exigência é uma diferença de mínimos, portanto não é convexa nem suave.
 Quando as torções eram livres por estação isso obrigava a reescrevê-la de
@@ -451,7 +463,7 @@ modo que a penalidade direta é ao mesmo tempo mais simples e exata: não há
 reformulação a validar, e a viabilidade é conferida no fim pelo próprio
 critério.
 """
-penalidade_estol(me, margem) = x -> max(margem - margem_aileron(me, x), 0.0)^2
+penalidade_estol(me, eta_lim) = x -> max(DESEMPATE - folga_estol(me, x, eta_lim), 0.0)^2
 
 # --------------------------------------------------------------------
 # OTIMIZAÇÃO SOBRE OS DECREMENTOS DA SPLINE
@@ -518,11 +530,10 @@ function partidas_de(ns, extras = Vector{Float64}[])
     return vcat(p, [copy(e) for e in extras if length(e) == ns])
 end
 
-"Um candidato é viável se o estol começa fora do aileron com a margem pedida."
-function viavel(me, nos, s, margem)
+"Um candidato é viável se o estol começa para dentro de eta_lim."
+function viavel(me, nos, s, eta_lim)
     x = livres(torcoes_spline(nos, s))
-    return eta_critico(me, x) < ETA_AILERON &&
-           margem_aileron(me, x) >= margem - 0.05 &&
+    return folga_estol(me, x, eta_lim) >= DESEMPATE - 1e-3 &&
            sum(s) <= TW_TOTAL + 1e-6
 end
 
@@ -537,7 +548,7 @@ com multipartida apenas já tinha dado resultado incoerente: uma margem de
 viável. A amostragem mistura washout uniforme, concentrado na parte
 externa e concentrado na interna, para cobrir as formas de interesse.
 """
-function amostra_global(m, me, nos, margem; n = 60000, semente = 20240917)
+function amostra_global(m, me, nos, eta_lim; n = 60000, semente = 20240917)
     ns = length(nos) - 1
     rng = MersenneTwister(semente)
     achados = Tuple{Float64,Vector{Float64}}[]
@@ -552,7 +563,7 @@ function amostra_global(m, me, nos, margem; n = 60000, semente = 20240917)
         soma = sum(p)
         soma < 1e-9 && continue
         s = clamp.(escala .* p ./ soma, 0.0, DEC_MAX)
-        viavel(me, nos, s, margem) || continue
+        viavel(me, nos, s, eta_lim) || continue
         push!(achados, (cd_mod(m, livres(torcoes_spline(nos, s))), s))
     end
     sort!(achados; by = first)
@@ -560,14 +571,14 @@ function amostra_global(m, me, nos, margem; n = 60000, semente = 20240917)
 end
 
 "Etapa 3: busca global seguida de polimento local, melhor ótimo viável."
-function otimiza_com_estol(m, me, nos, margem; partidas, n_polir = 8)
-    pen = penalidade_estol(me, margem)
-    brutos = amostra_global(m, me, nos, margem)
+function otimiza_com_estol(m, me, nos, eta_lim; partidas, n_polir = 8)
+    pen = penalidade_estol(me, eta_lim)
+    brutos = amostra_global(m, me, nos, eta_lim)
     sementes = vcat(brutos[1:min(end, n_polir)], partidas)
     melhor = nothing
     for s0 in sementes
         s, cam = otimiza(m, nos; pen = pen, s0 = s0)
-        viavel(me, nos, s, margem) || continue
+        viavel(me, nos, s, eta_lim) || continue
         x = livres(torcoes_spline(nos, s))
         f = cd_mod(m, x)
         if melhor === nothing || f < melhor.f
@@ -703,7 +714,7 @@ const CANDIDATOS_NOS = [
     [0.0, 0.25, 0.45, 0.56, 0.68, 0.84, 1.0],
     [0.0, 0.16, 0.33, 0.5, 0.66, 0.83, 1.0]]
 
-@printf("  %-34s %19s   %19s\n", "", "sem restrição", "com estol $(MARGEM_PROJ)°")
+@printf("  %-34s %19s   %19s\n", "", "sem restrição", "estol antes de $(ETA_ESTOL_PROJ)")
 @printf("  %-34s %9s %9s   %9s %9s\n", "nós", "counts", "torç tot",
         "counts", "torç tot")
 function estuda_nos(m, me, candidatos)
@@ -713,7 +724,7 @@ function estuda_nos(m, me, candidatos)
         sk, _ = otimiza(m, nos)
         xk = livres(torcoes_spline(nos, sk))
         c_livre = 1e4*(cd_mod(m, xk) - base_full.CDff)
-        sc = otimiza_com_estol(m, me, nos, MARGEM_PROJ;
+        sc = otimiza_com_estol(m, me, nos, ETA_ESTOL_PROJ;
                                partidas = partidas_de(ns))
         rot = join([@sprintf("%.2f", v) for v in nos], " ")
         if sc === nothing
@@ -742,29 +753,28 @@ end
 # ETAPA 3 -- PROJETO: COM A EXIGÊNCIA DE ESTOL DA FAR 25.203
 # ====================================================================
 println("\n", "="^78)
-println("ETAPA 3 -- PROJETO: estol antes do aileron (FAR 25.203)")
+println("ETAPA 3 -- PROJETO: estol começando para dentro de η_lim (FAR 25.203)")
 println("="^78)
 
-@printf("  aileron: de η = %.2f a 0,90\n", ETA_AILERON)
-@printf("  sem torção:        estol em η = %.3f, margem do aileron %+.2f°\n",
-        eta_critico(me, zeros(NV)), margem_aileron(me, zeros(NV)))
-@printf("  ótimo da etapa 2:  estol em η = %.3f, margem do aileron %+.2f°\n",
-        eta_critico(me, x2), margem_aileron(me, x2))
-println("  (margem negativa significa que o estol começa DENTRO do aileron,")
-println("   o que a FAR 25.203 não admite: o rolamento perde eficácia)\n")
+@printf("  aileron: de η = %.2f a 0,90; projeto exige estol antes de η = %.2f\n",
+        ETA_AILERON, ETA_ESTOL_PROJ)
+@printf("  sem torção:        estol começa em η = %.3f\n", eta_critico(me, zeros(NV)))
+@printf("  ótimo da etapa 2:  estol começa em η = %.3f\n", eta_critico(me, x2))
+println("  (ambos começam dentro do aileron, o que a FAR 25.203 não admite)\n")
 
 partidas = partidas_de(length(NOS_PROJ) - 1, [s2])
 
-# A varredura vai da margem MAIOR para a menor e leva a solução obtida
-# como semente da próxima. Os conjuntos viáveis são encaixados (o que
-# atende 2 graus atende 1,5), de modo que carregar a solução garante que
-# a tabela não possa sair incoerente por falha do otimizador.
-const MARGENS = (0.0, 0.5, 1.0, 1.5, 2.0, 3.0)
+# A varredura vai da posição mais EXIGENTE (η_lim menor) para a mais
+# folgada e leva a solução obtida como semente da próxima. Os conjuntos
+# viáveis são encaixados (quem estola antes de 0,40 estola antes de 0,50),
+# de modo que carregar a solução garante que a tabela não possa sair
+# incoerente por falha do otimizador.
+const ETAS_LIM = (0.35, 0.40, 0.45, 0.50, 0.56)
 
-function varre_margens(m, me, nos, margens, partidas)
+function varre_posicoes(m, me, nos, etas_lim, partidas)
     sols = Dict{Float64,Any}()
     anterior = Vector{Float64}[]
-    for mg in reverse(margens)
+    for mg in sort(collect(etas_lim))
         s = otimiza_com_estol(m, me, nos, mg;
                               partidas = vcat(partidas, anterior))
         s === nothing && continue
@@ -775,18 +785,18 @@ function varre_margens(m, me, nos, margens, partidas)
     return sols
 end
 
-sols = varre_margens(m2, me, NOS_PROJ, MARGENS, partidas)
+sols = varre_posicoes(m2, me, NOS_PROJ, ETAS_LIM, partidas)
 
-println("  custo da margem de estol exigida:")
-@printf("  %-8s %10s %9s %8s %8s %8s %8s %8s\n", "margem", "CDff", "counts",
+println("  custo de exigir o início do estol para dentro de η_lim:")
+@printf("  %-8s %10s %9s %8s %8s %8s %8s %8s\n", "η_lim", "CDff", "counts",
         "Oswald", "estol η", "torç tot", "salto", "°/m")
-for mg in MARGENS
+for mg in ETAS_LIM
     if !haskey(sols, mg)
-        @printf("  %-8.1f %10s\n", mg, "inviável"); continue
+        @printf("  %-8.2f %10s\n", mg, "inviável"); continue
     end
     r = sols[mg]
     tw = torcoes_spline(NOS_PROJ, r.s.s)
-    @printf("  %-8.1f %10.6f %+9.2f %8.4f %8.3f %7.1f° %7.1f° %8.2f\n", mg,
+    @printf("  %-8.2f %10.6f %+9.2f %8.4f %8.3f %7.1f° %7.1f° %8.2f\n", mg,
             r.av.CDff, 1e4*(r.av.CDff - base_full.CDff), r.av.e,
             eta_critico(me, r.s.x), sum(r.s.s), salto_max(tw), taxa_max(tw))
 end
@@ -795,35 +805,35 @@ println("   °/m = maior taxa de torção ao longo da envergadura. São as medid
 println("   que dizem se a asa é fabricável: um transporte fica perto de")
 println("   0,3 °/m, de modo que valores bem acima disso pedem atenção)")
 
-# Coerência: exigir mais margem não pode sair mais barato, e uma margem
-# menor não pode ser inviável se uma maior é viável.
+# Coerência: exigir o estol mais para dentro não pode sair mais barato, e
+# uma posição mais folgada não pode ser inviável se uma mais exigente é.
 let viaveis = sort(collect(keys(sols)))
     ruim = false
     for i in 1:length(viaveis)-1
-        if sols[viaveis[i]].av.CDff > sols[viaveis[i+1]].av.CDff + 1e-6
-            @printf("  ATENÇÃO: margem %.1f custa mais que %.1f, otimização incoerente\n",
+        if sols[viaveis[i]].av.CDff < sols[viaveis[i+1]].av.CDff - 1e-6
+            @printf("  ATENÇÃO: η_lim %.2f custa menos que %.2f, otimização incoerente\n",
                     viaveis[i], viaveis[i+1])
             ruim = true
         end
     end
     if !isempty(viaveis)
-        for mg in MARGENS
-            mg < maximum(viaveis) && !haskey(sols, mg) || continue
-            @printf("  ATENÇÃO: margem %.1f saiu inviável com %.1f viável, incoerente\n",
-                    mg, maximum(viaveis))
+        for mg in ETAS_LIM
+            mg > minimum(viaveis) && !haskey(sols, mg) || continue
+            @printf("  ATENÇÃO: η_lim %.2f saiu inviável com %.2f viável, incoerente\n",
+                    mg, minimum(viaveis))
             ruim = true
         end
     end
-    ruim || println("\n  coerência da varredura conferida: custo cresce com a margem")
+    ruim || println("\n  coerência da varredura conferida: custo cresce ao exigir o estol mais para dentro")
 end
 
-haskey(sols, MARGEM_PROJ) ||
-    error("a margem de projeto $(MARGEM_PROJ)° saiu inviável")
-esc = sols[MARGEM_PROJ]
+haskey(sols, ETA_ESTOL_PROJ) ||
+    error("a posição de projeto η_lim = $(ETA_ESTOL_PROJ) saiu inviável")
+esc = sols[ETA_ESTOL_PROJ]
 s3, cam3, ot3 = esc.s.s, esc.s.cam, esc.av
 tw3, x3 = torcoes_spline(NOS_PROJ, s3), esc.s.x
-@printf("\n  margem adotada no projeto: %.1f grau de ângulo de ataque\n",
-        MARGEM_PROJ)
+@printf("\n  projeto: estol tem de começar para dentro de η = %.2f\n",
+        ETA_ESTOL_PROJ)
 @printf("  decrementos [graus]: %s\n",
         join([@sprintf("%5.2f", v) for v in s3], " "))
 @printf("  torções [graus]: %s\n",
@@ -832,8 +842,8 @@ tw3, x3 = torcoes_spline(NOS_PROJ, s3), esc.s.x
         ot3.CDff, 1e4*(ot3.CDff - base_full.CDff))
 @printf("  CDtot (CDvis + CDff) %.6f  (%+.2f counts)\n", cdtot_ff(ot3),
         1e4*(cdtot_ff(ot3) - cdtot_ff(base_full)))
-@printf("  estol em η = %.3f com margem de %+.2f graus\n",
-        eta_critico(me, x3), margem_aileron(me, x3))
+@printf("  estol começa em η = %.3f, folga em relação a η = %.2f: %+.3f graus\n",
+        eta_critico(me, x3), ETA_ESTOL_PROJ, folga_estol(me, x3, ETA_ESTOL_PROJ))
 @printf("  torção total raiz-ponta: %.1f graus\n", maximum(tw3) - minimum(tw3))
 @printf("  custo da exigência de estol: %+.2f counts sobre a etapa 2\n",
         1e4*(ot3.CDff - ot2.CDff))
@@ -844,7 +854,7 @@ if taxa_max(tw3) > 1.0
     println("  perto de 0,3 °/m. A solução é monotônica e lisa, mas concentra")
     println("  a mudança de incidência num trecho curto junto à raiz do")
     println("  aileron, que é onde a restrição age. Suavizar mais custa")
-    println("  arrasto, e o preço está na tabela de margens acima.")
+    println("  arrasto, e o preço está na tabela de posições acima.")
 end
 
 # O caminho da solução acima parte de uma semente da busca global, que já
@@ -854,13 +864,14 @@ end
 # semente nenhuma. Ele é refeito aqui e conferido contra o ótimo: tem de
 # chegar ao mesmo ponto, e isso é mais um teste de que o ótimo é global.
 println("\n  refazendo o caminho a partir da asa sem torção, sem semente...")
-s_zero, cam3 = otimiza(m2, NOS_PROJ; pen = penalidade_estol(me, MARGEM_PROJ),
+s_zero, cam3 = otimiza(m2, NOS_PROJ; pen = penalidade_estol(me, ETA_ESTOL_PROJ),
                        s0 = zeros(length(NOS_PROJ) - 1))
 x_zero = livres(torcoes_spline(NOS_PROJ, s_zero))
 @printf("  %d pontos no caminho; chega a CDff %.6f contra %.6f do ótimo (%+.2f counts)\n",
         length(cam3), cd_mod(m2, x_zero), cd_mod(m2, x3),
         1e4*(cd_mod(m2, x_zero) - cd_mod(m2, x3)))
-@printf("  margem no fim do caminho: %+.3f graus\n", margem_aileron(me, x_zero))
+@printf("  folga de estol no fim do caminho: %+.3f graus\n",
+        folga_estol(me, x_zero, ETA_ESTOL_PROJ))
 
 println("\n  gerando a animação do caminho da etapa 3...")
 anima(cam3, NOS_PROJ, "evolucao_3_com_estol.gif"; so_asa = false, trim = true,
@@ -879,23 +890,23 @@ println("\n  mapa do problema no plano (s3, s4)...")
 let g3 = range(0, 7; length = 141), g4 = range(0, 5; length = 101)
     plano(a, b) = livres(torcoes_spline(NOS_PROJ, [0.0, 0.0, a, b, 0.0, 0.0]))
     Z = [1e4*cd_mod(m2, plano(a, b)) for b in g4, a in g3]
-    Mg = [margem_aileron(me, plano(a, b)) for b in g4, a in g3]
+    Mg = [folga_estol(me, plano(a, b), ETA_ESTOL_PROJ) for b in g4, a in g3]
     q = contour(g3, g4, Z; levels = 25, color = :viridis,
                 colorbar_title = "CDff [counts]",
                 xlabel = "s3: washout entre η 0,48 e 0,56 [graus]",
                 ylabel = "s4: washout entre η 0,56 e 0,70 [graus]",
                 title = "arrasto e restrição de estol (s1 = s2 = s5 = s6 = 0)",
                 titlefontsize = 10, titlelocation = :left, ESTILO...)
-    contourf!(q, g3, g4, Mg .< MARGEM_PROJ; levels = [0.5, 1.5], color = [:gray],
+    contourf!(q, g3, g4, Mg .< DESEMPATE; levels = [0.5, 1.5], color = [:gray],
               alpha = 0.18, colorbar_entry = false)
-    contour!(q, g3, g4, Mg; levels = [MARGEM_PROJ], color = PAL[2], linewidth = 2.6,
+    contour!(q, g3, g4, Mg; levels = [DESEMPATE], color = PAL[2], linewidth = 2.6,
              colorbar_entry = false)
     plot!(q, [c[3] for c in cam3], [c[4] for c in cam3]; color = INK,
           linewidth = 1.2, linestyle = :dot,
           label = "caminho a partir de s = 0 (projeção)")
     scatter!(q, [s3[3]], [s3[4]]; color = PAL[2], marker = :star5, markersize = 11,
              markerstrokecolor = INK, label = "ótimo")
-    annotate!(q, 1.2, 4.4, text("região inviável:\nestol começa no aileron", 8,
+    annotate!(q, 1.2, 4.4, text("região inviável:\nestol começa fora de η_lim", 8,
                                 INK2, :left))
     savefig(plot(q; size = (900, 650), dpi = 200),
             joinpath(SAIDA, "mapa_restricao_estol.png"))
@@ -917,17 +928,16 @@ println("\n", "="^78)
 println("O QUE O PERFIL DA RAIZ RESOLVERIA")
 println("="^78)
 al2 = alfa_estol(me, x2)
-dentro = me.eta .< ETA_AILERON
+dentro = me.eta .< ETA_ESTOL_PROJ
 alfa_ail = minimum(al2[.!dentro])
-@printf("  com a torção da etapa 2, a região do aileron estola em α = %.2f°\n",
-        alfa_ail)
-@printf("  para o estol vir antes com %.1f° de margem, o clmax interno teria\n",
-        MARGEM_PROJ)
+@printf("  com a torção da etapa 2, a região externa a η = %.2f estola em α = %.2f°\n",
+        ETA_ESTOL_PROJ, alfa_ail)
+println("  para o estol começar para dentro dela, o clmax interno teria")
 println("  de cair para:")
 @printf("  %-10s %12s %12s %10s\n", "η", "clmax atual", "clmax alvo", "redução")
 for k in findall(dentro)
     me.eta[k] > 0.45 && continue
-    alvo = me.a[k] + me.C[:, k]'x2 + me.b[k]*(alfa_ail - MARGEM_PROJ)
+    alvo = me.a[k] + me.C[:, k]'x2 + me.b[k]*(alfa_ail - DESEMPATE)
     @printf("  %-10.3f %12.3f %12.3f %9.1f%%\n", me.eta[k], me.lim[k], alvo,
             100*(alvo/me.lim[k] - 1))
 end
@@ -985,9 +995,9 @@ for (nome, _, _, _, ot, cor) in etapas
           label = nome)
 end
 
-p4 = plot(; xlabel = "margem de estol exigida [graus de α]",
+p4 = plot(; xlabel = "o estol tem de começar para dentro de η_lim",
           ylabel = "CDff em counts", legend = :topleft,
-          title = "(d) custo da exigência de estol", titlefontsize = 10,
+          title = "(d) custo da posição exigida para o início do estol", titlefontsize = 10,
           titlelocation = :left, ESTILO...)
 mg = sort(collect(keys(sols)))
 plot!(p4, mg, [1e4*sols[k].av.CDff for k in mg]; color = PAL[3],
@@ -997,7 +1007,7 @@ hline!(p4, [1e4*base_full.CDff]; color = CINZA, linewidth = 2,
        linestyle = :dash, label = "asa sem torção")
 hline!(p4, [1e4*ot2.CDff]; color = PAL[2], linewidth = 2, linestyle = :dot,
        label = "ótimo sem restrição (etapa 2)")
-scatter!(p4, [MARGEM_PROJ], [1e4*ot3.CDff]; color = PAL[3], markersize = 10,
+scatter!(p4, [ETA_ESTOL_PROJ], [1e4*ot3.CDff]; color = PAL[3], markersize = 10,
          marker = :star5, markerstrokecolor = INK, label = "adotado")
 
 savefig(plot(p1, p2, p3, p4; layout = (2, 2), size = (1300, 900), dpi = 200,
@@ -1030,7 +1040,8 @@ open(joinpath(SAIDA, "torcao_otimizada.json"), "w") do io
         "criterio_estol" => Dict(
             "norma" => "FAR 25.203(a): rolamento eficaz até e durante o estol",
             "eta_aileron" => ETA_AILERON,
-            "margem_adotada_graus" => MARGEM_PROJ),
+            "eta_limite_adotado" => ETA_ESTOL_PROJ,
+            "desempate_graus" => DESEMPATE),
         "sem_torcao" => Dict("CDff" => base_full.CDff, "e" => base_full.e,
                              "eta_estol" => eta_critico(me, zeros(NV))),
         "geometria" => Dict("versao_designTool" => "v3",
@@ -1044,7 +1055,7 @@ open(joinpath(SAIDA, "torcao_otimizada.json"), "w") do io
                                   "CDtot_ff" => cdtot_ff(ot3),
                                   "e" => ot3.e,
                                   "eta_estol" => eta_critico(me, x3),
-                                  "margem_aileron" => margem_aileron(me, x3)),
-        "custo_da_margem" => Dict(string(k) => sols[k].av.CDff for k in mg)), 2)
+                                  "folga_estol" => folga_estol(me, x3, ETA_ESTOL_PROJ)),
+        "custo_da_posicao" => Dict(string(k) => sols[k].av.CDff for k in mg)), 2)
 end
 println("\ngravado: $SAIDA/torcao_otimizada.json")

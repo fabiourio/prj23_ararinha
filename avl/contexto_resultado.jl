@@ -218,15 +218,15 @@ println("="^78)
 @printf("  etapa 2, ignora o estol:         CDff %.6f  (%+.2f counts)\n",
         OT["etapa_2_completa"]["CDff"],
         1e4*(OT["etapa_2_completa"]["CDff"] - base_ff))
-if haskey(OT, "custo_da_margem")
-    cm = OT["custo_da_margem"]
-    for k in sort([parse(Float64, x) for x in keys(cm)])
-        @printf("  conforme com margem de %.1f°:      CDff %.6f  (%+.2f counts)\n",
+if haskey(OT, "custo_da_posicao")
+    cm = OT["custo_da_posicao"]
+    for k in sort([parse(Float64, x) for x in keys(cm)]; rev = true)
+        @printf("  estol começando antes de η = %.2f: CDff %.6f  (%+.2f counts)\n",
                 k, cm[string(k)], 1e4*(cm[string(k)] - base_ff))
     end
 end
 println("""
   A leitura: a asa sem torção JÁ É não conforme, então a comparação
   relevante não é contra o ótimo sem restrição e sim contra a linha de
-  base. Com margem nula a torção entrega conformidade E arrasto menor;
-  é só a partir de meio grau que ela começa a cobrar.""")
+  base. O custo cresce à medida que se exige o estol começando mais para
+  dentro da asa.""")

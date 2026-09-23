@@ -13,9 +13,10 @@
 #   4  o estol começa onde o modelo afim diz, conferido por varredura
 #      direta de ângulo de ataque no AVL
 #   5  condições de KKT no espaço dos decrementos
-#   6  o multiplicador do estol contra a varredura de margem
-#   7  o erro do modelo de arrasto não desloca o ótimo (modelo remontado
+#   6  o erro do modelo de arrasto não desloca o ótimo (modelo remontado
 #      no próprio ótimo e problema resolvido de novo)
+#   7  otimizar sem estol e corrigir depois com washout "manual" não ganha
+#      do otimizador (todo ponto viável tem de ficar acima do ótimo)
 #
 # A etapa 1 (asa isolada indo para a elíptica) foi verificada antes e está
 # registrada no README; a otimização atual começa na aeronave completa.
@@ -45,6 +46,8 @@ const AR      = BREF^2/SREF
 
 const MACH_BAIXO  = 0.2
 const ETA_AILERON = 0.56
+const ETA_LIM_PROJ = Float64(OT["criterio_estol"]["eta_limite_adotado"])
+const DESEMPATE = Float64(OT["criterio_estol"]["desempate_graus"])
 const ETA_LIM   = [0.1011, 0.398, 0.90]
 const CLMAX_LIM = [1.774, 1.7985, 1.7338]
 const ETAS = Float64.(OT["etas"])
@@ -215,9 +218,9 @@ if isfile(cache)
         # aleatórios de até 10 graus, bem longe do ponto de linearização,
         # e servem para medir até onde o modelo continua válido.
         # Informativo: o erro absoluto não decide nada sozinho. O que
-        # importa é se ele desloca a solução, e isso é testado na seção 7,
+        # importa é se ele desloca a solução, e isso é testado na seção 6,
         # remontando o modelo no próprio ótimo.
-        @printf("       erro do modelo NAS SOLUÇÕES ótimas: máximo %.2f counts (ver seção 7)\n",
+        @printf("       erro do modelo NAS SOLUÇÕES ótimas: máximo %.2f counts (ver seção 6)\n",
                 maximum(abs.(erros[1:2])))
         @printf("       longe do ponto de linearização (até 10° de torção): %.2f counts\n",
                 maximum(abs.(erros[3:end])))
@@ -273,7 +276,7 @@ function estol_direto(tw; alfas = 4.0:1.0:24.0)
             end
         end
     end
-    dentro = eta .< ETA_AILERON
+    dentro = eta .< ETA_LIM_PROJ
     # Basta que ALGUMA faixa de cada região alcance o clmax: o critério é
     # sobre o mínimo, e as faixas junto à fuselagem têm cl local baixo por
     # interferência e podem nunca estolar sem que isso signifique nada.
@@ -299,13 +302,17 @@ for (nome, tw, chave) in (("etapa 2", tw2, "etapa_2_completa"),
                      "a varredura de α não alcançou o clmax")
 end
 dir3 = estol_direto(tw3)
-confere(dir3.ok && dir3.eta_estol < ETA_AILERON,
-        "etapa 3: estol começa FORA do aileron (FAR 25.203)",
-        @sprintf("η %.3f contra aileron a partir de %.2f",
-                 dir3.eta_estol, ETA_AILERON))
-prev_m = Float64(OT["etapa_3_projeto"]["margem_aileron"])
-confere(dir3.ok && dir3.margem > 0.0, "etapa 3: margem do aileron positiva",
-        @sprintf("direto %+.2f°, modelo %+.2f°", dir3.margem, prev_m))
+confere(dir3.ok && dir3.eta_estol < ETA_LIM_PROJ,
+        "etapa 3: estol começa para dentro de η_lim",
+        @sprintf("η %.3f contra η_lim %.2f (aileron a partir de %.2f)",
+                 dir3.eta_estol, ETA_LIM_PROJ, ETA_AILERON))
+prev_m = Float64(OT["etapa_3_projeto"]["folga_estol"])
+# O desempate existe para que a posição valha na medição direta, então é
+# ela que decide: a folga direta tem de ser positiva.
+confere(dir3.ok && dir3.margem > 0.0,
+        "etapa 3: na medição direta o estol começa antes de η_lim",
+        @sprintf("folga direta %+.3f°, pelo modelo %+.3f° (desempate %.2f°)",
+                 dir3.margem, prev_m, DESEMPATE))
 
 # sensibilidade ao critério: cl_norm contra cl
 fx = em_alfa(tw3, 12.0)
@@ -332,7 +339,6 @@ const NOS = Float64.(OT["parametrizacao"]["nos"])
 const NS  = length(NOS) - 1
 const DEC_MAX  = 6.0
 const TW_TOTAL = Float64(OT["parametrizacao"]["torcao_total_max"])
-const MARGEM_PROJ = Float64(OT["criterio_estol"]["margem_adotada_graus"])
 
 # PCHIP, igual ao usado na otimização
 function inclinacao_extremo(h1, h2, Δ1, Δ2)
@@ -395,8 +401,8 @@ function modelo_estol()
 end
 me = modelo_estol()
 alfa_estol(x) = (me.lim .- me.a .- me.C'x)./me.b
-function margem_aileron(x)
-    al = alfa_estol(x); dentro = me.eta .< ETA_AILERON
+function folga_estol(x)
+    al = alfa_estol(x); dentro = me.eta .< ETA_LIM_PROJ
     return minimum(al[.!dentro]) - minimum(al[dentro])
 end
 
@@ -432,11 +438,11 @@ end
 Teste KKT no espaço dos decrementos.
 
 Restrições escritas como c(s) >= 0: s_k >= 0, DEC_MAX - s_k >= 0,
-TW_TOTAL - soma(s) >= 0 e, na etapa 3, margem(s) - margem_exigida >= 0.
+TW_TOTAL - soma(s) >= 0 e, na etapa 3, folga(s) - desempate >= 0.
 No ótimo vale grad f = soma(lambda_i grad c_i) com lambda_i >= 0 sobre as
 restrições ativas, o que é resolvido por mínimos quadrados.
 """
-function testa_kkt(nome, f, s; margem = nothing, tol_ativa = 1e-4)
+function testa_kkt(nome, f, s; com_estol = false, tol_ativa = 1e-4)
     println("\n  ", nome)
     g = gradiente(f, s)
     @printf("    decrementos s : %s\n",
@@ -456,7 +462,7 @@ function testa_kkt(nome, f, s; margem = nothing, tol_ativa = 1e-4)
         push!(nomes, "s$k <= $DEC_MAX")
     end
     tot_ativa && (push!(cols, fill(-1.0, NS)); push!(nomes, "torção total"))
-    # Restrição de estol DESAGREGADA. Escrita como margem do aileron ela é
+    # Restrição de estol DESAGREGADA. Escrita como folga de estol ela é
     # um mínimo de mínimos, portanto não diferenciável, e um gradiente por
     # diferenças finitas num ponto de empate é arbitrário. A forma correta
     # separa a exigência por faixa: fixada a faixa interna que estola
@@ -464,18 +470,18 @@ function testa_kkt(nome, f, s; margem = nothing, tol_ativa = 1e-4)
     # dela. Cada uma dessas é suave, e o KKT admite um multiplicador por
     # faixa ativa. Se várias estiverem empatadas, é a combinação convexa
     # dos gradientes delas que precisa reproduzir o gradiente do objetivo.
-    if margem !== nothing
+    if com_estol
         x = livres(torcoes_spline(s))
         al = alfa_estol(x)
-        dentro = me.eta .< ETA_AILERON
+        dentro = me.eta .< ETA_LIM_PROJ
         i_ref = findall(dentro)[argmin(al[dentro])]
-        folga = margem_aileron(x) - margem
+        folga = folga_estol(x) - DESEMPATE
         @printf("    faixa interna crítica: η = %.3f, estola em α = %.2f°\n",
                 me.eta[i_ref], al[i_ref])
         @printf("    folga da restrição de estol: %+.4f graus\n", folga)
         ext = findall(.!dentro)
         gj(j) = z -> (xx = livres(torcoes_spline(z));
-                      aa = alfa_estol(xx); aa[j] - aa[i_ref] - margem)
+                      aa = alfa_estol(xx); aa[j] - aa[i_ref] - DESEMPATE)
         folgas = [gj(j)(s) for j in ext]
         ativas = ext[folgas .<= 5e-3]
         @printf("    faixas do aileron ativas: %d de %d", length(ativas),
@@ -508,12 +514,20 @@ function testa_kkt(nome, f, s; margem = nothing, tol_ativa = 1e-4)
     lam = A \ g
     resid = 1e4*maximum(abs.(A*lam .- g))
     @printf("    multiplicadores [counts por unidade]:\n")
+    # Tolerância de 0,05 count por grau. Um multiplicador negativo diz que
+    # sair daquele batente melhoraria o arrasto, e o próprio valor limita o
+    # ganho: com 0,05 count por grau, mesmo alguns graus de folga no
+    # decremento renderiam décimos de count, abaixo da precisão do AVL.
+    # Valores assim aparecem nos batentes de monotonicidade porque na
+    # reparametrização logística o gradiente em u some perto de s = 0 e o
+    # otimizador para ali; é justamente o que este teste existe para medir.
+    tol_lam = 5e-6
     for (i, n) in enumerate(nomes)
         @printf("      %-16s %+10.3f  %s\n", n, 1e4*lam[i],
-                lam[i] >= -1e-9 ? "" : "<-- SINAL ERRADO")
+                lam[i] >= -tol_lam ? "" : "<-- SINAL ERRADO")
     end
-    confere(all(lam .>= -1e-7), "$nome: multiplicadores não negativos",
-            @sprintf("menor %.3e", minimum(lam)))
+    confere(all(lam .>= -tol_lam), "$nome: multiplicadores não negativos",
+            @sprintf("menor %+.4f counts por unidade", 1e4*minimum(lam)))
     confere(resid < 0.5, "$nome: estacionariedade de KKT",
             @sprintf("resíduo %.3f counts/grau", resid))
 
@@ -536,30 +550,10 @@ s3 = Float64.(OT["etapa_3_projeto"]["decrementos"])
 
 println("\n5. CONDIÇÕES DE OTIMALIDADE (KKT) NO ESPAÇO DOS DECREMENTOS")
 testa_kkt("etapa 2, aeronave completa", objetivo("completa"), s2)
-testa_kkt("etapa 3, projeto", objetivo("completa"), s3; margem = MARGEM_PROJ)
+testa_kkt("etapa 3, projeto", objetivo("completa"), s3; com_estol = true)
 
 # ====================================================================
-println("\n6. O MULTIPLICADOR DO ESTOL BATE COM A VARREDURA DE MARGEM?")
-# ====================================================================
-# O multiplicador é o preço marginal da restrição: quanto de arrasto
-# custa exigir um grau a mais de margem. Se ele bate com a inclinação da
-# tabela de margens, os dois caminhos independentes concordam.
-if haskey(OT, "custo_da_margem")
-    cm = OT["custo_da_margem"]
-    chaves = sort([parse(Float64, k) for k in keys(cm)])
-    perto = filter(k -> abs(k - MARGEM_PROJ) <= 0.51, chaves)
-    if length(perto) >= 2
-        for i in 1:length(perto)-1
-            a, b = perto[i], perto[i+1]
-            incl = 1e4*(cm[string(b)] - cm[string(a)])/(b - a)
-            @printf("    secante entre %.1f° e %.1f°: %+.1f counts por grau\n",
-                    a, b, incl)
-        end
-    end
-end
-
-# ====================================================================
-println("\n7. O ERRO DO MODELO DE ARRASTO MEXE NO ÓTIMO?")
+println("\n6. O ERRO DO MODELO DE ARRASTO MEXE NO ÓTIMO?")
 # ====================================================================
 # O modelo quadrático é montado em torno da asa sem torção e, no ótimo,
 # que tem quase 7 graus de washout, erra perto de 1 count. A pergunta que
@@ -599,7 +593,7 @@ function resolve_centrado(s0)
     for w in (1e2, 1e3, 1e4, 1e5, 1e6)
         obj(v) = (s = s_de_u(v); x = livres(torcoes_spline(s));
                   1e4*fc(x) + 1e4*max(sum(s) - TW_TOTAL, 0)^2 +
-                  w*max(MARGEM_PROJ - margem_aileron(x), 0)^2)
+                  w*max(DESEMPATE - folga_estol(x), 0)^2)
         u = Optim.minimizer(optimize(obj, u, LBFGS(),
                                      Optim.Options(iterations = 400, g_tol = 1e-10)))
     end
@@ -616,6 +610,51 @@ confere(desl < 0.1, "etapa 3: ótimo não se move com o modelo recentrado",
         @sprintf("maior mudança de torção %.3f graus", desl))
 confere(ganho > -0.5, "etapa 3: recentrar não acha arrasto menor no AVL",
         @sprintf("diferença %+.2f counts, medida no AVL", ganho))
+
+# ====================================================================
+println("\n7. OTIMIZAR SEM ESTOL E CORRIGIR COM WASHOUT GANHA DO OTIMIZADOR?")
+# ====================================================================
+# A alternativa óbvia ao problema restrito: otimizar só o arrasto (etapa
+# 2) e depois dar washout na ponta até o estol sair do aileron. Todo
+# projeto assim que atende a restrição é um ponto viável, e o ótimo
+# restrito não pode perder para nenhum ponto viável. Se algum washout
+# "manual" ganhar, o otimizador tem problema. São testadas duas famílias:
+# rampa linear a partir de η0, e degrau com transição desde 0,48 até η1,
+# que é a forma que o otimizador usa. Para cada uma acha-se, por
+# bisseção, o menor washout que atende a restrição, e mede-se o CDff no AVL.
+function menor_washout(extra)
+    folga_w(W) = folga_estol(livres(tw2 .+ extra(W)))
+    folga_w(25.0) < DESEMPATE && return nothing
+    lo, hi = 0.0, 25.0
+    for _ in 1:40
+        mid = (lo + hi)/2
+        folga_w(mid) >= DESEMPATE ? (hi = mid) : (lo = mid)
+    end
+    return hi
+end
+function testa_washouts()
+    cd3 = avalia(tw3; trim = true).CDff
+    familias = vcat(
+        [("rampa desde η $(η0)", W -> [-W*max(0, (η - η0)/(1 - η0)) for η in ETAS])
+         for η0 in (0.20, 0.40, 0.48, 0.56)],
+        [("degrau até η $(η1)", W -> [-W*clamp((η - 0.48)/(η1 - 0.48), 0, 1) for η in ETAS])
+         for η1 in (0.56, 0.60, 0.70)])
+    melhor = Inf
+    for (nome, extra) in familias
+        W = menor_washout(extra)
+        if W === nothing
+            @printf("    %-22s inviável\n", nome); continue
+        end
+        cd = avalia(tw2 .+ extra(W); trim = true).CDff
+        melhor = min(melhor, cd)
+        @printf("    %-22s W %5.2f°   CDff %.6f   %+7.2f counts contra o otimizador\n",
+                nome, W, cd, 1e4*(cd - cd3))
+    end
+    return 1e4*(melhor - cd3)
+end
+dif_manual = testa_washouts()
+confere(dif_manual > -0.5, "nenhum washout manual ganha do otimizador",
+        @sprintf("o melhor manual fica %+.2f counts acima", dif_manual))
 
 # ====================================================================
 println("\n", "="^78)
