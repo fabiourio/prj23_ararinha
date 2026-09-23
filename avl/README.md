@@ -171,20 +171,21 @@ dentro do aileron. A causa é o modelo afim de estol, que extrapola de dois
 ângulos e é ligeiramente otimista perto do estol: nos casos medidos, ele
 superestimou a folga entre 0,11 e 0,19 grau. O desempate é esse erro, para que a
 posição do estol valha também na medição direta, que a verificação confere. No
-projeto final a folga pelo modelo é 0,200° e a medida direto é +0,094°.
+projeto final a folga pelo modelo é 0,200° e a medida direto é +0,089°.
 
 ### Onde pôr os nós
 
 O parâmetro que mais importa, e ele só aparece com a restrição ativa. Para
-arrasto puro as nove configurações ficam dentro de 1,2 count umas das outras;
-com a exigência de estol o espalhamento passa de 70 counts (valores do modelo):
+arrasto puro as nove configurações ficam dentro de 0,7 count umas das outras;
+com a exigência de estol o espalhamento passa de 50 counts, e com três nós
+nem existe solução viável (valores do modelo):
 
 | nós | sem restrição | com estol antes de 0,56 |
 |---|---|---|
-| 0,00 0,25 0,50 0,75 1,00 | −12,37 | +16,63 |
-| 0,00 0,22 0,40 0,56 0,75 1,00 | −12,52 | +8,28 |
-| 0,00 0,48 0,56 0,75 1,00 | −12,11 | +0,91 |
-| **0,00 0,30 0,48 0,56 0,70 0,85 1,00** | **−12,26** | **+0,91** |
+| 0,00 0,25 0,50 0,75 1,00 | −10,79 | +26,54 |
+| 0,00 0,22 0,40 0,56 0,75 1,00 | −10,83 | +14,46 |
+| 0,00 0,48 0,56 0,75 1,00 | −10,70 | +4,52 |
+| **0,00 0,30 0,48 0,56 0,70 0,85 1,00** | **−10,72** | **+4,48** |
 
 O que decide é ter um nó em 0,48, logo antes da raiz do aileron em 0,56: a curva
 fica plana até ali e vira depressa depois, sem vazar washout para a região que
@@ -194,20 +195,20 @@ precisa estolar primeiro.
 
 | caso | CDff | counts | Oswald | estol começa em η | CL no estol |
 |---|---|---|---|---|---|
-| sem torção | 0,010030 | - | 0,7983 | 0,923 | 0,954 |
-| 2: completa compensada, sem restrição | 0,008784 | −12,46 | 0,9180 | 0,842 | 1,073 |
-| **3: projeto, estol antes de 0,56** | **0,010045** | **+0,15** | **0,8064** | **0,520** | **1,217** |
+| sem torção | 0,010142 | - | 0,7941 | 0,923 | 0,952 |
+| 2: completa compensada, sem restrição | 0,009055 | −10,87 | 0,8966 | 0,842 | 1,065 |
+| **3: projeto, estol antes de 0,56** | **0,010511** | **+3,69** | **0,7783** | **0,520** | **1,219** |
 
 Torção adotada:
 
 | η | 0,000 | 0,101 | 0,220 | 0,320 | 0,398 | 0,480 | 0,560 | 0,700 | 0,820 | 0,900 | 1,000 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| torção [°] | 0,00 | 0,00 | 0,00 | 0,00 | 0,00 | 0,00 | −2,95 | −5,81 | −5,81 | −5,81 | −5,81 |
+| torção [°] | 0,00 | 0,00 | 0,00 | 0,00 | 0,00 | 0,00 | −3,13 | −6,00 | −6,00 | −6,00 | −6,00 |
 
-A aeronave fica conforme por praticamente o mesmo arrasto da asa sem torção
-(+0,15 count), e o CL em que o estol começa sobe de 0,954 para 1,217, 28% a
-mais, logo abaixo do CLmax de 1,333 que o designTool estima para a aeronave
-limpa. O maior salto entre estações vizinhas é 2,95 graus (1,22 °/m), acima dos
+A aeronave fica conforme por 3,7 counts a mais que a asa sem torção, e o CL em
+que o estol começa sobe de 0,952 para 1,219, 28% a mais, logo abaixo do CLmax
+de 1,333 que o designTool estima para a aeronave limpa. O maior salto entre
+estações vizinhas é 3,13 graus (1,30 °/m), acima dos
 cerca de 0,3 °/m de um transporte, porque a variação de incidência se concentra
 junto à raiz do aileron, onde a restrição age.
 
@@ -215,54 +216,63 @@ Custo de exigir o início do estol mais para dentro:
 
 | estol antes de | CDff | counts | Oswald |
 |---|---|---|---|
-| **0,56** | **0,010045** | **+0,15** | **0,806** |
-| 0,50 e 0,45 | 0,013411 | +33,80 | 0,609 |
-| 0,40 e 0,35 | 0,013564 | +35,34 | 0,603 |
+| **0,56** | **0,010511** | **+3,69** | **0,778** |
+| 0,50 a 0,35 | 0,013446 | +33,04 | 0,614 |
 
 O salto entre 0,56 e 0,50 é grande porque a malha só enxerga os centros das
 faixas (0,439, 0,520, 0,596...): exigir 0,50 tira da região interna a faixa em
-0,520, que é justamente a que estola primeiro no projeto. Por isso 0,45 e 0,50
-dão o mesmo resultado.
+0,520, que é justamente a que estola primeiro no projeto. Daí para dentro o
+resultado é o mesmo: o ótimo passa a estolar em η = 0,243, bem antes de todos
+esses limites.
 
-### Por que o Oswald fica em 0,81
+### Por que o Oswald fica em 0,78
 
 A cascata abaixo, feita pelo `carga_completa.jl` com a torção da etapa 2 e o CL
 fixo, atribui cada queda a uma peça da aeronave:
 
 | configuração | e | Δe |
 |---|---|---|
-| só a asa, sem winglet | 0,982 | - |
-| + winglet | 1,078 | +0,096 |
-| + fuselagem | 1,058 | −0,020 |
-| **+ naceles** | **0,943** | **−0,115** |
-| + empenagens, profundor em zero | 0,932 | −0,011 |
-| compensado, ótimo da etapa 2 | 0,918 | −0,014 |
-| **+ restrição de estol (projeto)** | **0,806** | **−0,112** |
+| só a asa, sem winglet | 0,979 | - |
+| + winglet | 1,075 | +0,096 |
+| + fuselagem | 1,056 | −0,019 |
+| **+ naceles** | **0,923** | **−0,132** |
+| + empenagens, profundor em zero | 0,916 | −0,007 |
+| compensado, ótimo da etapa 2 | 0,897 | −0,020 |
+| **+ restrição de estol (projeto)** | **0,778** | **−0,118** |
 
-A otimização sem restrição entrega 0,918, e a asa isolada com winglet chega a
+A otimização sem restrição entrega 0,897, e a asa isolada com winglet chega a
 1,08. As duas maiores quedas são as naceles e a restrição de estol, cada uma de
-cerca de 0,11.
+cerca de 0,12 a 0,13.
 
-**Alerta sobre as naceles.** Elas estão modeladas como SUPERFÍCIE sustentadora
-em forma de anel, com cerca de 91 m² de malha cada, quase metade da área da
-asa. No VLM um anel em ângulo de ataque gera circulação, esteira e arrasto
-induzido; uma nacele real tem escoamento passante e não se comporta assim. A
-representação usual no AVL para nacele é BODY, que desloca o escoamento sem
-sustentar. O efeito não fica só no valor absoluto: com a mesma torção e o mesmo
-CL, tirar as naceles muda a carga local da asa em até 11% em η = 0,36.
-Comparações entre casos continuam válidas, porque as naceles são as mesmas em
-todos, mas o valor absoluto do Oswald depende dessa escolha de modelagem.
+**Naceles: a modelagem do 737 da disciplina.** No `737.avl` a nacele é uma
+SUPERFÍCIE sustentadora em forma de anel, declarada no mesmo `COMPONENT 1` da
+asa. Aqui ela foi copiada igual, inclusive o componente: entre componentes
+diferentes o AVL usa núcleo finito nos vórtices, e a interação asa-nacele
+mudaria em relação ao modelo de referência. Cada anel tem cerca de 91 m² de
+malha, quase metade da área da asa, e no VLM um anel em ângulo de ataque gera
+circulação, esteira e arrasto induzido, o que uma nacele real, de escoamento
+passante, não faz. O próprio 737 de referência mostra o tamanho desse efeito:
+
+| 737.avl da disciplina | e |
+|---|---|
+| sem as naceles | 0,842 |
+| naceles em anel, componente próprio | 0,792 |
+| **naceles em anel, COMPONENT 1 (como está no arquivo)** | **0,751** |
+
+Ou seja, o Oswald na faixa de 0,75 a 0,80 é o que esta modelagem entrega
+mesmo para o avião de referência, e o nosso 0,778 está nela. Comparações entre
+casos continuam válidas, porque as naceles são as mesmas em todos.
 
 **Estudo, não adotado: nacele como BODY.** Trocando o anel por um corpo de
 revolução com as mesmas dimensões e posição (7,3 m por 4,0 m, bocal elíptico,
 cauda afinando) e refazendo toda a otimização:
 
-| | nacele como anel (atual) | nacele como BODY |
+| | nacele como no 737 (adotado) | nacele como BODY |
 |---|---|---|
-| sem torção | 0,010030, e 0,798 | 0,009485, e 0,824 |
-| etapa 2, sem restrição | 0,008784, e 0,918 | 0,007259, e 1,068 |
-| projeto, estol antes de 0,56 | 0,010045, e 0,806 | 0,008226, e 0,952 |
-| projeto contra a asa sem torção | +0,15 count | −12,6 counts |
+| sem torção | 0,010142, e 0,794 | 0,009485, e 0,824 |
+| etapa 2, sem restrição | 0,009055, e 0,897 | 0,007259, e 1,068 |
+| projeto, estol antes de 0,56 | 0,010511, e 0,778 | 0,008226, e 0,952 |
+| projeto contra a asa sem torção | +3,69 counts | −12,6 counts |
 
 Com a nacele como BODY o problema também fica mais comportado: no estudo de nós
 todas as configurações viáveis ficam entre −6 e −12 counts, e a torção de
@@ -280,16 +290,19 @@ produziram, e passa em todas as checagens.
 - **Física**: monotonicidade e tamanho da torção, coerência entre CDff, CL e
   Oswald, e a posição do estol refeita por varredura direta de ângulo de ataque
   no AVL, sem extrapolar do modelo afim. Na medição direta o estol do projeto
-  começa em η = 0,520, antes da raiz do aileron, com folga de +0,094°.
+  começa em η = 0,520, antes da raiz do aileron, com folga de +0,089°.
 - **KKT no espaço dos decrementos**, necessário porque na reparametrização
   logística ds/du tende a zero junto ao batente, e a estacionariedade em u não
-  distingue um mínimo legítimo de uma parada prematura. O ótimo é um vértice:
-  seis variáveis, quatro batentes de monotonicidade e duas faixas de estol
-  ativas (η = 0,596 e 0,842), com multiplicadores de +19,6 e +6,7 counts por
-  grau nas faixas de estol e resíduo zero. Um dos batentes (s5) tem
-  multiplicador de −0,016 count por grau, zero para fins práticos: é o
-  vestígio da parada perto do batente que a reparametrização causa, e o ganho
-  possível ao sair dele fica abaixo de décimos de count.
+  distingue um mínimo legítimo de uma parada prematura. Foi esse teste que
+  pegou a parada: o LBFGS deixava decrementos de 0,0003 a 0,035 grau que
+  deveriam ser zero, e o resíduo de KKT dava 3,8 counts por grau. O otimizador
+  agora termina com um encaixe, que zera os decrementos abaixo de 0,1 grau e
+  repole os demais direto em s, aceito só se continuar viável e não piorar o
+  arrasto. O ótimo é um vértice: seis variáveis, quatro batentes de
+  monotonicidade e duas faixas de estol ativas (η = 0,596 e 0,842), com
+  multiplicadores de +23,8 e +7,1 counts por grau nas faixas de estol, todos
+  os multiplicadores positivos (o menor, +0,14) e resíduo zero. O cone crítico
+  é vazio: o ótimo é determinado pelas restrições.
 - **O erro do modelo de arrasto não mexe no ótimo.** Remontando o modelo
   centrado no próprio ótimo, onde ele passa a ser exato, e resolvendo de novo,
   os decrementos saem idênticos até a terceira casa e o arrasto medido no AVL
@@ -298,7 +311,7 @@ produziram, e passa em todas as checagens.
   fica num vale raso em vez de num vértice, a torção pode deslizar alguns
   décimos de grau sem mudar o arrasto, e isso não é defeito.
 - **Caminho independente**: refeita a partir da asa sem torção, sem nenhuma
-  semente da busca global, a otimização chega ao mesmo ponto (+0,00 count)
+  semente da busca global, a otimização chega ao mesmo ponto (+0,01 count)
   depois de cerca de 2000 iterações. É esse caminho que o
   `evolucao_3_com_estol.gif` mostra.
 - **Otimizar sem restrição e corrigir depois não ganha.** A alternativa óbvia
@@ -308,13 +321,13 @@ produziram, e passa em todas as checagens.
 
 | etapa 2 + washout manual | washout necessário | contra o otimizador |
 |---|---|---|
-| rampa linear desde η = 0,48 (melhor rampa) | 11,6° | +48,5 counts |
-| degrau até η = 0,56 | 5,2° | +25,8 counts |
-| **degrau até η = 0,60 (melhor manual)** | **4,7°** | **+14,1 counts** |
-| degrau até η = 0,70 | 5,4° | +19,3 counts |
+| rampa linear desde η = 0,48 (melhor rampa) | 12,2° | +53,2 counts |
+| degrau até η = 0,56 | 5,4° | +26,0 counts |
+| **degrau até η = 0,60 (melhor manual)** | **4,8°** | **+13,9 counts** |
+| degrau até η = 0,70 | 5,6° | +20,7 counts |
 
   A rampa começando antes do aileron descarrega também as faixas que precisam
-  estolar primeiro e pede 11° a 18° de washout. O otimizador deixa a asa plana
+  estolar primeiro e pede 10° a 19° de washout. O otimizador deixa a asa plana
   até 0,48 e concentra o washout na raiz do aileron, e mesmo o degrau manual com
   essa forma perde 14 counts porque parte da torção da etapa 2 em vez de
   escolher a torção inteira sabendo da restrição.
@@ -322,3 +335,15 @@ produziram, e passa em todas as checagens.
 Nenhuma etapa encostou no batente superior de 6 graus por intervalo, e a
 torção total ficou abaixo do limite de 12 graus: os únicos batentes ativos são
 os de monotonicidade.
+
+## Alerta: ponto neutro com as naceles do 737
+
+Com as naceles modeladas como no 737, o ponto neutro que o AVL devolve é
+x = 27,38 m (asa sem torção, M = 0,85), à frente do CG traseiro do
+`aft.avl` em 27,72 m: margem estática de −5,0% da CMA no CG traseiro e +18,7%
+no dianteiro. O designTool dá +7,1% no traseiro. Os anéis sustentadores ficam à
+frente da asa e contribuem de forma desestabilizadora; o próprio 737 de
+referência perde cerca de 10% da CMA de margem com eles. Não afeta a
+otimização de torção, que é a CL fixo e compensada, mas pesa no item de ponto
+neutro e derivadas do roteiro: vale discutir com a equipe se o número do
+designTool ou o do AVL é o de referência, ou reportar os dois.

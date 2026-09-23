@@ -236,7 +236,7 @@ end
 
 # ====================================================================
 println("\n", "="^78)
-println("DECOMPOSIÇÃO: QUEM COME OS 14 COUNTS")
+println("DECOMPOSIÇÃO: O QUE CADA PEÇA ACRESCENTA AO INDUZIDO")
 println("="^78)
 # A conta acima mostra que NÃO é arrasto de compensação: na etapa 2 a
 # empenagem está praticamente descarregada e a asa carrega menos que o
@@ -329,9 +329,9 @@ println("""
   com cerca de 91 m² de malha cada, quase metade da área da asa. No VLM
   um anel em ângulo de ataque gera circulação, esteira e portanto
   arrasto induzido. Uma nacele real tem escoamento passante e não se
-  comporta assim; a prática usual no AVL é representá-la como BODY, que
-  desloca o escoamento sem sustentar. Vale conferir se isso muda a
-  torção ótima, e não só o valor absoluto do arrasto.""")
+  comporta assim. A modelagem foi mantida porque é a do 737.avl da
+  disciplina, inclusive o COMPONENT 1 junto com a asa, e com ela o 737
+  de referência também fica com e perto de 0,75.""")
 
 # A pergunta que importa para o projeto: a nacele distorce a CARGA da
 # asa? Se distorcer, a torção ótima foi ajustada em cima de um artefato.

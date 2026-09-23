@@ -570,6 +570,40 @@ function amostra_global(m, me, nos, eta_lim; n = 60000, semente = 20240917)
     return [a[2] for a in achados]
 end
 
+"""
+Encaixe nos batentes de monotonicidade.
+
+A logística resolve a barreira, mas tem um preço: perto de s = 0 a
+derivada ds/du = s(1 - s/DEC_MAX) some, o gradiente em u some junto, e o
+LBFGS para com decrementos de centésimos de grau que deveriam ser zero.
+O ponto fica a menos de 0,1 count do ótimo, mas não satisfaz KKT, e o
+verifica_torcao.jl acusa. O encaixe zera de vez os decrementos abaixo de
+`limiar` e repole os demais direto em s, que estão longe das paredes e
+não precisam da logística. O resultado só é aceito se continuar viável e
+não piorar o arrasto.
+"""
+function encaixa_batentes(m, me, nos, s, eta_lim; limiar = 0.1)
+    zera = s .< limiar
+    any(zera) || return s
+    livre = findall(.!zera)
+    isempty(livre) && return s
+    pen = penalidade_estol(me, eta_lim)
+    monta(v) = (z = zeros(length(s)); z[livre] = v; z)
+    v = s[livre]
+    for w in (1e2, 1e3, 1e4, 1e5, 1e6)
+        f(v) = (z = monta(v); x = livres(torcoes_spline(nos, z));
+                1e4*cd_mod(m, x) + 1e4*excesso_total(z) + w*pen(x))
+        v = Optim.minimizer(optimize(f, v, LBFGS(),
+                                     Optim.Options(iterations = 400, g_tol = 1e-10)))
+    end
+    novo = monta(v)
+    all(0.0 .<= novo .<= DEC_MAX) || return s
+    viavel(me, nos, novo, eta_lim) || return s
+    cd_mod(m, livres(torcoes_spline(nos, novo))) <=
+        cd_mod(m, livres(torcoes_spline(nos, s))) + 1e-9 || return s
+    return novo
+end
+
 "Etapa 3: busca global seguida de polimento local, melhor ótimo viável."
 function otimiza_com_estol(m, me, nos, eta_lim; partidas, n_polir = 8)
     pen = penalidade_estol(me, eta_lim)
@@ -591,6 +625,11 @@ function otimiza_com_estol(m, me, nos, eta_lim; partidas, n_polir = 8)
         s = brutos[1]
         x = livres(torcoes_spline(nos, s))
         melhor = (s = s, x = x, cam = [copy(s)], f = cd_mod(m, x))
+    end
+    s = encaixa_batentes(m, me, nos, melhor.s, eta_lim)
+    if s != melhor.s
+        x = livres(torcoes_spline(nos, s))
+        melhor = (s = s, x = x, cam = vcat(melhor.cam, [copy(s)]), f = cd_mod(m, x))
     end
     return melhor
 end

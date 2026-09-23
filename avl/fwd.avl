@@ -259,10 +259,12 @@ Nacelle
 #Nchordwise  Cspace   Nspanwise  Sspace
 6            1.0      12          0.0
 
-# Sem COMPONENT: asa, empenagens e nacele usam indice automatico e ficam
-# como componentes independentes. Declarar COMPONENT 1 aqui agruparia a
-# nacele com a asa (que recebe o indice 1 automaticamente) e alterava o
-# Cm da aeronave em 0,006.
+# Como no 737.avl da disciplina: anel sustentador no mesmo componente da
+# asa (COMPONENT 1). Entre componentes diferentes o AVL usa nucleo finito
+# nos vortices, e a interacao asa-nacele mudaria em relacao ao modelo de
+# referencia.
+COMPONENT
+1
 
 YDUPLICATE
 0.0
