@@ -1,0 +1,15 @@
+rodada,descricao,CDff_count,e,eta_inicio_estol,alfa_estol_graus,margem_aileron_graus,folga_restricao_graus,status,torcao_graus
+A_prod,"producao reproduzida (partida sem torcao, eps 0,2 grau)",94.935,0.8323,0.4933381582010093,13.176245783694021,0.19980446264100138,-0.000195537358998632,convergiu,+0.00 +3.00 +1.13 -0.26 +0.94 +3.00 -3.32 -3.28 -5.02 -4.65 -3.75
+E_asafus,"asa + fuselagem, sem EH (sem compensacao)",88.133,0.8933,0.4933381582010093,12.493166582405816,0.13148076306033651,-0.0685192369396635,nao convergiu: Inequality constraints incompatible,+0.00 +3.00 +1.69 +0.53 +3.00 +3.00 -2.38 -2.43 -4.11 -3.99 -3.32
+E_fwd,"aeronave completa, CG dianteiro",100.119,,,,,,interrompida (sem convergir; restricao nao atendida),+0.00 +3.00 +0.17 +1.09 -3.13 +3.00 -4.12 -4.07 -5.79 -5.05 -8.00
+eps01,"passo de diferenca finita 0,1 grau",94.911,0.8325,0.4933381582010093,13.119846802496227,0.19933937139372304,-0.0006606286062769695,convergiu,+0.00 +3.00 +1.27 +0.18 +0.83 +3.00 -3.27 -3.22 -4.97 -4.60 -3.68
+eps05,"passo de diferenca finita 0,5 grau",127.268,,,,,,interrompida (sem convergir; restricao nao atendida),+0.00 +3.00 -8.00 -8.00 -8.00 +3.00 -8.00 -8.00 -8.00 -8.00 -8.00
+full_m10,margem de estol de 1 grau sobre o aileron,117.08800000000001,,,,,,interrompida (sem convergir; restricao nao atendida),+0.00 +3.00 -5.04 -4.44 +3.00 +3.00 -8.00 -5.77 -7.82 -6.93 -6.72
+full_m20,margem de estol de 2 graus sobre o aileron,154.041,,,,,,interrompida (sem convergir; restricao nao atendida),+0.00 +3.00 +3.00 +3.00 +3.00 +3.00 -8.00 -8.00 -8.00 -8.00 -8.00
+full_semestol,sem restricao de estol,86.233,0.915,,,,,convergiu,+0.00 +3.00 +0.26 +0.78 -2.39 -1.07 -1.52 -1.84 -2.37 -2.56 -5.38
+ms_alt,partida alternativa,94.914,0.8326,0.4933381582010093,13.151822236024799,0.19986151913094652,-0.00013848086905349222,convergiu,+0.00 +3.00 +1.07 +0.22 +0.77 +3.00 -3.30 -3.25 -4.99 -4.57 -4.20
+ms_washout,partida com washout linear,94.908,0.8327,0.4933381582010093,13.138410668547849,0.20000821142047975,8.211420479742326e-06,convergiu,+0.00 +3.00 +1.16 +0.23 +0.76 +3.00 -3.28 -3.24 -4.98 -4.54 -4.37
+pchip4_m10,"spline PCHIP de 4 nos, margem 1 grau",137.603,0.5778,0.4662300948766655,13.022538828335021,0.7227534236381494,-0.27724657636185057,nao convergiu: Inequality constraints incompatible,+0.00 +3.00 +3.00 +3.00 +3.00 +1.07 -3.05 -8.00 -8.00 -8.00 -8.00
+pchip4_m20,"spline PCHIP de 4 nos, margem 2 graus",137.638,0.5777,0.4662300948766655,13.022538828335021,0.7227534236381494,-1.2772465763618506,nao convergiu: Positive directional derivative for linesearch,+0.00 +3.00 +3.00 +3.00 +3.00 +1.07 -3.05 -8.00 -8.00 -8.00 -8.00
+pl2_m02,"linear por partes, 2 graus de liberdade",99.697,0.7956,0.5467031056259715,14.249678158944834,-0.1988322456022491,-0.3988322456022491,nao convergiu: Positive directional derivative for linesearch,+0.00 +3.00 +1.54 +0.32 -0.63 -1.64 -2.62 -4.33 -5.80 -6.78 -8.00
+pl3_m02,"linear por partes, 3 graus de liberdade",161.802,,,,,,interrompida (sem convergir; restricao nao atendida),+0.00 -8.00 -5.15 -2.75 -0.88 +1.08 +3.00 -0.50 -3.50 -5.50 -8.00
