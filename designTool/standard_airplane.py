@@ -168,7 +168,7 @@ def standard_airplane(name='fokker100'):
                   'tct_w' : 0.08, # t/c of the tip section of the wing
 
                   'Cht' : 0.7, # Horizontal tail volume coefficient
-                  'Lc_h' : 4.6, # Non-dimensional lever of the horizontal tail (lever/wing_mac) (v2: 4.0; recuada ate 2 m do fim da fuselagem)
+                  'Lc_h' : 4.8237, # Non-dimensional lever of the horizontal tail (lever/wing_mac) (v2: 4.0; v3: 4.6; Lab 04: limite da fuselagem com folga de 0,5 m, ver avl/varredura_eh.py)
                   'AR_h' : 4.6, # HT aspect ratio
                   'taper_h' : 0.45, # HT taper ratio
                   'sweep_h' : 0.66, # HT sweep [rad]
