@@ -70,7 +70,10 @@ def ponto(lc):
         it, c = it_para_de_zero(arq, av['M'], av['CL'])
         e = estol(arq, it=it, trim=True, av=av)
         xcg = av[f'xcg_{cg}']
-        r.update({f'it_{cg}': it, f'CD_{cg}': 1e4*c['CD'], f'CDff_{cg}': 1e4*c['CDff'],
+        # CD = CDp + CDff (Trefftz), a mesma definicao do resto do Lab 04; o
+        # CDtot de campo proximo fica so como referencia (CDnf_*)
+        r.update({f'it_{cg}': it, f'CD_{cg}': 1e4*(av['CD0'] + c['CDff']),
+                  f'CDnf_{cg}': 1e4*c['CD'], f'CDff_{cg}': 1e4*c['CDff'],
                   f'e_{cg}': c['e'], f'MS_{cg}': (c['xnp'] - xcg)/av['Cref'],
                   f'alfa_estol_{cg}': e['alfa'], f'CLmax_{cg}': e['CL'],
                   f'de_estol_{cg}': e['de'], f'eta_estol_{cg}': e['eta_crit']})
@@ -100,7 +103,7 @@ def figura(linhas, escolhido):
     lc = np.array([l['Lc_h'] for l in linhas])
     paineis = [
         ('W0 [kgf]', [('W0_kgf', AZUL, None)], None),
-        ('CD compensado [count]', [('CD_fwd', LARANJA, 'CG dianteiro'),
+        ('CD compensado, CDp + CDff (Trefftz) [count]', [('CD_fwd', LARANJA, 'CG dianteiro'),
                                    ('CD_aft', AZUL, 'CG traseiro')], None),
         ('δe no CLmax, CG dianteiro [°]', [('de_estol_fwd', AZUL, None)], -DE_MAX),
         ('margem estática, CG traseiro\n(informativo, não entra em viável)',
