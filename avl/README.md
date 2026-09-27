@@ -88,4 +88,5 @@ o interpretador real.
 | `it` que zera δe | −3,242° (CG dianteiro); −0,964° (CG traseiro) |
 | CLmax (M 0,2) | 1,14 a 1,19 |
 | MS com CG traseiro | AVL −2,9% (M 0,85), +4,1% (M 0,2); designTool +7,3% |
-| Correção recomendada | recuar a asa 0,34 m (+267 kgf) para ter MS ≥ 0 no cruzeiro pelo AVL |
+| PN com e sem naceles | AVL 36,3% / 42,6%; planilha (Torenbeek) 38,7% / 44,7%; designTool (sem naceles) 46,5% (M 0,85) |
+| CG | não alterado; pelo AVL, o CG traseiro teria de avançar 0,2 m (MS = 0) a 0,5 m (MS = 5%) |
