@@ -28,10 +28,13 @@ Escolhas:
     traseiro do item 3 (tab_incidencia.csv do roteiro), M 0,85.
   - CDq: o AVL nao imprime; diferenca finita central em q^ = qc/2V = +-0,005
     com alfa FIXO no alfa do ponto de projeto ("p p <valor>" no OPER; o
-    comando "q q" nao existe no AVL 3.37). Usa o CD de campo proximo
-    (CDvis + CDind do ft): o de Trefftz nao enxerga a rotacao de forma
-    consistente (CLff varia ~60% mais que o CLtot com q). A mesma diferenca
-    finita reproduz o CLq e o Cmq do st (verificacao_q.csv).
+    comando "q q" nao existe no AVL 3.37). Usa o CD de Trefftz (CDp + CDff),
+    a mesma definicao de CD0/CDalfa/CDalfa2 (ajuste da polar) e de CDit/CDde
+    (CDffg1/CDffd2): a tabela inteira fica numa so definicao de arrasto. O
+    valor de campo proximo (CDvis + CDind) vai para verificacao_q.csv como
+    sensibilidade: a razao campo proximo/Trefftz (~2,7x) e a mesma de CDit e
+    CDde, ou seja, e diferenca de definicao, nao efeito da rotacao. A mesma
+    diferenca finita reproduz o CLq e o Cmq do st (verificacao_q.csv).
   - Tabela 4: momentos de inercia do designTool (moment_of_inertia) com a
     fracao de combustivel do ponto de projeto e 100% de carga paga, em torno
     do CG dessa condicao (x) e da linha z = 0 do designTool (eixos do
@@ -180,8 +183,15 @@ def tabela9(t4, t6, t7, st, sb, fd):
     linhas = []
 
     def add(par, expl, bruto, final, conv, fonte):
+        # valor_4as: 4 algarismos significativos (o AVL imprime alguns com so 3,
+        # p. ex. CDffd2 = 0.000117), e o que vai para o relatorio
+        try:
+            v4 = float(f'{float(final):.4g}')
+        except (TypeError, ValueError):
+            v4 = final
         linhas.append({'parametro': par, 'explicacao': expl, 'valor_avl_bruto': bruto,
-                       'valor_final': final, 'conversao': conv, 'fonte': fonte})
+                       'valor_final': final, 'valor_4as': v4, 'conversao': conv,
+                       'fonte': fonte})
 
     for l in t4:
         add(l['parametro'], l['explicacao'], '', l['valor'],
@@ -202,8 +212,9 @@ def tabela9(t4, t6, t7, st, sb, fd):
     add('CD0', 'CD para alfa = 0 (ajuste)', '', v7['CD0'], '', 'Tabela 7 (exercicio 5.b)')
     add('CDa', 'termo linear da polar [1/rad]', '', v7['CDa'], '', 'Tabela 7 (exercicio 5.b)')
     add('CDa2', 'termo quadratico da polar [1/rad2]', '', v7['CDa2'], '', 'Tabela 7 (exercicio 5.b)')
-    add('CDq', 'dCD/dq [1/rad]', '', fd['CDq'],
-        f'diferenca finita central em qc/2V = +-{DQ} (alfa fixo), CD de campo proximo',
+    add('CDq', 'dCD/dq [1/rad]', '', fd['CDq_trefftz'],
+        f'diferenca finita central em qc/2V = +-{DQ} (alfa fixo), CDp + CDff (Trefftz), '
+        'consistente com CD0/CDalfa/CDit/CDde',
         'AVL ft ("p p <valor>")')
     av_st('CDit', 'dCD/dit [1/rad]', 'CDffg1', por_grau=True)
     av_st('CDde', 'dCD/dde [1/rad]', 'CDffd2', por_grau=True)
@@ -272,8 +283,10 @@ def main(argv=None):
             'erro_rel': (fd[k]/st[k] - 1) if k in st else float('nan')}
            for k in ('CLq', 'Cmq', 'CDq', 'CDq_trefftz', 'CLq_trefftz')]
     for v in ver:
-        v['observacao'] = {'CDq': 'adotado (campo proximo: CDvis + CDind)',
-                           'CDq_trefftz': 'nao adotado (Trefftz)',
+        v['observacao'] = {'CDq': 'sensibilidade (campo proximo: CDvis + CDind; ~2,7x o de '
+                                  'Trefftz, mesma razao de CDit e CDde)',
+                           'CDq_trefftz': 'adotado na Tabela 9 (CDp + CDff, mesma definicao '
+                                          'das demais derivadas de arrasto)',
                            'CLq_trefftz': 'Trefftz nao reproduz o CLq do st com rotacao'}.get(
             v['grandeza'], 'conferencia do metodo contra o st')
     grava_csv(os.path.join(saida, 'verificacao_q.csv'), ver)

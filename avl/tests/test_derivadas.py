@@ -77,7 +77,10 @@ def test_tabela9_convencoes():
     t4 = [{'parametro': 'zp', 'explicacao': '', 'valor': 3.0, 'fonte': 'designTool'}]
     t6 = [{'parametro': 'CL0', 'valor': 0.1}, {'parametro': 'CM0', 'valor': -0.2}]
     t7 = [{'parametro': k, 'valor': v} for k, v in (('CD0', 0.02), ('CDa', 0.01), ('CDa2', 0.5))]
-    t9 = {l['parametro']: l for l in tabela9(t4, t6, t7, st, sb, {'CDq': 0.3})}
+    # CDq da Tabela 9 e o de Trefftz (mesma definicao de CD0/CDit/CDde);
+    # o de campo proximo fica so como sensibilidade
+    t9 = {l['parametro']: l for l in tabela9(t4, t6, t7, st, sb,
+                                                 {'CDq': 0.9, 'CDq_trefftz': 0.3})}
     g = 180/np.pi
     assert t9['CLde']['valor_final'] == pytest.approx(st['CLd2']*g)
     assert t9['CDit']['valor_final'] == pytest.approx(st['CDffg1']*g)

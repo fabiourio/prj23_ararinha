@@ -358,9 +358,11 @@ def item4(arqs, av, its, saida):
             f'(eta = {ETA_AILERON[0]:.2f}).')
     ok = all(l['estol_inicia_antes_do_aileron'] == 'sim' for l in linhas)
     notas.append('  Conclusao: ' + (
-        'nos quatro casos o estol comeca na parte interna da asa, antes da raiz do aileron: '
-        'o aileron continua efetivo no inicio do estol e a separacao a dentro tende a dar '
-        'aviso (buffet na EH) e arfagem a picar, caracteristica adequada.' if ok else
+        'nos quatro casos o estol comeca na parte interna da asa, antes da raiz do aileron, '
+        'como exigido. A margem, porem, e pequena: o inicio fica so ~2 m para dentro da raiz '
+        'do aileron e toda a asa externa esta a poucos centesimos do clmax no estol '
+        '(estol quase simultaneo na asa externa, efeito da restricao com desempate de 0,2 '
+        'grau na otimizacao de torcao). Criterio atendido com margem pequena.' if ok else
         'em pelo menos um caso o estol comeca sobre o aileron ou para fora dele: perda de '
         'controle lateral no estol e tendencia a cair de asa -- caracteristica NAO adequada '
         '(corrigir com torcao/perfis de ponta).'))
@@ -520,7 +522,10 @@ def itens567(arqs, av, its, estol_res, saida):
                      f'graus entre CL = {p["CL"].min():.2f} e {p["CL"].max():.3f}; '
                      f'no ponto de projeto de = {proj[chave]["de"]:+.3f} graus; '
                      f'|de|max = {dmax:.2f} graus = {100*dmax/DE_LIMITE:.0f}% de {DE_LIMITE:.0f} graus '
-                     f'({"adequado" if dmax < 0.8*DE_LIMITE else "margem pequena"}).')
+                     f'(amplitude {"adequada" if dmax < 0.8*DE_LIMITE else "com margem pequena"}'
+                     + ('' if incl < 0 else
+                        '; porem o gradiente invertido indica aeronave estaticamente instavel '
+                        'no cruzeiro com este CG, segundo o AVL') + ').')
     notas.append(f'  Referencia: autoridade tipica de profundor +-{DE_LIMITE:.0f} graus; o uso '
                  'de ate ~80% dela no envelope de cruzeiro deixa margem para manobra e rajada.')
     return pol, proj, notas
