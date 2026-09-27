@@ -1,0 +1,148 @@
+{
+  "descricao": "Cht e Delta xr_w exigidos para MS_aft >= 5% (AVL, M 0,2) e MS_aft >= 0 (AVL, M 0,85), com a penalidade de W0 em relacao ao projeto entregue. Interpolacao linear na varredura.",
+  "W0_entregue_kgf": 288764.0,
+  "criterios": {
+    "AVL_M0.2_MS5": "MS_aft >= 0,05 (AVL, M 0,2)",
+    "AVL_M0.85_MS0": "MS_aft >= 0 (AVL, M 0,85)",
+    "ambos": "os dois criterios"
+  },
+  "A_Cht": {
+    "hipoteses": "Lc_h = 4,8237 fixo; designTool recalcula S_h, W0 e CGs",
+    "exigido": {
+      "AVL_M0.2_MS5": {
+        "Cht": 0.7192386199778513,
+        "W0_kgf": 289102.51623078587,
+        "dW0_kgf": 338.51623078587,
+        "dW0_pct": 0.11722937443237047,
+        "MS_aft_avl_M0.85": -0.021677305122993505,
+        "MS_aft_avl_M0.2": 0.04999999999999998,
+        "MS_aft_dt": 0.08030015607683418,
+        "S_h_m2": 54.9949080420198,
+        "S_v_m2": 61.47216666666667,
+        "Lc_h": 4.8237,
+        "alpha_tipback_graus": 15.288957023673142,
+        "alpha_tailstrike_graus": 10.060361606021251,
+        "frac_nlg_aft": 0.06243229896507946,
+        "folga_fus_m": 0.488537191668737
+      },
+      "AVL_M0.85_MS0": {
+        "Cht": 0.7736222089965562,
+        "W0_kgf": 290057.37511805433,
+        "dW0_kgf": 1293.3751180543331,
+        "dW0_pct": 0.4479004024235511,
+        "MS_aft_avl_M0.85": -6.938893903907228e-18,
+        "MS_aft_avl_M0.2": 0.0748899234957246,
+        "MS_aft_dt": 0.09999810024401652,
+        "S_h_m2": 59.15322267363784,
+        "S_v_m2": 61.47216666666667,
+        "Lc_h": 4.8237,
+        "alpha_tipback_graus": 15.109591361741792,
+        "alpha_tailstrike_graus": 10.060361606021251,
+        "frac_nlg_aft": 0.0616645620952577,
+        "folga_fus_m": 0.45582870989026303
+      },
+      "ambos": {
+        "Cht": 0.7736222089965562,
+        "W0_kgf": 290057.37511805433,
+        "dW0_kgf": 1293.3751180543331,
+        "dW0_pct": 0.4479004024235511,
+        "MS_aft_avl_M0.85": -6.938893903907228e-18,
+        "MS_aft_avl_M0.2": 0.0748899234957246,
+        "MS_aft_dt": 0.09999810024401652,
+        "S_h_m2": 59.15322267363784,
+        "S_v_m2": 61.47216666666667,
+        "Lc_h": 4.8237,
+        "alpha_tipback_graus": 15.109591361741792,
+        "alpha_tailstrike_graus": 10.060361606021251,
+        "frac_nlg_aft": 0.0616645620952577,
+        "folga_fus_m": 0.45582870989026303
+      }
+    }
+  },
+  "B_xr_w": {
+    "hipoteses": "asa, motores (x_n) e trem principal (x_mlg) deslocados juntos; bordo de fuga da raiz da EH em L_f - 0,5 m (Lc_h recalculado); bordo de ataque da raiz da EV no mesmo x (Lb_v recalculado); Cht e Cvt fixos; carga paga e tripulacao fixas",
+    "exigido": {
+      "AVL_M0.2_MS5": {
+        "dxr_w_m": 0.10481833016770596,
+        "W0_kgf": 288846.2944453462,
+        "dW0_kgf": 82.29444534622598,
+        "dW0_pct": 0.028498859049674863,
+        "MS_aft_avl_M0.85": -0.020405471061063513,
+        "MS_aft_avl_M0.2": 0.05,
+        "MS_aft_dt": 0.08150704149688326,
+        "S_h_m2": 53.69580760860024,
+        "S_v_m2": 61.66634448435623,
+        "Lc_h": 4.808322540633056,
+        "alpha_tipback_graus": 15.908287059881685,
+        "alpha_tailstrike_graus": 10.122686801624567,
+        "frac_nlg_aft": 0.064833159631918,
+        "folga_fus_m": 0.500160303087586
+      },
+      "AVL_M0.85_MS0": {
+        "dxr_w_m": 0.34073772437283145,
+        "W0_kgf": 289031.4488727552,
+        "dW0_kgf": 267.4488727552234,
+        "dW0_pct": 0.09261849564183855,
+        "MS_aft_avl_M0.85": 3.469446951953614e-18,
+        "MS_aft_avl_M0.2": 0.07019457441495205,
+        "MS_aft_dt": 0.09995812846390964,
+        "S_h_m2": 54.08528768472157,
+        "S_v_m2": 62.105780570833176,
+        "Lc_h": 4.773694502677349,
+        "alpha_tipback_graus": 17.152647346873106,
+        "alpha_tailstrike_graus": 10.264565596406872,
+        "frac_nlg_aft": 0.06959003098613767,
+        "folga_fus_m": 0.5000050474474863
+      },
+      "ambos": {
+        "dxr_w_m": 0.34073772437283145,
+        "W0_kgf": 289031.4488727552,
+        "dW0_kgf": 267.4488727552234,
+        "dW0_pct": 0.09261849564183855,
+        "MS_aft_avl_M0.85": 3.469446951953614e-18,
+        "MS_aft_avl_M0.2": 0.07019457441495205,
+        "MS_aft_dt": 0.09995812846390964,
+        "S_h_m2": 54.08528768472157,
+        "S_v_m2": 62.105780570833176,
+        "Lc_h": 4.773694502677349,
+        "alpha_tipback_graus": 17.152647346873106,
+        "alpha_tailstrike_graus": 10.264565596406872,
+        "frac_nlg_aft": 0.06959003098613767,
+        "folga_fus_m": 0.5000050474474863
+      }
+    },
+    "trem_de_pouso_ok": true
+  },
+  "conferencia_ponto_entregue": {
+    "A": {
+      "MS_aft_obtido": {
+        "AVL_M0.85": -0.02937287608178083,
+        "AVL_M0.2": 0.04114015564135578,
+        "designTool": 0.0733018547142821
+      },
+      "MS_aft_entregue": {
+        "AVL_M0.85": -0.029,
+        "AVL_M0.2": 0.041,
+        "designTool": 0.073
+      },
+      "tolerancia": 0.002,
+      "W0_kgf": 288764.41080342693,
+      "ok": true
+    },
+    "B": {
+      "MS_aft_obtido": {
+        "AVL_M0.85": -0.02937287608178083,
+        "AVL_M0.2": 0.04114015564135578,
+        "designTool": 0.0733018547142821
+      },
+      "MS_aft_entregue": {
+        "AVL_M0.85": -0.029,
+        "AVL_M0.2": 0.041,
+        "designTool": 0.073
+      },
+      "tolerancia": 0.002,
+      "W0_kgf": 288764.41080342693,
+      "ok": true
+    }
+  }
+}

@@ -11,6 +11,10 @@ O peso no ponto de projeto segue a definicao do Lab 03 (peso medio de
 cruzeiro, 229.669,3 kgf com Lc_h = 4,6). Para outros Lc_h mantem-se a mesma
 fracao de combustivel, com 100% de carga paga, e o peso e recalculado com o
 W_empty e o W_fuel do designTool.
+
+aeronave_mod(overrides) faz o mesmo para inputs arbitrarios do designTool
+(estudos de sensibilidade, ex.: sensibilidade_estabilidade.py), sem mudar
+o comportamento de aeronave(Lc_h).
 '''
 
 import copy
@@ -50,10 +54,8 @@ def fracao_combustivel():
     return (W - tm['W_empty'] - inp['W_payload'] - inp['W_crew'])/tm['W_fuel']
 
 
-@functools.lru_cache(maxsize=None)
-def _aeronave_cache(Lc_h):
-    '''Dicionario da aeronave para um Lc_h (cru, compartilhado pelo cache).'''
-    ap = _analisa(Lc_h)
+def _dicionario(ap):
+    '''Dicionario da aeronave a partir de um designTool ja analisado.'''
     inp, geo = ap['inputs'], ap['geometry']
     tm, bal = ap['thrust_matching'], ap['balance']
 
@@ -70,7 +72,7 @@ def _aeronave_cache(Lc_h):
     _, _, drag = aerodynamics(ap, Mach=M, altitude=h, CL=CL)
 
     return {
-        'Lc_h': float(Lc_h),
+        'Lc_h': float(inp['Lc_h']),
         'W0': tm['W0'], 'W': W, 'W_kgf': W/gravity, 'W0_kgf': tm['W0']/gravity,
         'fuel_frac': fracao_combustivel(),
         'M': M, 'h': h, 'rho': rho, 'a': a_inf, 'V': V, 'CL': CL,
@@ -92,24 +94,54 @@ def _aeronave_cache(Lc_h):
     }
 
 
+@functools.lru_cache(maxsize=None)
+def _aeronave_cache(Lc_h):
+    '''Dicionario da aeronave para um Lc_h (cru, compartilhado pelo cache).'''
+    return _dicionario(_analisa(Lc_h))
+
+
 def aeronave(Lc_h=LC_H_BASE):
     '''Dicionario da aeronave para um Lc_h. Copia independente do cache: pode
     ser modificado livremente sem afetar chamadas futuras.'''
     return copy.deepcopy(_aeronave_cache(float(Lc_h)))
 
 
-def _fim_eh(Lc_h):
+def analisa_mod(overrides=None):
+    '''
+    Roda o designTool com standard_airplane('my_airplane') e os inputs
+    trocados por `overrides` (dict {nome_do_input: valor}); devolve o
+    dicionario completo do designTool. Sem overrides e a aeronave entregue.
+    '''
     ap = standard_airplane('my_airplane')
+    ap['inputs'].update(copy.deepcopy(overrides or {}))
+    analyze(ap, print_log=False, plot=False)
+    return ap
+
+
+def aeronave_mod(overrides=None):
+    '''
+    Como aeronave(), mas para inputs arbitrarios do designTool (estudos de
+    sensibilidade: Cht, xr_w, x_n, ...). Mesma definicao de peso de projeto
+    (fracao de combustivel do Lab 03, 100% de carga paga). Sem cache: cada
+    chamada roda o designTool e devolve um dicionario novo.
+    '''
+    return _dicionario(analisa_mod(overrides))
+
+
+def _fim_eh(Lc_h, overrides=None):
+    ap = standard_airplane('my_airplane')
+    ap['inputs'].update(copy.deepcopy(overrides or {}))
     ap['inputs']['Lc_h'] = float(Lc_h)
     geometry(ap)
     return ap['geometry']['xr_h'] + ap['geometry']['cr_h'], ap['inputs']['L_f']
 
 
-def lc_h_maximo(folga=FOLGA_FUSELAGEM, lo=4.0, hi=6.0, tol=1e-5):
-    '''Maior Lc_h com o bordo de fuga da raiz da EH a `folga` do fim da fuselagem.'''
+def lc_h_maximo(folga=FOLGA_FUSELAGEM, lo=4.0, hi=6.0, tol=1e-5, overrides=None):
+    '''Maior Lc_h com o bordo de fuga da raiz da EH a `folga` do fim da
+    fuselagem. `overrides`: inputs do designTool trocados (ex.: xr_w, Cht).'''
     while hi - lo > tol:
         mid = 0.5*(lo + hi)
-        fim, L_f = _fim_eh(mid)
+        fim, L_f = _fim_eh(mid, overrides)
         if fim <= L_f - folga:
             lo = mid
         else:
