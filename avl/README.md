@@ -33,6 +33,16 @@ De dentro de `avl/`, na ordem abaixo:
 
 Testes: `python -m pytest tests -q` (41 testes).
 
+Material complementar:
+
+- `investigacao_torcao/`: verificação da otimização de torção, com o
+  histórico de convergência, múltiplas partidas, margens de estol maiores,
+  parametrizações suaves e o caso sem EH. `python figuras_investigacao.py`
+  refaz as figuras e o `resumo.csv` a partir de `runs/`.
+- `planilha_pn/`: planilha de ponto neutro da disciplina (Torenbeek)
+  preenchida com a geometria final, na versão original recebida e na
+  corrigida. Veja o README da pasta.
+
 O `python.exe` da Microsoft Store é só um lançador e termina logo; o
 processo real é o `python3.13.exe`. Para acompanhar execuções longas, rode
 o interpretador real.
