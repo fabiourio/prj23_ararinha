@@ -45,3 +45,4 @@ historico.pickle
 
 # Arquivos temporarios do AVL gerados pelos scripts do Lab 04
 avl/resultados/_tmp/
+avl/resultados/varredura/

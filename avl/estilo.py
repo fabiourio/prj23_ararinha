@@ -1,5 +1,11 @@
 '''Estilo comum das figuras: marcas finas, grade discreta, paleta fixa.'''
 
+import sys
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except AttributeError:
+    pass
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt

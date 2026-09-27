@@ -1,0 +1,12 @@
+{
+  "Lc_h": 4.8237,
+  "monotono": true,
+  "lc_max": 4.823738098144531,
+  "restricoes": {
+    "folga_fus_m": 0.5,
+    "folga_sombra_graus_etapa2": 2.0,
+    "de_max_graus": 20.0,
+    "ms_min": 0.05,
+    "tol_cd_count": 0.3
+  }
+}
