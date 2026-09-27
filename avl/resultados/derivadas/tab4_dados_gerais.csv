@@ -1,0 +1,15 @@
+parametro,explicacao,valor,fonte,observacao
+Sref,area de referencia [m2],368.833,designTool,
+cref,corda de referencia [m],6.89949,designTool,CMA da asa
+bref,envergadura de referencia [m],60.1518,designTool,
+m,massa da aeronave [kg],229268.8,designTool,"W/g no ponto de projeto, W = 2249127.0 N"
+Ixx,momento de inercia [kg.m2],15116733.0,designTool,"moment_of_inertia(fuel_frac = 0.4510, payload_frac = 1,0); origem no CG da condicao, z = 0 do designTool"
+Iyy,momento de inercia [kg.m2],42968065.2,designTool,"moment_of_inertia(fuel_frac = 0.4510, payload_frac = 1,0); origem no CG da condicao, z = 0 do designTool"
+Izz,momento de inercia [kg.m2],55951147.5,designTool,"moment_of_inertia(fuel_frac = 0.4510, payload_frac = 1,0); origem no CG da condicao, z = 0 do designTool"
+Ixz,momento de inercia [kg.m2],1207315.2,designTool,"moment_of_inertia(fuel_frac = 0.4510, payload_frac = 1,0); origem no CG da condicao, z = 0 do designTool; Ixz = soma m (x-xcg) z, mesmo sinal nos eixos do corpo (x frente, z baixo)"
+ip,incidencia do motor [graus],0,designTool,o designTool nao define incidencia de motor: eixo do motor paralelo ao eixo x
+xp,posicao longitudinal do motor [m],21.65,designTool,"centro da nacele x_n + L_n/2 = 18 + 7.3/2; origem no nariz, x para tras; xp - xcg_aft = -6.0701 m"
+zp,posicao vertical do motor [m] (sinal invertido),3,designTool,"-z_n, z_n = -3 m (designTool, z para cima, origem no nariz); positivo = abaixo da linha z = 0"
+Tmax,tracao maxima [N],195551.5,designTool,"2 motores: T0 = 1026000 N (nivel do mar, estatico) x kT = 0.19060 (engineTSFC, M 0.85, h 10668 m)"
+V,velocidade de voo [m/s],252.099,ponto de projeto,
+h,altitude de voo [m],10668,ponto de projeto,

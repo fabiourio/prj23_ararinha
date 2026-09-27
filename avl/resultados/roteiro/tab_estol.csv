@@ -1,0 +1,5 @@
+cg,trimagem,it_graus,M,alfa_max_graus,CLmax,de_graus,eta_crit,y_crit_m,estol_inicia_antes_do_aileron,excesso_max_cl_norm
+fwd,sem,-3.24228,0.2,13.1832,1.17307,0,0.493338,14.8376,sim,0.00298761
+fwd,com,-3.24228,0.2,13.196,1.13851,-7.54472,0.493338,14.8376,sim,0.00298761
+aft,sem,-0.963792,0.2,13.1764,1.19252,0,0.493338,14.8376,sim,0.00308761
+aft,com,-0.963792,0.2,13.1761,1.19329,0.16833,0.493338,14.8376,sim,0.00308761

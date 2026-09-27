@@ -1,0 +1,6 @@
+grandeza,diferenca_finita,AVL_st,erro_rel,observacao
+CLq,6.859,6.86626,-0.00105749,conferencia do metodo contra o st
+Cmq,-36.379,-36.4196,-0.00111536,conferencia do metodo contra o st
+CDq,0.50291,nan,nan,adotado (campo proximo: CDvis + CDind)
+CDq_trefftz,0.17855,nan,nan,nao adotado (Trefftz)
+CLq_trefftz,10.823,nan,nan,Trefftz nao reproduz o CLq do st com rotacao

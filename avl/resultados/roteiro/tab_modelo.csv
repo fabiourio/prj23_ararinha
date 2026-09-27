@@ -1,0 +1,25 @@
+parametro,fwd,aft,unidade,observacao
+arquivo,fwd.avl,aft.avl,,
+Mach,0.85,0.85,-,
+Sref,368.833,368.833,m2,area de referencia do designTool (asa trapezoidal)
+Cref,6.8995,6.8995,m,
+Bref,60.1518,60.1518,m,
+Xref,26.0805,27.7201,m,CG dianteiro / traseiro do designTool (origem no nariz)
+Zref,0,0,m,
+CDp,0.01468,0.01468,-,CD0 do designTool no ponto de projeto
+superficie 1: Wing,185.432,185.432,m2,area integrada pelo AVL; malha 8 (corda) x 60 (envergadura)
+superficie 2: Wing (YDUP),185.432,185.432,m2,area integrada pelo AVL; malha 8 (corda) x 60 (envergadura)
+superficie 3: Winglet,3.40849,3.40849,m2,area integrada pelo AVL; malha 8 (corda) x 4 (envergadura)
+superficie 4: Winglet (YDUP),3.40849,3.40849,m2,area integrada pelo AVL; malha 8 (corda) x 4 (envergadura)
+superficie 5: Horizontal tail,26.7781,26.7781,m2,area integrada pelo AVL; malha 8 (corda) x 20 (envergadura)
+superficie 6: Horizontal tail (YDUP),26.7781,26.7781,m2,area integrada pelo AVL; malha 8 (corda) x 20 (envergadura)
+superficie 7: Vertical tail,61.4723,61.4723,m2,area integrada pelo AVL; malha 8 (corda) x 6 (envergadura)
+superficie 8: Nacelle,90.6889,90.6889,m2,area integrada pelo AVL; malha 6 (corda) x 12 (envergadura)
+superficie 9: Nacelle (YDUP),90.6889,90.6889,m2,area integrada pelo AVL; malha 6 (corda) x 12 (envergadura)
+fuselagem (BODY),nbody = 80,nbody = 80,,fuselage_reamostrada.dat (BFILE)
+torcao da asa (Ainc por secao),0.000 3.000 1.126 -0.258 0.935 3.000 -3.319 -3.276 -5.019 -4.655 -3.749,0.000 3.000 1.126 -0.258 0.935 3.000 -3.319 -3.276 -5.019 -4.655 -3.749,graus,eta = 0.000 0.101 0.220 0.320 0.398 0.480 0.560 0.700 0.820 0.900 1.000
+d1,aileron,aileron,,"asa, eta 0.56-0.90, charneira em 73% da corda, SgnDup -1"
+d2,elevator,elevator,,"EH inteira, charneira em 70% da corda, SgnDup +1"
+d3,rudder,rudder,,"EV inteira, charneira em 70% da corda"
+variavel de projeto 1,it,it,graus,incidencia da EH (DESIGN it 1.0)
+perfis da asa,Lab 03 (airfoils/),Lab 03 (airfoils/),,EH e EV: NACA 0010

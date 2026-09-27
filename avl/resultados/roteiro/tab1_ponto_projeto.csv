@@ -1,0 +1,10 @@
+parametro,explicacao,valor,observacao
+W0,peso maximo de decolagem [N],2832778.9,288764.4 kgf; Lc_h = 4.8237
+W,peso no ponto de projeto [N],2249127.0,"fracao de combustivel 0.4510 (mesmo ponto do Lab 03), 100% de carga paga; W = 229268.8 kgf"
+h,altitude [m],10668,
+rho,densidade do ar [kg/m3],0.380455,
+a,velocidade do som [m/s],296.587,
+M,Mach [-],0.85,
+V,velocidade [m/s],252.099,
+CL,CL de projeto [-],0.504393,
+Sref,area de referencia [m2],368.833,

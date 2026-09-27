@@ -1,0 +1,9 @@
+fonte,M,cg,arquivo,xnp_m,xnp_pctCMA,xcg_m,xcg_pctCMA,MS,observacao
+AVL,0.85,fwd,fwd.avl,27.535,36.5296,26.0805,15.4496,0.2108,"st no CL de projeto, it = -3.242, compensado"
+AVL,0.85,aft,aft.avl,27.5174,36.2751,27.7201,39.2124,-0.0293729,"st no CL de projeto, it = -0.964, compensado"
+designTool,0.85,fwd,,28.2258,46.5425,26.0805,15.4496,0.31093,balance.py
+designTool,0.85,aft,,28.2258,46.5425,27.7201,39.2124,0.0733019,balance.py
+AVL,0.2,fwd,fwd.avl,28.0193,43.5494,26.0805,15.4496,0.280998,"st no CL de projeto, it = -3.242, compensado"
+AVL,0.2,aft,aft.avl,28.0039,43.3264,27.7201,39.2124,0.0411402,"st no CL de projeto, it = -0.964, compensado"
+designTool,0.2,fwd,,28.421,49.3719,26.0805,15.4496,0.339223,formulas de balance.py com Mach livre (ponto_neutro.np_designtool)
+designTool,0.2,aft,,28.421,49.3719,27.7201,39.2124,0.101596,formulas de balance.py com Mach livre (ponto_neutro.np_designtool)

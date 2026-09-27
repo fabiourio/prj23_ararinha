@@ -1,0 +1,3 @@
+parametro,explicacao,valor,fonte,condicao
+CL0,CL para alfa = 0,0.03668,AVL ft,"alfa = 0, it = 0, de = 0, beta = 0, p = r = 0, da = dr = 0, M 0.85, Xref = 27.7201 m (CG traseiro)"
+CM0,CM para alfa = 0,-0.066,AVL ft,"alfa = 0, it = 0, de = 0, beta = 0, p = r = 0, da = dr = 0, M 0.85, Xref = 27.7201 m (CG traseiro)"

@@ -1,0 +1,39 @@
+Lab 04 -- roteiro (itens 1 a 8). Lc_h = 4.8237. Arquivos: fwd.avl, aft.avl.
+
+Escolhas:
+  - Polares, CL x alfa e CL x de no Mach de cruzeiro (M 0.85, h 10668 m).
+  - CLmax pelo metodo da secao critica em M 0,2 (baixa velocidade), clmax dos perfis do Lab 03; cada polar vai de CL = -0,5 ate o CLmax do caso correspondente do item 4 (sem trimagem -> CLmax sem trimagem; compensada -> CLmax compensado). Em M 0,85 o alfa desse CL e menor que o alfa_max de M 0,2.
+  - it de cada CG = o do item 3 (fwd -3.242 graus, aft -0.964 graus), mantido nos itens 4 a 8.
+  - Passo de alfa das varreduras: 0.5 grau.
+
+Item 4 -- caracteristicas de estol (metodo da secao critica, M 0,2):
+  CG dianteiro, sem trimagem: alfa_max = 13.18 graus, CLmax = 1.173, de = 0.00 graus; estol inicia em eta = 0.493 (y = 14.84 m), para dentro da raiz do aileron (eta = 0.56).
+  CG dianteiro, com trimagem: alfa_max = 13.20 graus, CLmax = 1.139, de = -7.54 graus; estol inicia em eta = 0.493 (y = 14.84 m), para dentro da raiz do aileron (eta = 0.56).
+  CG traseiro, sem trimagem: alfa_max = 13.18 graus, CLmax = 1.193, de = 0.00 graus; estol inicia em eta = 0.493 (y = 14.84 m), para dentro da raiz do aileron (eta = 0.56).
+  CG traseiro, com trimagem: alfa_max = 13.18 graus, CLmax = 1.193, de = 0.17 graus; estol inicia em eta = 0.493 (y = 14.84 m), para dentro da raiz do aileron (eta = 0.56).
+  Conclusao: nos quatro casos o estol comeca na parte interna da asa, antes da raiz do aileron: o aileron continua efetivo no inicio do estol e a separacao a dentro tende a dar aviso (buffet na EH) e arfagem a picar, caracteristica adequada.
+  As faixas da raiz e da juncao com o winglet sao excluidas da busca (singularidades de canto do VLM; ver estol.py).
+
+Item 5 -- CD no CL de projeto:
+  (a) CD_AVL = 0.02471  designTool = 0.02383  diferenca = +8.8 counts
+  (b) CD_AVL = 0.02408  designTool = 0.02383  diferenca = +2.5 counts
+  (c) CD_AVL = 0.02471  designTool = 0.02383  diferenca = +8.8 counts
+  (d) CD_AVL = 0.02408  designTool = 0.02383  diferenca = +2.5 counts
+  CD do AVL = CDp (CD0 do designTool, constante) + CDi do plano de Trefftz (CDff). O CDi de campo proximo (CDind, que entra no CDtot do ft) nao e usado: com a fuselagem e os aneis das naceles ele fica irrealisticamente baixo (e implicito > 1); o CDtot fica em tab_polar_ponto_projeto.csv/polares.csv so para referencia.
+  O designTool soma ainda o arrasto de onda (CDwave = 0.00050 no ponto de projeto) e usa o seu proprio fator de Oswald (e = 0.7958).
+Item 7 -- deflexoes de profundor (casos compensados):
+  (c) CG dianteiro: d(de)/dCL = -7.05 graus (negativo: gradiente de profundor normal, estavel).
+  (c) CG dianteiro: de de -4.70 a +6.88 graus entre CL = -0.50 e 1.139; no ponto de projeto de = +0.000 graus; |de|max = 6.88 graus = 28% de 25 graus (adequado).
+  (d) CG traseiro: d(de)/dCL = +1.07 graus (positivo: gradiente invertido -- margem estatica negativa no Mach de cruzeiro, ver item 8).
+  (d) CG traseiro: de de -1.14 a +0.68 graus entre CL = -0.50 e 1.193; no ponto de projeto de = -0.000 graus; |de|max = 1.14 graus = 5% de 25 graus (adequado).
+  Referencia: autoridade tipica de profundor +-25 graus; o uso de ate ~80% dela no envelope de cruzeiro deixa margem para manobra e rajada.
+
+Item 8 -- ponto neutro e margem estatica (MS = (xnp - xcg)/cref):
+  AVL        M 0.85  CG dianteiro  xnp = 27.535 m (36.5% CMA)  MS = +0.211
+  AVL        M 0.85  CG traseiro   xnp = 27.517 m (36.3% CMA)  MS = -0.029
+  designTool M 0.85  CG dianteiro  xnp = 28.226 m (46.5% CMA)  MS = +0.311
+  designTool M 0.85  CG traseiro   xnp = 28.226 m (46.5% CMA)  MS = +0.073
+  AVL        M 0.20  CG dianteiro  xnp = 28.019 m (43.5% CMA)  MS = +0.281
+  AVL        M 0.20  CG traseiro   xnp = 28.004 m (43.3% CMA)  MS = +0.041
+  designTool M 0.20  CG dianteiro  xnp = 28.421 m (49.4% CMA)  MS = +0.339
+  designTool M 0.20  CG traseiro   xnp = 28.421 m (49.4% CMA)  MS = +0.102
