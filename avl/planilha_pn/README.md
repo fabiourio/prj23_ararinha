@@ -17,22 +17,31 @@ com os dados da configuração final (`Lc_h` = 4,8237).
 2. **CG dianteiro e traseiro (C91, C92): 15,45% e 39,21% da CMA,** os limites
    do designTool.
 
-## Pendente
+3. **Células da nacele reconstruídas (C75 a C80).** Na cópia recebida elas
+   estavam com 0 fixo, sem fórmula. Foram reconstruídas pela Eq. E-41 de
+   Torenbeek, seguindo os rótulos da planilha:
+   - `ln_front` = `xm_w − x_n`: bordo de ataque da CMA menos a face frontal
+     da nacele;
+   - `ln_back` = `x_n + L_n − xm_w`;
+   - `ln` = `ln_front` para motor na asa e `ln_back` para motor na cauda;
+   - `k_n` = −4 para nacele à frente da asa e −2,5 para nacele na cauda;
+   - `dxac_n` = `num_eng · k_n · D_n² · ln / (S_w · CLα_wf)`;
+   - `xac_wfn` = `xac_wf + dxac_n`.
+4. **`x_np` (C95) passa a usar `xac_wfn` (C80)** em vez de `xac_wf` (C74).
+   Antes, a nacele ficava de fora mesmo com as células preenchidas.
 
-As células da nacele (C75 a C79: `ln_front`, `ln_back`, `ln`, `k_n`,
-`dxac_n`) estão com 0 fixo, sem fórmula, então a correção de Torenbeek
-(Eq. E-41) para as naceles não entra no cálculo. As fórmulas precisam ser
-restauradas a partir da planilha original do professor.
+A planilha foi salva com Mach 0,85.
 
-## Resultado (planilha corrigida, M 0,85)
+## Resultado (planilha corrigida)
 
-| | sem a nacele (como está) | com a nacele (estimativa) |
+| | sem a nacele | com a nacele |
 |---|---|---|
-| x_np | 28,10 m = 44,7% da CMA | ≈ 27,69 m ≈ 38,7% da CMA |
-| MS com CG traseiro | +5,5% | ≈ −0,5% |
+| x_np, M 0,85 | 28,10 m = 44,7% da CMA | 27,69 m = 38,7% da CMA |
+| MS com CG traseiro, M 0,85 | +5,5% | −0,5% |
+| x_np, M 0,2 | 28,31 m = 47,8% da CMA | 27,77 m = 40,0% da CMA |
+| MS com CG traseiro, M 0,2 | +8,6% | +0,8% |
 
-A estimativa com a nacele usa k_n = −4 (nacele à frente da asa), b_n = 4 m,
-l_n = x_m,w − x_n = 7,0 m e 2 naceles, o que dá Δx_ac = −0,44 m. Com a
-nacele, o método semi-empírico fica perto do AVL (36,3% da CMA no
-cruzeiro), e o designTool (46,5%), que ignora as naceles, fica como o valor
-otimista.
+A nacele desloca o centro aerodinâmico do conjunto asa-fuselagem em
+−0,44 m. Com ela, o método semi-empírico fica perto do AVL (36,3% da CMA no
+cruzeiro e 43,3% em M 0,2). O designTool (46,5%), que ignora as naceles,
+fica como o valor otimista.
