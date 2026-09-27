@@ -2,7 +2,10 @@
 Escreve os arquivos do AVL a partir do dicionario de aeronave.py.
 
 Deslocamentos em Z (exigencia do professor, para manter distancia entre os
-paineis): asa -1,20 m, EH +1,85 m, EV +0,85 m, nacele acompanhando a asa.
+paineis): asa -1,20 m, EH +1,85 m, EV +1,85 m, nacele acompanhando a asa.
+A EV sobe o mesmo que a EH para preservar a separacao real de 1 m entre
+as raizes (designTool: EH em z = 2,0 m, EV em z = 3,0 m); com +0,85 m a
+raiz da EH ficava sobre a borda inferior da EV.
 Nao sao alteracao de projeto e existem so aqui.
 
 Winglet: superficie propria no COMPONENT 1 (mesmo componente da asa), com
@@ -34,7 +37,7 @@ import numpy as np
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 
-DZ = {'asa': -1.20, 'EH': +1.85, 'EV': +0.85}
+DZ = {'asa': -1.20, 'EH': +1.85, 'EV': +1.85}
 TAPER_WINGLET = 0.21
 
 # Estacoes da asa (fracao da semienvergadura) e perfis do Lab 03

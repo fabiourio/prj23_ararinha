@@ -496,7 +496,14 @@ def itens567(arqs, av, its, estol_res, saida):
     fig.savefig(os.path.join(saida, 'cl_delta_e.png'))
     plt.close(fig)
 
-    notas = ['Item 5 -- CD no CL de projeto:']
+    notas = ['Item 5 -- CD no CL de projeto:',
+             '  Ressalva: polares em M 0,85 pelo VLM, que e linear e nao representa '
+             'compressibilidade nem buffet; CL acima de ~0,8 nesse Mach e so extrapolacao '
+             'do modelo (as polares terminam no CLmax do metodo da secao critica em M 0,2, '
+             'como pede o roteiro).',
+             '  Arrasto de onda: o AVL nao o calcula e o CDp do cabecalho e o CD0 do '
+             'designTool, que nao inclui a onda. Na comparacao com o designTool a onda '
+             'estimada por ele (Korn, 5 counts no CL de projeto) deve ser somada ao AVL.']
     for l in linhas_pp:
         notas.append(f'  ({l["caso"]}) CD_AVL = {l["CD_AVL"]:.5f}  designTool = {l["CD_designTool"]:.5f}'
                      f'  diferenca = {l["dif_counts"]:+.1f} counts')

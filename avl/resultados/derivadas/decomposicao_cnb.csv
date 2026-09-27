@@ -1,13 +1,13 @@
 config,M,alfa_graus,CYb,Clb,Cnb,blocos
-completo,0.2,3.0,-0.695187,-0.147282,0.015456,Wing + Winglet + Horizontal tail + Vertical tail + Fuselage + Nacelle
-completo,0.85,3.0,-0.759787,-0.196369,-0.080815,Wing + Winglet + Horizontal tail + Vertical tail + Fuselage + Nacelle
-sem fuselagem,0.2,3.0,-0.681427,-0.167595,0.132534,Wing + Winglet + Horizontal tail + Vertical tail + Nacelle
-sem fuselagem,0.85,3.0,-0.749801,-0.220927,0.152372,Wing + Winglet + Horizontal tail + Vertical tail + Nacelle
-sem nacele,0.2,3.0,-0.444591,-0.154964,0.051403,Wing + Winglet + Horizontal tail + Vertical tail + Fuselage
-sem nacele,0.85,3.0,-0.504251,-0.200397,-0.042953,Wing + Winglet + Horizontal tail + Vertical tail + Fuselage
+completo,0.2,3.0,-0.687232,-0.152555,0.012137,Wing + Winglet + Horizontal tail + Vertical tail + Fuselage + Nacelle
+completo,0.85,3.0,-0.751109,-0.202286,-0.084395,Wing + Winglet + Horizontal tail + Vertical tail + Fuselage + Nacelle
+sem fuselagem,0.2,3.0,-0.679336,-0.173048,0.131693,Wing + Winglet + Horizontal tail + Vertical tail + Nacelle
+sem fuselagem,0.85,3.0,-0.746029,-0.22702,0.150646,Wing + Winglet + Horizontal tail + Vertical tail + Nacelle
+sem nacele,0.2,3.0,-0.436557,-0.160188,0.048037,Wing + Winglet + Horizontal tail + Vertical tail + Fuselage
+sem nacele,0.85,3.0,-0.495527,-0.206261,-0.046556,Wing + Winglet + Horizontal tail + Vertical tail + Fuselage
 sem EV,0.2,3.0,-0.351401,-0.11248,-0.156865,Wing + Winglet + Horizontal tail + Fuselage + Nacelle
 sem EV,0.85,3.0,-0.381439,-0.158181,-0.270279,Wing + Winglet + Horizontal tail + Fuselage + Nacelle
 só fuselagem,0.2,3.0,-0.015917,-0.003563,-0.130196,Fuselage
 só fuselagem,0.85,3.0,-0.01582,-0.00662,-0.243304,Fuselage
-sem fuselagem e nacele,0.2,3.0,-0.426761,-0.174576,0.169422,Wing + Winglet + Horizontal tail + Vertical tail
-sem fuselagem e nacele,0.85,3.0,-0.493196,-0.224398,0.19079,Wing + Winglet + Horizontal tail + Vertical tail
+sem fuselagem e nacele,0.2,3.0,-0.42457,-0.179982,0.168531,Wing + Winglet + Horizontal tail + Vertical tail
+sem fuselagem e nacele,0.85,3.0,-0.48937,-0.230438,0.18904,Wing + Winglet + Horizontal tail + Vertical tail

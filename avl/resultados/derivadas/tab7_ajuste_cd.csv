@@ -1,4 +1,4 @@
 parametro,explicacao,valor,fonte,observacao
 CD0,termo constante da polar,0.0167341,exercicio 5.b,"30 pontos da polar 5(b) (CG traseiro, de = 0, M 0,85), alfa de -4.32 a 9.72 graus; RMS do residuo 0.332 counts"
-CDa,termo linear da polar [1/rad],-0.00342532,exercicio 5.b,"30 pontos da polar 5(b) (CG traseiro, de = 0, M 0,85), alfa de -4.32 a 9.72 graus; RMS do residuo 0.332 counts"
+CDa,termo linear da polar [1/rad],-0.00342539,exercicio 5.b,"30 pontos da polar 5(b) (CG traseiro, de = 0, M 0,85), alfa de -4.32 a 9.72 graus; RMS do residuo 0.332 counts"
 CDa2,termo quadratico da polar [1/rad2],1.60065,exercicio 5.b,"30 pontos da polar 5(b) (CG traseiro, de = 0, M 0,85), alfa de -4.32 a 9.72 graus; RMS do residuo 0.332 counts"

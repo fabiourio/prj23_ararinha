@@ -61,8 +61,10 @@ o interpretador real.
 ## Decisões de modelagem
 
 - **Deslocamento em Z só no AVL**, por exigência do professor, para afastar
-  os painéis: asa −1,20 m, EH +1,85 m, EV +0,85 m, nacele junto com a asa.
-  Não é alteração de projeto.
+  os painéis: asa −1,20 m, EH e EV +1,85 m, nacele junto com a asa.
+  Nenhuma superfície cruza a fuselagem (folga mínima de 0,15 m, na raiz da
+  asa), e EH e EV mantêm entre as raízes a separação real de 1 m do
+  designTool. Não é alteração de projeto.
 - **Winglet** em superfície própria no COMPONENT 1, com toe zero.
 - **Nacele** como anel sustentador em componente próprio. No COMPONENT 1 o
   CDff oscilava ±0,2 count com a malha da asa.
