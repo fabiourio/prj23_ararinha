@@ -1,33 +1,18 @@
-Ararinha
-#
-# Lab 04 -- CG dianteiro. Geometria do designTool, perfis otimizados do
-# Lab 03 (familia roteiro): raiz.dat, centro.dat, ponta.dat.
-#
-# Asa sem torcao (linha de base; a torcao entra na etapa de otimizacao).
-# Geometria da v3 do designTool (EH recuada para Lc_h = 4,6, winglet).
-# Alturas em Z deslocadas SO neste modelo, para tirar as superficies de
-# dentro da fuselagem (z de -2,348 a +3,732) e o VLM nao gerar paineis
-# cruzando o corpo: asa -1,20 m (raiz em z = -2,50), EH +1,85 m e EV
-# +0,85 m (raizes em z = +3,85), nacele acompanhando a asa. Nao e
-# alteracao de projeto; o dados_designtool.py confere os deslocamentos.
-#
-# Controles: d1 = aileron, d2 = elevator, d3 = rudder. Design: 1 = it.
-#
-0.85          # Mach
+Ararinha Lc_h=4.8237 CG fwd
+0.8500          # Mach
 0 0 0.0       # iYsym iZsym Zsym
-368.833 6.8995 60.1518   # Sref Cref Bref
-26.0797 0.0 0.0   # Xref Yref Zref (CG dianteiro)
-0.01473       # CDp (CD0 do designTool no ponto de projeto)
+368.8330 6.8995 60.1518   # Sref Cref Bref
+26.0805 0.0 0.0   # Xref Yref Zref
+0.01468       # CDp
 #----------------------------------------------------------------
 SURFACE
 Wing
 #Nchordwise Cspace Nspanwise Sspace
-8 1.0 20 1.0
+8 1.0 60 1.0
 YDUPLICATE
 0.0
 ANGLE
 0.0
-
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
@@ -39,7 +24,7 @@ CLAF
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-18.2882  3.0407  -2.1804  9.1299  0.0000
+18.2882  3.0407  -2.1804  9.1299  3.0000
 AFILE
 airfoils/raiz.dat
 CLAF
@@ -47,7 +32,7 @@ CLAF
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-20.9833  6.6167  -1.8046  8.2362  0.0000
+20.9833  6.6167  -1.8046  8.2363  1.1263
 AFILE
 airfoils/gerado/eta_0220.dat
 CLAF
@@ -55,7 +40,7 @@ CLAF
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-23.2500  9.6243  -1.4884  7.4846  0.0000
+23.2500  9.6243  -1.4884  7.4846  -0.2582
 AFILE
 airfoils/gerado/eta_0320.dat
 CLAF
@@ -63,7 +48,7 @@ CLAF
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-25.0180  11.9702  -1.2419  6.8984  0.0000
+25.0180  11.9702  -1.2419  6.8984  0.9353
 AFILE
 airfoils/gerado/eta_0398.dat
 CLAF
@@ -71,7 +56,7 @@ CLAF
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-26.8767  14.4364  -0.9827  6.2820  0.0000
+26.8767  14.4364  -0.9827  6.2820  3.0000
 AFILE
 airfoils/gerado/eta_0480.dat
 CLAF
@@ -79,80 +64,60 @@ CLAF
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-28.6901  16.8425  -0.7298  5.6807  0.0000
+28.6900  16.8425  -0.7298  5.6807  -3.3188
 AFILE
 airfoils/gerado/eta_0560.dat
 CLAF
 1.0000
 CONTROL
-#name    gain  Xhinge  XYZhvec      SgnDup
 aileron  1.0   0.73    0. 0. 0.    -1.0
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-31.8634  21.0531  -0.2872  4.6285  0.0000
+31.8634  21.0531  -0.2872  4.6284  -3.2764
 AFILE
 airfoils/gerado/eta_0700.dat
 CLAF
 1.0000
 CONTROL
-#name    gain  Xhinge  XYZhvec      SgnDup
 aileron  1.0   0.73    0. 0. 0.    -1.0
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-34.5835  24.6622  0.0921  3.7265  0.0000
+34.5834  24.6623  0.0921  3.7265  -5.0187
 AFILE
 airfoils/gerado/eta_0820.dat
 CLAF
 1.0000
 CONTROL
-#name    gain  Xhinge  XYZhvec      SgnDup
 aileron  1.0   0.73    0. 0. 0.    -1.0
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-36.3968  27.0683  0.3450  3.1252  0.0000
+36.3968  27.0683  0.3450  3.1252  -4.6546
 AFILE
 airfoils/ponta.dat
 CLAF
 1.0000
 CONTROL
-#name    gain  Xhinge  XYZhvec      SgnDup
 aileron  1.0   0.73    0. 0. 0.    -1.0
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-38.6635  30.0759  0.6611  2.3736  0.0000
+38.6635  30.0759  0.6611  2.3736  -3.7486
 AFILE
 airfoils/ponta.dat
 CLAF
 1.0000
-
 #----------------------------------------------------------------
 SURFACE
 Winglet
 #Nchordwise Cspace Nspanwise Sspace
-8 1.0 8 1.0
-
+8 1.0 4 1.0
 COMPONENT
 1
-
-# Winglet do designTool (Raymer, Fig. 7.34): vertical, com raiz na ponta
-# da asa, altura e corda de raiz iguais a corda da ponta (2,3736 m),
-# afilamento 0,21 e bordo de fuga reto. E uma superficie propria, e nao
-# uma secao a mais da asa, para que o angulo de convergencia (toe) fique
-# fixo em zero: numa superficie continua a secao da ponta seria
-# compartilhada, e o Ainc dela, que e a torcao da asa, viraria toe do
-# winglet. O COMPONENT 1 poe o winglet no mesmo componente da asa, que
-# recebe o indice 1 automaticamente: assim a juncao e tratada como folha
-# de vortices continua. Em componentes separados o AVL usa nucleo finito
-# entre as duas e a quina perde metade do efeito do winglet.
-# Malha propria: 8 faixas, ja no plato (variacao abaixo de 0,03 count).
-
 YDUPLICATE
 0.0
-
 ANGLE
 0.0
 
@@ -171,12 +136,11 @@ AFILE
 airfoils/ponta.dat
 CLAF
 1.0000
-
 #----------------------------------------------------------------
 SURFACE
 Horizontal tail
 #Nchordwise Cspace Nspanwise Sspace
-16 1.0 10 1.0
+8 1.0 20 1.0
 YDUPLICATE
 0.0
 ANGLE
@@ -184,32 +148,27 @@ ANGLE
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-54.5492  0.0000  3.8500  4.8180  0.0000
+56.1848  0.0000  3.8500  4.7050  0.0000
 NACA
 0010
 CLAF
 1.0000
 DESIGN
-#DName  Wdes
 it      1.0
 CONTROL
-#name    gain  Xhinge  XYZhvec      SgnDup
 elevator 1.0   0.70    0. 0. 0.     1.0
 
 SECTION
 #Xle      Yle      Zle      Chord    Ainc
-61.4469  8.0340  4.1306  2.1681  0.0000
+62.9206  7.8455  4.1240  2.1172  0.0000
 NACA
 0010
 CLAF
 1.0000
 DESIGN
-#DName  Wdes
 it      1.0
 CONTROL
-#name    gain  Xhinge  XYZhvec      SgnDup
 elevator 1.0   0.70    0. 0. 0.     1.0
-
 #----------------------------------------------------------------
 SURFACE
 Vertical tail
@@ -226,7 +185,6 @@ NACA
 CLAF
 1.0000
 CONTROL
-#name    gain  Xhinge  XYZhvec      SgnDup
 rudder   1.0   0.70    0. 0. 0.     0.0
 
 SECTION
@@ -237,98 +195,78 @@ NACA
 CLAF
 1.0000
 CONTROL
-#name    gain  Xhinge  XYZhvec      SgnDup
 rudder   1.0   0.70    0. 0. 0.     0.0
-
 #----------------------------------------------------------------
 BODY
 Fuselage
 # Nbody Bspace
-20 1.0
-
+80 1.0
 SCALE
-# Length Diameter Diameter
-61.39 6.08 6.08
-
+61.3900 6.0800 6.0800
 BFILE
-fuselage_nondim.dat
-
-#--------------------------------------------------
+fuselage_reamostrada.dat
+#----------------------------------------------------------------
 SURFACE
 Nacelle
 #Nchordwise  Cspace   Nspanwise  Sspace
 6            1.0      12          0.0
-
-# Como no 737.avl da disciplina: anel sustentador no mesmo componente da
-# asa (COMPONENT 1). Entre componentes diferentes o AVL usa nucleo finito
-# nos vortices, e a interacao asa-nacele mudaria em relacao ao modelo de
-# referencia.
 COMPONENT
-1
-
+2
 YDUPLICATE
 0.0
-
 SCALE
-# Length, Hor. radius, and Vert. radius
-# L_n = 7,3 m e D_n = 4,0 m (raio 2,0) do designTool
-7.3   2.0  2.0
-
+7.3000  2.0000  2.0000
 TRANSLATE
-# x_n = 18,0 (face frontal) e y_n = 11,0 do designTool. O z_n = -3,0
-# acompanha o deslocamento da asa (-1,2 m), mantendo a folga de 0,86 m
-# entre o topo da nacele e o bordo de ataque da asa.
-18.0  11.0  -4.2
+18.0000  11.0000  -4.2000
 
-SECTION		     
+SECTION
 #Xle   Yle    Zle      Chord   Ainc  Nspanwise  Sspace
- 0.00  0.0    1.0       1.0   0.    1          0.
+ 0.00  0.000  1.000  1.0  0.  1  0.
 
-SECTION		     
+SECTION
 #Xle   Yle    Zle      Chord   Ainc  Nspanwise  Sspace
- 0.00  0.5    0.866     1.0    0.    1          0.
+ 0.00  0.500  0.866  1.0  0.  1  0.
 
-SECTION		     
+SECTION
 #Xle   Yle    Zle      Chord   Ainc  Nspanwise  Sspace
- 0.00  0.866  0.5       1.0    0.    1          0.
+ 0.00  0.866  0.500  1.0  0.  1  0.
 
-SECTION		     
+SECTION
 #Xle   Yle    Zle      Chord   Ainc  Nspanwise  Sspace
- 0.00  1.0    0.0       1.0    0.    1          0.
+ 0.00  1.000  0.000  1.0  0.  1  0.
 
-SECTION		     
+SECTION
 #Xle   Yle    Zle      Chord   Ainc  Nspanwise  Sspace
- 0.00  0.866 -0.5       1.0    0.    1          0.
+ 0.00  0.866  -0.500  1.0  0.  1  0.
 
-SECTION		     
+SECTION
 #Xle   Yle    Zle      Chord   Ainc  Nspanwise  Sspace
- 0.00  0.5   -0.866     1.0    0.    1          0.
+ 0.00  0.500  -0.866  1.0  0.  1  0.
 
-SECTION		     
+SECTION
 #Xle   Yle    Zle      Chord   Ainc  Nspanwise  Sspace
- 0.00  0.0   -1.0       1.0    0.    1          0.
+ 0.00  0.000  -1.000  1.0  0.  1  0.
 
-SECTION		     
+SECTION
 #Xle   Yle    Zle      Chord   Ainc  Nspanwise  Sspace
- 0.00 -0.5   -0.866     1.0    0.    1          0.
+ 0.00  -0.500  -0.866  1.0  0.  1  0.
 
-SECTION		     
+SECTION
 #Xle   Yle    Zle      Chord   Ainc  Nspanwise  Sspace
- 0.00 -0.866 -0.5       1.0    0.    1          0.
+ 0.00  -0.866  -0.500  1.0  0.  1  0.
 
-SECTION		     
+SECTION
 #Xle   Yle    Zle      Chord   Ainc  Nspanwise  Sspace
- 0.00 -1.0    0.0       1.0    0.    1          0.
+ 0.00  -1.000  0.000  1.0  0.  1  0.
 
-SECTION		     
+SECTION
 #Xle   Yle    Zle      Chord   Ainc  Nspanwise  Sspace
- 0.00 -0.866  0.5       1.0    0.    1          0.
+ 0.00  -0.866  0.500  1.0  0.  1  0.
 
-SECTION		     
+SECTION
 #Xle   Yle    Zle      Chord   Ainc  Nspanwise  Sspace
- 0.00 -0.5    0.866     1.0    0.    1          0.
+ 0.00  -0.500  0.866  1.0  0.  1  0.
 
-SECTION		     
+SECTION
 #Xle   Yle    Zle      Chord   Ainc  Nspanwise  Sspace
- 0.00  0.0    1.0       1.0    0.    1          0.
-
+ 0.00  0.000  1.000  1.0  0.  1  0.
