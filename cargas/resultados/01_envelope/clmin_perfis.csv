@@ -1,0 +1,4 @@
+estacao,eta,Re,Mach,clmin_xfoil,alfa_clmin,clmin_corrigido,estol_capturado,n_pontos
+raiz,0.101,60600000.0,0.266,-1.6176,-22.0,-1.3776,True,56
+meio,0.398,42300000.0,0.266,-1.495,-26.0,-1.2550000000000001,True,57
+ponta,0.9,14500000.0,0.266,-1.4721,-16.5,-1.2321,True,49

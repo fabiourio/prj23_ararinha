@@ -1,0 +1,38 @@
+parametro,unidade,inicio_cruzeiro,fim_cruzeiro,observacao
+MTOW,kgf,288764,288764,designTool
+peso da condicao,kgf,275971,188397,"MTOW x fracoes de partida, taxi, decolagem e subida (x cruzeiro no fim)"
+area de referencia,m2,368.833,368.833,
+corda de referencia (CMA),m,6.89949,6.89949,
+altitude de cruzeiro,m,10668,10668,
+Mach de cruzeiro (M_C),-,0.85,0.85,
+Mach de mergulho (M_D),-,0.92,0.92,"M_C + 0,07 (25.335(b)(2))"
+CLmax,-,1.13851,1.13851,"secao critica, M 0,2, compensado (Lab 04)"
+CLmin,-,-0.61847,-0.61847,"secao critica negativa, M 0,2, compensado"
+CLa,1/rad,6.89883,6.93749,"AVL, M 0,85, CL de cruzeiro do peso"
+U_ref em V_C (EAS),m/s,10.2765,10.2765,"25.341(a)(5)(i), na altitude de cruzeiro"
+U_ref em V_C (EAS),ft/s,33.7156,33.7156,
+n limite positivo,-,2.5,2.5,25.337(b)
+n limite negativo,-,-1,-1,25.337(c)
+razao de massa mu,-,82.6356,56.0984,
+fator de alivio Kg,-,0.826961,0.804037,
+V_S1 (EAS),m/s,102.596,84.7686,
+V_S1 (Mach em FL350),-,0.620718,0.51286,
+V_Sneg (EAS),m/s,139.2,115.012,
+V_Sneg (Mach em FL350),-,0.842177,0.695838,
+V_A (EAS),m/s,162.218,134.031,
+V_A (Mach em FL350),-,0.981441,0.810904,
+V_B (EAS),m/s,133.269,119.412,
+V_B (Mach em FL350),-,0.806295,0.72246,
+V_C (EAS),m/s,140.493,140.493,
+V_C (Mach em FL350),-,0.85,0.85,
+V_D (EAS),m/s,152.063,152.063,
+V_D (Mach em FL350),-,0.92,0.92,
+n de rajada positiva em V_B,-,1.65199,1.83669,
+n de rajada negativa em V_B,-,0.348013,0.163305,
+n de rajada positiva em V_C,-,1.68733,1.9844,
+n de rajada negativa em V_C,-,0.312672,0.0155989,
+n de rajada positiva em V_D,-,1.37197,1.53273,
+n de rajada negativa em V_D,-,0.628034,0.467265,
+n de estol em V_C,-,1.87521,2.74688,
+n de estol em V_D,-,2.19678,3.21794,
+"folga V_C - (V_B + 1,32 U_ref)",m/s,-15.6713,-1.81456,25.335(a)(1)
