@@ -1,0 +1,27 @@
+parametro,unidade,inicio_cruzeiro,fim_cruzeiro,observacao
+peso da aeronave,N,2.70727e+06,1.84817e+06,
+peso da aeronave,kgf,275971,188397,
+"peso da asa (estrutura, duas semiasas)",N,344275,344275,designTool (Raymer 15.25)
+peso de combustivel,N,937611,78508.9,combustivel restante da missao
+peso de combustivel,kgf,95577.1,8002.94,
+peso de cada trem de pouso principal,N,51769.2,51769.2,W_mlg do designTool / 2
+peso de cada motor (instalado),N,111800,111800,"motor seco 86000 N x 1,3 (designTool)"
+altitude,m,0,0,nivel do mar (caso critico)
+fator de carga n,-,2.5,2.5,25.337(b)
+velocidade equivalente V_A,m/s,162.218,134.031,
+velocidade verdadeira V_A,m/s,162.218,134.031,igual a EAS no nivel do mar
+Mach,-,0.476744,0.393904,
+pressao dinamica,Pa,16117.8,11003.1,
+CL total da aeronave,-,1.13851,1.13851,n W/(q S) = CLmax
+angulo de ataque,graus,12.3203,12.5886,
+profundor de compensacao,graus,-9.22259,-10.6809,it = -3.242 graus
+taxa de arfagem q,rad/s,0.0907111,0.109788,g (n - 1)/V_TAS
+taxa de arfagem q,graus/s,5.19736,6.2904,
+taxa de arfagem adimensional qc/2V,-,0.00192907,0.00282578,entrada do AVL (p p)
+sustentacao da asa,N,6.42416e+06,4.3863e+06,superficies Wing + Wing (YDUP)
+sustentacao da empenagem,N,-5350.3,-40.5831,EH + EV
+sustentacao das naceles,N,341230,237492,
+sustentacao dos winglets,N,12127.3,8278.96,
+sustentacao da fuselagem,N,-4161.34,-11769.1,
+sustentacao total,N,6.76819e+06,4.62043e+06,confere com n W
+n W,N,6.76819e+06,4.62043e+06,
