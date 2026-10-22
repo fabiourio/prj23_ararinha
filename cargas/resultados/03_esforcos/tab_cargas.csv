@@ -1,0 +1,13 @@
+condicao,carga,peso_N,peso_kgf,n,forca_N,y_m,x,braco_EA_m,torque_Nm
+inicio,estrutura da asa (semiasa),172137,17547.1,2.5,-430344,distribuído (∝ c),40.0% da corda,,
+inicio,combustível (semiasa),468806,47788.5,2.5,-1.17201e+06,distribuído (∝ c),32.5% da corda,,
+inicio,motor (inércia),111800,11396.5,2.5,-279500,11,21.65,4.95757,-1.38564e+06
+inicio,trem principal (inércia),51769.2,5277.18,2.5,-129423,6.93599,29.3738,-5.49901,711698
+inicio,nacele (sustentação),,,,170615,11,17.5656,9.04201,1.5427e+06
+inicio,winglet (sustentação),,,,6063.67,30.0759,,0,0
+fim,estrutura da asa (semiasa),172137,17547.1,2.5,-430344,distribuído (∝ c),40.0% da corda,,
+fim,combustível (semiasa),39254.4,4001.47,2.5,-98136.1,distribuído (∝ c),32.5% da corda,,
+fim,motor (inércia),111800,11396.5,2.5,-279500,11,21.65,4.95757,-1.38564e+06
+fim,trem principal (inércia),51769.2,5277.18,2.5,-129423,6.93599,29.3738,-5.49901,711698
+fim,nacele (sustentação),,,,118746,11,17.6295,8.97808,1.06611e+06
+fim,winglet (sustentação),,,,4139.48,30.0759,,0,0
